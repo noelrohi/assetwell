@@ -1,0 +1,31 @@
+import path from "path"
+import { defineConfig } from "vite"
+import react from "@vitejs/plugin-react"
+import tailwindcss from "@tailwindcss/vite"
+
+const host = process.env.VITE_DEV_SERVER_HOST
+const configuredPort = Number(process.env.VITE_PORT || 1420)
+const port = Number.isFinite(configuredPort) ? configuredPort : 1420
+
+export default defineConfig({
+  plugins: [react(), tailwindcss()],
+  base: "./",
+  resolve: {
+    alias: {
+      "@": path.resolve(__dirname, "./src"),
+    },
+  },
+  clearScreen: false,
+  server: {
+    port,
+    strictPort: true,
+    host: host || false,
+    hmr: host
+      ? {
+          protocol: "ws",
+          host,
+          port: port + 1,
+        }
+      : undefined,
+  },
+})
