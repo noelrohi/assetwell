@@ -25,19 +25,24 @@ function ActionButton({
   children,
   onClick,
   primary,
+  disabled,
 }: {
   children: React.ReactNode
   onClick?: () => void
   primary?: boolean
+  disabled?: boolean
 }) {
   return (
     <button
       onClick={onClick}
+      disabled={disabled}
       className={cn(
         "flex h-9 items-center gap-2 rounded-full px-4 text-sm font-medium transition-all",
-        primary
-          ? "bg-ember text-ember-foreground hover:brightness-105 ember-glow"
-          : "border border-border/70 bg-background/50 hover:bg-accent",
+        disabled
+          ? "cursor-not-allowed bg-muted text-muted-foreground"
+          : primary
+            ? "bg-ember text-ember-foreground hover:brightness-105 ember-glow"
+            : "border border-border/70 bg-background/50 hover:bg-accent",
       )}
     >
       {children}
@@ -49,10 +54,14 @@ function PlacementTile({
   p,
   onRegenerate,
   onReveal,
+  canRegenerate,
+  canReveal,
 }: {
   p: PlacementResult
   onRegenerate: () => void
   onReveal: () => void
+  canRegenerate: boolean
+  canReveal: boolean
 }) {
   const spec = placementSpecs[p.size]
   return (
@@ -74,7 +83,14 @@ function PlacementTile({
             <IconAlertTriangle className="size-4" />
             <button
               onClick={onRegenerate}
-              className="flex items-center gap-1 font-mono text-[0.6rem] text-muted-foreground hover:text-foreground"
+              disabled={!canRegenerate}
+              title={p.error}
+              className={cn(
+                "flex items-center gap-1 font-mono text-[0.6rem] text-muted-foreground",
+                canRegenerate
+                  ? "hover:text-foreground"
+                  : "cursor-not-allowed opacity-60",
+              )}
             >
               <IconRefresh className="size-3" /> retry
             </button>
@@ -85,6 +101,7 @@ function PlacementTile({
           <div className="absolute inset-0 flex items-end justify-end gap-1 bg-gradient-to-t from-background/80 via-transparent p-1.5 opacity-0 transition-opacity group-hover:opacity-100">
             <button
               onClick={onRegenerate}
+              disabled={!canRegenerate}
               className="grid size-7 place-items-center rounded-md bg-background/80 text-muted-foreground backdrop-blur hover:text-foreground"
               title="Regenerate"
             >
@@ -92,6 +109,7 @@ function PlacementTile({
             </button>
             <button
               onClick={onReveal}
+              disabled={!canReveal}
               className="grid size-7 place-items-center rounded-md bg-background/80 text-muted-foreground backdrop-blur hover:text-foreground"
               title="Reveal in Finder"
             >
@@ -157,6 +175,11 @@ export function CreativePage() {
   const readyTakes = creative.takes.filter((t) => t.status === "ready")
   const hasPlacements = creative.placements.length > 0
   const readyPlacements = creative.placements.filter((p) => p.status === "ready")
+  const selectedSource =
+    creative.takes.find((take) => take.url === selectedUrl) ??
+    creative.takes.find((take) => take.id === creative.selectedTakeId) ??
+    readyTakes[0]
+  const canUseLocalHero = !creative.isDemo && Boolean(selectedSource?.filePath)
 
   return (
     <div className="mx-auto max-w-6xl px-8 pt-6 pb-24">
@@ -182,11 +205,9 @@ export function CreativePage() {
         </div>
         <div className="flex items-center gap-2">
           <ActionButton
+            disabled={!canUseLocalHero}
             onClick={() =>
-              void openOutput(
-                readyTakes.find((take) => take.url === selectedUrl)?.filePath ??
-                  readyTakes[0]?.filePath,
-              )
+              void openOutput(selectedSource?.filePath)
             }
           >
             <IconFolderOpen className="size-4" /> Reveal
@@ -196,15 +217,12 @@ export function CreativePage() {
           </ActionButton>
           <ActionButton
             primary
+            disabled={!canUseLocalHero}
             onClick={() => {
-              const source =
-                creative.takes.find((take) => take.url === selectedUrl) ??
-                creative.takes.find((take) => take.id === creative.selectedTakeId) ??
-                readyTakes[0]
-              if (source) {
+              if (selectedSource) {
                 setVideoDraftSource({
-                  url: source.url,
-                  filePath: source.filePath,
+                  url: selectedSource.url,
+                  filePath: selectedSource.filePath,
                   label: creative.title,
                   creativeId: creative.id,
                 })
@@ -317,6 +335,8 @@ export function CreativePage() {
                 <PlacementTile
                   key={p.size}
                   p={p}
+                  canRegenerate={!creative.isDemo && Boolean(selectedSource?.filePath)}
+                  canReveal={Boolean(p.filePath)}
                   onRegenerate={() =>
                     void regeneratePlacement(creative.id, p.size)
                   }

@@ -233,9 +233,10 @@ export function HiggsfieldProvider({
         pendingRuns.current.delete(event.runId)
         completedRuns.current.delete(event.runId)
         syncRunningJobs()
+        void refreshAccount()
       }
     })
-  }, [bridge, syncRunningJobs])
+  }, [bridge, refreshAccount, syncRunningJobs])
 
   function applyGenerationResult(
     pending: PendingRun,
@@ -516,6 +517,10 @@ export function HiggsfieldProvider({
   async function generateAllPlacements(creativeId: string) {
     const creative = creatives.find((item) => item.id === creativeId)
     if (!creative || !(await canGenerate()) || !bridge) return
+    if (creative.isDemo) {
+      toast("Remix the demo before generating new placements")
+      return
+    }
     const source = selectedTake(creative)
 
     if (!source?.filePath) {
@@ -531,7 +536,12 @@ export function HiggsfieldProvider({
               ...item,
               placements: imagePlacements.map((size) => ({
                 size,
-                status: "pending" as JobStatus,
+                status: supportedPlacementAspectRatio(size)
+                  ? ("pending" as JobStatus)
+                  : ("failed" as JobStatus),
+                error: supportedPlacementAspectRatio(size)
+                  ? undefined
+                  : unsupportedPlacementMessage(size),
               })),
             }
           : item,
@@ -539,9 +549,9 @@ export function HiggsfieldProvider({
     )
 
     void Promise.all(
-      imagePlacements.map((size) =>
-        startPlacementGeneration(creative, size, sourcePath),
-      ),
+      imagePlacements
+        .filter(supportedPlacementAspectRatio)
+        .map((size) => startPlacementGeneration(creative, size, sourcePath)),
     )
   }
 
@@ -551,6 +561,30 @@ export function HiggsfieldProvider({
   ) {
     const creative = creatives.find((item) => item.id === creativeId)
     if (!creative || !(await canGenerate()) || !bridge) return
+    if (creative.isDemo) {
+      toast("Remix the demo before regenerating placements")
+      return
+    }
+    if (!supportedPlacementAspectRatio(placement)) {
+      setCreatives((current) =>
+        current.map((item) =>
+          item.id === creativeId
+            ? {
+                ...item,
+                placements: upsertPlacement(item.placements, {
+                  size: placement,
+                  status: "failed",
+                  error: unsupportedPlacementMessage(placement),
+                }),
+              }
+            : item,
+        ),
+      )
+      toast("That banner size needs a post-process step", {
+        description: unsupportedPlacementMessage(placement),
+      })
+      return
+    }
     const source = selectedTake(creative)
 
     if (!source?.filePath) {
@@ -579,7 +613,15 @@ export function HiggsfieldProvider({
     placement: ImagePlacement,
     sourcePath: string,
   ) {
-    const spec = placementSpecs[placement]
+    const aspectRatio = supportedPlacementAspectRatio(placement)
+
+    if (!aspectRatio) {
+      markRunFailed(
+        { kind: "placement", creativeId: creative.id, placement },
+        unsupportedPlacementMessage(placement),
+      )
+      return
+    }
 
     try {
       const run = await startTrackedGeneration(
@@ -589,7 +631,7 @@ export function HiggsfieldProvider({
           mediaKind: "image",
           assetPath: sourcePath,
           assetMediaKind: "image",
-          aspectRatio: nearestHiggsfieldRatio(spec.width, spec.height),
+          aspectRatio,
           outputDirectoryName:
             creative.outputDirectoryName ?? `${creative.createdAt.slice(0, 10)}-${slug(creative.prompt)}`,
           outputFileName: `${placement}.png`,
@@ -883,4 +925,19 @@ function nearestHiggsfieldRatio(width: number, height: number) {
     const nextDistance = Math.abs(Math.log(ratio / next.value))
     return nextDistance < currentDistance ? next : best
   }).id
+}
+
+function supportedPlacementAspectRatio(placement: ImagePlacement) {
+  const spec = placementSpecs[placement]
+  const targetRatio = spec.width / spec.height
+  const ratio = nearestHiggsfieldRatio(spec.width, spec.height)
+  const supportedRatio =
+    HIGGSFIELD_RATIOS.find((item) => item.id === ratio)?.value ?? targetRatio
+  const relativeDrift = Math.abs(Math.log(targetRatio / supportedRatio))
+
+  return relativeDrift > 0.35 ? null : ratio
+}
+
+function unsupportedPlacementMessage(placement: ImagePlacement) {
+  return `${placement} is wider than Higgsfield's supported generation ratios. It needs an exact-size post-process step before we should spend credits on it.`
 }
