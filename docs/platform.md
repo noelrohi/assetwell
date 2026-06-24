@@ -1,0 +1,88 @@
+# Kreeyts Platform — Product Model & v1 Spec
+
+Kreeyts is **bespoke desktop software for a small team of non-technical creatives who already use Higgsfield** and want a tailored 10/10 version of the parts they care about. Higgsfield is the AI image/video generation engine; users know it powers the app. The web app (higgsfield.ai) is their current 7/10 — the pain is its GUI.
+
+The core thesis is **create efficiently**: a base creative image → resized into ad-placement sizes → optional video. Everything else is a bonus.
+
+The desired flow is mirrored by the reference app at `~/sandbox/dilag`-adjacent `~/sandbox/assetwell` (same create→resize→video model, but built on OpenAI/Gemini + trigger.dev; Kreeyts uses Higgsfield + a **local** queue instead).
+
+> This document is the product source of truth. For the runtime/module layout and the bridge contract, see [architecture.md](./architecture.md). For the UI redesign stack and conventions, see [Section 9](#9-ui-implementation-status).
+
+## 1. Positioning
+
+- Bespoke, not a public general-purpose tool. The audience is a specific creative team that chose Higgsfield.
+- Users know Higgsfield powers the app; the CLI, npm, accounts, and exit codes are implementation details they must never see.
+- "10/10 custom" means *their* small set of controls, pre-tuned — not feature parity with higgsfield.ai.
+
+## 2. Onboarding
+
+- **Bundle the Higgsfield CLI** inside the app — no npm, ever (the `bundled` executable source).
+- First run: if not authenticated, a single **"Sign in to Higgsfield"** screen → browser login → land directly on **Create**.
+- **One workspace**, auto-selected, never asked.
+- CLI version, install state, and workspace IDs are never shown.
+- After sign-in, show a **seeded showcase demo**: a finished example creative (base + placements + a sample video) the user can explore, backed by **bundled demo assets**, with a **"Remix this"** button that drops the demo prompt into the composer.
+
+## 3. Create (image)
+
+Composer inputs:
+
+1. **Prompt** textarea (the main control).
+2. **Dynamic aspect-ratio picker** — the base creative's ratio is user-chosen.
+3. **Attach reference image** (Higgsfield `generate` takes an `assetPath`).
+4. **Prompt library** picker — shipped starters + user-saved, plain text only (no templated `<field>` styles — styles/presets are cut).
+5. **Model selection is shown** (image models via `listModels`).
+
+Flow:
+
+- Generate produces **~4 takes** of the base; the user picks the hero.
+- Then **one-click "Generate all placements"** — the (B) checkpoint flow: review the base before mass-producing the 8 sizes.
+- Placements = **regenerate at each target size, referencing the base image** (Higgsfield is pure generation, not reframe/outpaint; content may drift but stays on-brand via the reference).
+- Each placement tile is single-shot with its own **Regenerate**. Failures are **isolated** — one bad size never kills the batch.
+- **Parallel creatives** are allowed — a global "X jobs running" indicator.
+
+## 4. Supported sizes
+
+- **Image (8):** 1200×628, 1024×768, 768×1024, 728×90, 320×50, 300×250, 600×300, 480×400.
+- **Video (4):** 1280×720, 720×1280, 1080×1080, 300×250.
+
+Canonical definitions live in `apps/desktop/src/lib/placements.ts`.
+
+## 5. Video
+
+- A **first-class standalone screen** — a freeform video composer: attached image + video prompt + video-size picker + video models.
+- From a creative's detail page, an **"Animate"** button sends the currently-selected image (base or a placement) into the composer, pre-attached.
+- **Opt-in per size** — video is slow and credit-expensive, so no auto-all.
+- Generated videos are **linked back to their source creative when there is one, AND appear in a flat Videos gallery** (freeform videos are never orphaned).
+
+## 6. Libraries
+
+- **Prompt library splits Image / Video** — each shipped-starters + user-saved, plain text.
+- **Reference library** — a flat grid of saved images (logo/product/mood), shipped 1–2 demo refs + user-saved, no tags/roles.
+- Both are **inline pickers inside the composers, NOT navigation destinations**.
+- **soul-id is deferred to phase 2** (the marquee consistency feature, but it adds training/onboarding weight).
+
+## 7. Navigation
+
+- Only two top-level destinations: **Create** (composer + your creatives grid) and **Videos** (composer + videos gallery) — plus detail pages, inline pickers, and an account corner menu (credit balance + sign out).
+- **Starred is cut for v1** (a flat recent-first grid is enough).
+
+## 8. Local-first output (the "why desktop" differentiator)
+
+- Every generation **auto-saves to a local folder-per-creative** (`~/Kreeyts` default, user-configurable), named by date + prompt slug, with files named by size (`1200x628.png`, `1280x720.mp4`).
+- **The folder is the deliverable.** Primary action is **Reveal in Finder**; **Export as ZIP** is secondary (for off-machine sharing).
+- The app keeps a small local index for the grids; the image/video files themselves are plain, user-owned files.
+
+## 9. Credits & failure states
+
+- Credit balance shown in the account corner; **hard-block generate at zero credits** with a "top up" action that opens Higgsfield's billing page in the browser (we don't own billing).
+- Job failure → failed tile + Regenerate; the batch survives.
+- Auth-expiry mid-session → a non-scary "Sign back in," resume in place.
+- **Never show raw stderr** — humane plain-language errors, with a collapsed "Show details" for debugging only.
+
+## 10. UI implementation status
+
+The renderer is built (Darkroom Gallery aesthetic, TanStack Router, shadcn) but is currently **mock-driven** (`apps/desktop/src/lib/mock-data.ts`) and **not yet wired to the Higgsfield bridge**. The onboarding gate, local-output persistence, and credit/auth handling are not yet built. The bridge currently streams raw CLI text rather than structured results — a normalization layer is the next major task.
+
+---
+
+_History: this spec was produced in a `grill-me` session on 2026-06-24 and supersedes the "wrapper-only" framing in earlier docs._

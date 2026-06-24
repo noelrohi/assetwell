@@ -122,11 +122,17 @@ function scheduleRestart() {
 async function main() {
   const dryRun = process.argv.includes("--dry-run")
   const requestedPort = Number(process.env.VITE_PORT || DEFAULT_VITE_PORT)
-  const preferredPort = Number.isFinite(requestedPort) ? requestedPort : DEFAULT_VITE_PORT
+  const preferredPort = Number.isFinite(requestedPort)
+    ? requestedPort
+    : DEFAULT_VITE_PORT
   const vitePort = await findOpenPort(preferredPort)
   viteUrl = `http://localhost:${vitePort}`
 
-  const childEnv = { ...process.env, VITE_PORT: String(vitePort), VITE_DEV_SERVER_URL: viteUrl }
+  const childEnv = {
+    ...process.env,
+    VITE_PORT: String(vitePort),
+    VITE_DEV_SERVER_URL: viteUrl,
+  }
 
   if (dryRun) {
     console.log(

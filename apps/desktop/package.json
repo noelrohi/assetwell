@@ -7,11 +7,12 @@
   "type": "module",
   "main": "dist-electron/main.cjs",
   "scripts": {
-    "dev": "bun scripts/dev-electron.mjs",
-    "dev:electron": "bun scripts/dev-electron.mjs",
+    "dev": "bun run prepare:higgsfield-cli && bun scripts/dev-electron.mjs",
+    "dev:electron": "bun run prepare:higgsfield-cli && bun scripts/dev-electron.mjs",
     "dev:renderer": "vite",
-    "build": "tsc && vite build && tsdown",
-    "build:electron": "tsdown",
+    "prepare:higgsfield-cli": "bun scripts/ensure-higgsfield-cli.mjs",
+    "build": "bun run prepare:higgsfield-cli && tsc && vite build && tsdown",
+    "build:electron": "bun run prepare:higgsfield-cli && tsdown",
     "typecheck": "tsc --noEmit",
     "lint": "tsc --noEmit",
     "dist": "bun run build && electron-builder",
@@ -23,27 +24,51 @@
     "directories": {
       "output": "release/electron"
     },
-    "files": ["dist/**/*", "dist-electron/**/*", "package.json"],
+    "files": [
+      "dist/**/*",
+      "dist-electron/**/*",
+      "node_modules/@higgsfield/cli/**/*",
+      "package.json"
+    ],
+    "asarUnpack": [
+      "node_modules/@higgsfield/cli/vendor/**"
+    ],
     "mac": {
       "category": "public.app-category.productivity",
-      "target": ["dmg", "zip"]
+      "target": [
+        "dmg",
+        "zip"
+      ]
     },
     "win": {
-      "target": ["nsis"]
+      "target": [
+        "nsis"
+      ]
     },
     "linux": {
-      "target": ["AppImage"]
+      "target": [
+        "AppImage"
+      ]
     }
   },
   "dependencies": {
+    "@fontsource-variable/fraunces": "^5.2.9",
+    "@fontsource-variable/hanken-grotesk": "^5.2.8",
+    "@fontsource-variable/jetbrains-mono": "^5.2.8",
+    "@higgsfield/cli": "0.2.3",
     "@kreeyts/desktop-bridge": "workspace:*",
     "@kreeyts/ui": "workspace:*",
-    "@tailwindcss/vite": "^4.1.18",
     "@tabler/icons-react": "catalog:",
+    "@tailwindcss/vite": "^4.1.18",
+    "@tanstack/react-router": "^1.170.16",
+    "class-variance-authority": "^0.7.1",
     "clsx": "catalog:",
-    "radix-ui": "catalog:",
+    "lucide-react": "^1.21.0",
+    "next-themes": "^0.4.6",
+    "radix-ui": "^1.6.0",
     "react": "^19.1.0",
     "react-dom": "^19.1.0",
+    "sonner": "^2.0.7",
     "tailwind-merge": "catalog:",
     "tailwindcss": "^4.1.18"
   },

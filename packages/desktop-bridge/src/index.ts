@@ -1,1 +1,25 @@
-export type { DesktopBridge } from "./types"
+export { HIGGSFIELD_COMMAND_AREAS } from "./types"
+export type {
+  DesktopBridge,
+  HiggsfieldAssetSelection,
+  HiggsfieldAccountStatus,
+  HiggsfieldAuthStatus,
+  HiggsfieldCliStatus,
+  HiggsfieldCommandOutputEvent,
+  HiggsfieldCommandOutputKind,
+  HiggsfieldCommandResult,
+  HiggsfieldCommandRun,
+  HiggsfieldExecutableSource,
+  HiggsfieldGeneratedArtifact,
+  HiggsfieldGenerateRequest,
+  HiggsfieldMediaKind,
+  HiggsfieldModel,
+  HiggsfieldModelListRequest,
+  HiggsfieldOpenOutputRequest,
+  HiggsfieldProductAction,
+  HiggsfieldUploadAssetRequest,
+  HiggsfieldWorkspaceContext,
+  HiggsfieldWorkspaceSummary,
+  HiggsfieldWorkspaceStatus,
+  HostAppInfo,
+} from "./types"
