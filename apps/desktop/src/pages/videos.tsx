@@ -6,24 +6,17 @@ import {
   IconLoader2,
   IconPhotoPlus,
   IconPlayerPlayFilled,
-  IconSparkles,
   IconX,
 } from "@tabler/icons-react"
 import { toast } from "sonner"
 
 import { Textarea } from "@/components/ui/textarea"
 import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select"
-import {
   Popover,
   PopoverContent,
   PopoverTrigger,
 } from "@/components/ui/popover"
+import { ModelPicker } from "@/components/model-picker"
 import { cn } from "@/lib/utils"
 import {
   aspectOf,
@@ -31,10 +24,7 @@ import {
   videoPlacements,
   type VideoPlacement,
 } from "@/lib/placements"
-import {
-  videoPromptLibrary,
-  useHiggsfieldApp,
-} from "@/lib/higgsfield"
+import { videoPromptLibrary, useHiggsfieldApp } from "@/lib/higgsfield"
 
 function VideoComposer() {
   const {
@@ -108,22 +98,11 @@ function VideoComposer() {
           />
 
           <div className="mt-2 flex flex-wrap items-center gap-2">
-            <Select value={model} onValueChange={setModel}>
-              <SelectTrigger className="h-8 gap-1.5 rounded-full border-border/70 bg-background/50 px-3 text-xs font-medium data-[size=default]:h-8">
-                <IconSparkles className="size-3.5 text-ember" />
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent className="w-60">
-                {videoModels.map((m) => (
-                  <SelectItem key={m.id} value={m.id}>
-                    <span className="flex flex-col">
-                      <span>{m.label}</span>
-                      <span className="text-xs text-muted-foreground">{m.hint}</span>
-                    </span>
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
+            <ModelPicker
+              models={videoModels}
+              value={model}
+              onChange={setModel}
+            />
 
             <Popover>
               <PopoverTrigger className="flex h-8 items-center gap-1.5 rounded-full border border-border/70 bg-background/50 px-3 text-xs font-medium transition-colors hover:bg-accent">
@@ -184,7 +163,9 @@ function VideoComposer() {
                   sizes,
                   source: videoDraftSource!,
                 })
-                toast(`Queued ${sizes.length} video${sizes.length > 1 ? "s" : ""}`)
+                toast(
+                  `Queued ${sizes.length} video${sizes.length > 1 ? "s" : ""}`,
+                )
                 setPrompt("")
               }}
               disabled={!canMake}

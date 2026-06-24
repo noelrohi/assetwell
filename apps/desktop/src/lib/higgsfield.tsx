@@ -147,6 +147,7 @@ export function HiggsfieldProvider({
   const bridge = getHiggsfieldBridge()
   const pendingRuns = React.useRef(new Map<string, PendingRun>())
   const completedRuns = React.useRef(new Set<string>())
+  const signInRun = React.useRef<string | null>(null)
   const booted = React.useRef(false)
 
   const [account, setAccount] =
@@ -181,6 +182,22 @@ export function HiggsfieldProvider({
       toast("Could not refresh Higgsfield credits", {
         description: friendlyError(error),
       })
+    }
+  }, [bridge])
+
+  const refreshSession = React.useCallback(async () => {
+    if (!bridge) return
+
+    const [status, credits, workspaceContext] = await Promise.allSettled([
+      bridge.getStatus(),
+      bridge.checkCredits(),
+      bridge.checkWorkspace(),
+    ])
+
+    if (status.status === "fulfilled") setCliStatus(status.value)
+    if (credits.status === "fulfilled") setAccount(credits.value)
+    if (workspaceContext.status === "fulfilled") {
+      setWorkspace(workspaceContext.value)
     }
   }, [bridge])
 
@@ -219,6 +236,13 @@ export function HiggsfieldProvider({
     if (!bridge) return
 
     return bridge.onCommandOutput((event) => {
+      if (event.runId === signInRun.current && event.kind === "exit") {
+        signInRun.current = null
+        if (event.exitCode === 0) {
+          void refreshSession()
+        }
+      }
+
       const pending = pendingRuns.current.get(event.runId)
       if (!pending) return
 
@@ -236,7 +260,7 @@ export function HiggsfieldProvider({
         void refreshAccount()
       }
     })
-  }, [bridge, refreshAccount, syncRunningJobs])
+  }, [bridge, refreshAccount, refreshSession, syncRunningJobs])
 
   function applyGenerationResult(
     pending: PendingRun,
@@ -373,7 +397,8 @@ export function HiggsfieldProvider({
   async function signIn() {
     if (!bridge) return
     try {
-      await bridge.signIn()
+      const run = await bridge.signIn()
+      signInRun.current = run.runId
       toast("Higgsfield sign-in opened")
     } catch (error) {
       toast("Could not start Higgsfield sign-in", {

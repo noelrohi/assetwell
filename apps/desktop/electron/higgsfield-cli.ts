@@ -1,11 +1,12 @@
 import { spawn, type ChildProcessWithoutNullStreams } from "node:child_process"
 import { randomUUID } from "node:crypto"
-import { existsSync, readFileSync } from "node:fs"
+import { copyFileSync, existsSync, mkdirSync, readFileSync } from "node:fs"
 import { copyFile, mkdir, writeFile } from "node:fs/promises"
 import { createRequire } from "node:module"
 import os from "node:os"
 import path from "node:path"
 
+import { app } from "electron"
 import type {
   HiggsfieldAccountStatus,
   HiggsfieldCliStatus,
@@ -555,10 +556,34 @@ function asUnpackedPath(filePath: string) {
 function higgsfieldEnvironment(executable: ResolvedHiggsfieldExecutable) {
   return {
     ...process.env,
+    XDG_CONFIG_HOME: ensureHiggsfieldConfigHome(),
     HIGGSFIELD_INSTALL_METHOD:
       executable.source === "bundled" ? "kreeyts" : "global",
     HIGGSFIELD_PACKAGE_MANAGER: "bun",
   }
+}
+
+function ensureHiggsfieldConfigHome() {
+  const configHome = path.join(app.getPath("userData"), "higgsfield-cli-config")
+  const credentialsPath = path.join(configHome, "higgsfield", "credentials.json")
+
+  if (!existsSync(credentialsPath)) {
+    const legacyCredentialsPath = path.join(
+      process.env.XDG_CONFIG_HOME ?? path.join(os.homedir(), ".config"),
+      "higgsfield",
+      "credentials.json",
+    )
+
+    if (
+      legacyCredentialsPath !== credentialsPath &&
+      existsSync(legacyCredentialsPath)
+    ) {
+      mkdirSync(path.dirname(credentialsPath), { recursive: true })
+      copyFileSync(legacyCredentialsPath, credentialsPath)
+    }
+  }
+
+  return configHome
 }
 
 function missingCliStatus(

@@ -6,7 +6,6 @@ import {
   IconChevronDown,
   IconPaperclip,
   IconPlus,
-  IconSparkles,
   IconWand,
   IconX,
 } from "@tabler/icons-react"
@@ -25,22 +24,16 @@ import {
   PopoverContent,
   PopoverTrigger,
 } from "@/components/ui/popover"
+import { ModelPicker } from "@/components/model-picker"
 import { CreativeCard } from "@/components/creative-card"
 import { cn } from "@/lib/utils"
 import { aspectOf, baseRatios } from "@/lib/placements"
-import {
-  imagePromptLibrary,
-  useHiggsfieldApp,
-} from "@/lib/higgsfield"
+import { imagePromptLibrary, useHiggsfieldApp } from "@/lib/higgsfield"
 
 function Composer() {
   const navigate = useNavigate()
-  const {
-    imageModels,
-    referenceLibrary,
-    chooseReferenceAsset,
-    makeCreative,
-  } = useHiggsfieldApp()
+  const { imageModels, referenceLibrary, chooseReferenceAsset, makeCreative } =
+    useHiggsfieldApp()
   const [prompt, setPrompt] = React.useState("")
   const [ratioId, setRatioId] = React.useState<string>(baseRatios[0].id)
   const [model, setModel] = React.useState(imageModels[0]?.id ?? "")
@@ -122,8 +115,14 @@ function Composer() {
             <span
               className="rounded-[3px] border border-foreground/50"
               style={{
-                width: ratio.width >= ratio.height ? 14 : (14 * ratio.width) / ratio.height,
-                height: ratio.height >= ratio.width ? 14 : (14 * ratio.height) / ratio.width,
+                width:
+                  ratio.width >= ratio.height
+                    ? 14
+                    : (14 * ratio.width) / ratio.height,
+                height:
+                  ratio.height >= ratio.width
+                    ? 14
+                    : (14 * ratio.height) / ratio.width,
               }}
             />
             <SelectValue />
@@ -139,22 +138,7 @@ function Composer() {
         </Select>
 
         {/* model */}
-        <Select value={model} onValueChange={setModel}>
-          <SelectTrigger className="h-8 gap-1.5 rounded-full border-border/70 bg-background/50 px-3 text-xs font-medium data-[size=default]:h-8">
-            <IconSparkles className="size-3.5 text-ember" />
-            <SelectValue />
-          </SelectTrigger>
-          <SelectContent className="w-64">
-            {imageModels.map((m) => (
-              <SelectItem key={m.id} value={m.id}>
-                <span className="flex flex-col">
-                  <span>{m.label}</span>
-                  <span className="text-xs text-muted-foreground">{m.hint}</span>
-                </span>
-              </SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
+        <ModelPicker models={imageModels} value={model} onChange={setModel} />
 
         {/* reference library */}
         <Popover>
@@ -165,7 +149,9 @@ function Composer() {
             )}
           >
             <IconPaperclip className="size-3.5" />
-            {refs.length > 0 ? `${refs.length} reference${refs.length > 1 ? "s" : ""}` : "Reference"}
+            {refs.length > 0
+              ? `${refs.length} reference${refs.length > 1 ? "s" : ""}`
+              : "Reference"}
           </PopoverTrigger>
           <PopoverContent align="start" className="w-72 p-3">
             <p className="mb-2 px-1 text-xs font-medium text-muted-foreground">
@@ -178,14 +164,24 @@ function Composer() {
                   <button
                     key={ref.id}
                     onClick={() =>
-                      setRefs(on ? refs.filter((r) => r !== ref.id) : [...refs, ref.id])
+                      setRefs(
+                        on
+                          ? refs.filter((r) => r !== ref.id)
+                          : [...refs, ref.id],
+                      )
                     }
                     className={cn(
                       "group relative aspect-square overflow-hidden rounded-lg border-2 transition-all",
-                      on ? "border-ember" : "border-transparent hover:border-border",
+                      on
+                        ? "border-ember"
+                        : "border-transparent hover:border-border",
                     )}
                   >
-                    <img src={ref.url} alt={ref.name} className="size-full object-cover" />
+                    <img
+                      src={ref.url}
+                      alt={ref.name}
+                      className="size-full object-cover"
+                    />
                     <span className="absolute inset-x-0 bottom-0 truncate bg-gradient-to-t from-background/90 to-transparent px-1.5 pt-3 pb-1 text-left text-[0.6rem] text-foreground">
                       {ref.name}
                     </span>
@@ -306,7 +302,11 @@ function FeaturedDemo() {
                   ),
                 }}
               >
-                <img src={p.url} alt={p.size} className="size-full object-cover" />
+                <img
+                  src={p.url}
+                  alt={p.size}
+                  className="size-full object-cover"
+                />
               </div>
             ))}
             <span className="font-mono text-[0.65rem] text-muted-foreground">
@@ -316,7 +316,12 @@ function FeaturedDemo() {
 
           <div className="flex items-center gap-2.5">
             <button
-              onClick={() => navigate({ to: "/creative/$creativeId", params: { creativeId: c.id } })}
+              onClick={() =>
+                navigate({
+                  to: "/creative/$creativeId",
+                  params: { creativeId: c.id },
+                })
+              }
               className="flex h-9 items-center gap-2 rounded-full border border-border/70 bg-background/50 px-4 text-sm transition-colors hover:bg-accent"
             >
               Explore the example
