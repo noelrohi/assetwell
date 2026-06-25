@@ -1,10 +1,24 @@
-import { app, BrowserWindow } from "electron"
+import { app, BrowserWindow, nativeImage } from "electron"
 import path from "node:path"
 
 import { registerAppInfoIpc } from "./ipc/app-info"
 import { registerHiggsfieldIpc } from "./ipc/higgsfield"
 
+const APP_NAME = "Kreeyts"
 const isDev = Boolean(process.env.VITE_DEV_SERVER_URL)
+const appIconPath = path.join(__dirname, "../build/icon.png")
+
+app.setName(APP_NAME)
+process.title = APP_NAME
+
+function setDockIcon() {
+  if (!isDev || process.platform !== "darwin" || !app.dock) return
+
+  const dockIcon = nativeImage.createFromPath(appIconPath)
+  if (!dockIcon.isEmpty()) {
+    app.dock.setIcon(dockIcon)
+  }
+}
 
 function createWindow() {
   const mainWindow = new BrowserWindow({
@@ -12,10 +26,10 @@ function createWindow() {
     height: 800,
     minWidth: 920,
     minHeight: 600,
-    title: "Kreeyts",
+    title: APP_NAME,
     backgroundColor: "#191816",
     titleBarStyle: "hiddenInset",
-    trafficLightPosition: { x: 18, y: 22 },
+    trafficLightPosition: { x: 16, y: 15 },
     webPreferences: {
       preload: path.join(__dirname, "preload.cjs"),
       contextIsolation: true,
@@ -32,6 +46,7 @@ function createWindow() {
 }
 
 app.whenReady().then(() => {
+  setDockIcon()
   registerAppInfoIpc()
   registerHiggsfieldIpc()
   createWindow()

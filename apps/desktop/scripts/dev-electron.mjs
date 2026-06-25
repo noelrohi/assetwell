@@ -7,9 +7,19 @@
 //
 // Ctrl-C kills all three children.
 
-import { spawn } from "node:child_process"
+import { spawn, spawnSync } from "node:child_process"
 import { once } from "node:events"
-import { watch } from "node:fs"
+import {
+  chmodSync,
+  copyFileSync,
+  existsSync,
+  mkdirSync,
+  readFileSync,
+  rmSync,
+  statSync,
+  watch,
+  writeFileSync,
+} from "node:fs"
 import { setTimeout as delay } from "node:timers/promises"
 import net from "node:net"
 import path from "node:path"
@@ -20,11 +30,22 @@ const __dirname = path.dirname(fileURLToPath(import.meta.url))
 const APP_ROOT = path.resolve(__dirname, "..")
 const DIST_ELECTRON = path.join(APP_ROOT, "dist-electron")
 const DEFAULT_VITE_PORT = 1420
+const APP_NAME = "Kreeyts"
+const DEV_APP_ID = "com.rohi.kreeyts.dev"
+const DEV_APP_BUNDLE = path.join(APP_ROOT, "release", "dev", `${APP_NAME}.app`)
+const DEV_APP_ICON = path.join(APP_ROOT, "build", "icon.icns")
+const DEV_APP_MARKER = path.join(
+  DEV_APP_BUNDLE,
+  "Contents",
+  "Resources",
+  ".kreeyts-dev-app.json",
+)
 
 const children = new Set()
 let electronProc = null
 let restartTimer = null
 let viteUrl = ""
+let electronBinary = electronPath
 
 function log(scope, line) {
   for (const chunk of String(line).split(/[\r\n]+/)) {
@@ -32,6 +53,131 @@ function log(scope, line) {
     if (!text.trim()) continue
     const alreadyPrefixed = text.startsWith(`[${scope}]`)
     process.stdout.write(alreadyPrefixed ? `${text}\n` : `[${scope}] ${text}\n`)
+  }
+}
+
+function resolveElectronAppBundle() {
+  if (process.platform !== "darwin") return null
+
+  const marker = ".app/Contents/MacOS/"
+  const markerIndex = electronPath.indexOf(marker)
+  if (markerIndex === -1) return null
+
+  return electronPath.slice(0, markerIndex + ".app".length)
+}
+
+function devElectronBinaryPath() {
+  const sourceAppBundle = resolveElectronAppBundle()
+  if (!sourceAppBundle) return electronPath
+
+  return path.join(DEV_APP_BUNDLE, "Contents", "MacOS", APP_NAME)
+}
+
+function prepareDevElectronBinary() {
+  const sourceAppBundle = resolveElectronAppBundle()
+  if (!sourceAppBundle) return electronPath
+
+  const targetBinary = devElectronBinaryPath()
+  const fingerprint = devAppFingerprint(sourceAppBundle)
+  if (isDevAppCurrent(targetBinary, fingerprint)) return targetBinary
+
+  mkdirSync(path.dirname(DEV_APP_BUNDLE), { recursive: true })
+  rmSync(DEV_APP_BUNDLE, { recursive: true, force: true })
+  runRequired("ditto", [sourceAppBundle, DEV_APP_BUNDLE])
+
+  const plistPath = path.join(DEV_APP_BUNDLE, "Contents", "Info.plist")
+  plistSet(plistPath, "CFBundleName", APP_NAME)
+  plistSet(plistPath, "CFBundleDisplayName", APP_NAME)
+  plistSet(plistPath, "CFBundleExecutable", APP_NAME)
+  plistSet(plistPath, "CFBundleIdentifier", DEV_APP_ID)
+  plistSet(plistPath, "CFBundleIconFile", "icon.icns")
+
+  const originalBinary = path.join(
+    DEV_APP_BUNDLE,
+    "Contents",
+    "MacOS",
+    path.basename(electronPath),
+  )
+  copyFileSync(originalBinary, targetBinary)
+  chmodSync(targetBinary, 0o755)
+  copyFileSync(
+    DEV_APP_ICON,
+    path.join(DEV_APP_BUNDLE, "Contents", "Resources", "icon.icns"),
+  )
+
+  writeFileSync(DEV_APP_MARKER, JSON.stringify(fingerprint, null, 2))
+  runOptional("codesign", ["--force", "--deep", "--sign", "-", DEV_APP_BUNDLE])
+  log("dev", `prepared ${APP_NAME}.app for macOS Dock title`)
+
+  return targetBinary
+}
+
+function devAppFingerprint(sourceAppBundle) {
+  const iconStat = statSync(DEV_APP_ICON)
+  const packageJsonPath = path.join(
+    path.dirname(path.dirname(sourceAppBundle)),
+    "package.json",
+  )
+  const electronVersion = readJson(packageJsonPath)?.version ?? null
+
+  return {
+    appName: APP_NAME,
+    appId: DEV_APP_ID,
+    electronPath,
+    electronVersion,
+    iconSize: iconStat.size,
+    iconMtimeMs: iconStat.mtimeMs,
+  }
+}
+
+function isDevAppCurrent(targetBinary, fingerprint) {
+  if (!existsSync(targetBinary) || !existsSync(DEV_APP_MARKER)) return false
+
+  try {
+    const current = JSON.parse(readFileSync(DEV_APP_MARKER, "utf8"))
+    return JSON.stringify(current) === JSON.stringify(fingerprint)
+  } catch {
+    return false
+  }
+}
+
+function readJson(filePath) {
+  try {
+    return JSON.parse(readFileSync(filePath, "utf8"))
+  } catch {
+    return null
+  }
+}
+
+function plistSet(plistPath, key, value) {
+  const setResult = spawnSync("/usr/libexec/PlistBuddy", [
+    "-c",
+    `Set :${key} ${value}`,
+    plistPath,
+  ])
+  if (setResult.status === 0) return
+
+  runRequired("/usr/libexec/PlistBuddy", [
+    "-c",
+    `Add :${key} string ${value}`,
+    plistPath,
+  ])
+}
+
+function runRequired(command, args) {
+  const result = spawnSync(command, args, { encoding: "utf8" })
+  if (result.status === 0) return
+
+  const stderr = result.stderr?.trim()
+  throw new Error(
+    `${command} ${args.join(" ")} failed${stderr ? `: ${stderr}` : ""}`,
+  )
+}
+
+function runOptional(command, args) {
+  const result = spawnSync(command, args, { encoding: "utf8" })
+  if (result.status !== 0) {
+    log("dev", `${command} failed; continuing with unsigned dev app`)
   }
 }
 
@@ -91,7 +237,7 @@ function spawnElectron() {
   }
 
   electronProc = track(
-    spawn(electronPath, electronArgs, {
+    spawn(electronBinary, electronArgs, {
       cwd: APP_ROOT,
       env: { ...process.env, VITE_DEV_SERVER_URL: viteUrl },
       stdio: ["ignore", "pipe", "pipe"],
@@ -121,6 +267,8 @@ function scheduleRestart() {
 
 async function main() {
   const dryRun = process.argv.includes("--dry-run")
+  electronBinary = dryRun ? devElectronBinaryPath() : prepareDevElectronBinary()
+
   const requestedPort = Number(process.env.VITE_PORT || DEFAULT_VITE_PORT)
   const preferredPort = Number.isFinite(requestedPort)
     ? requestedPort
@@ -144,7 +292,7 @@ async function main() {
           commands: {
             vite: "bun run dev:renderer",
             electronBundle: "bunx tsdown --watch",
-            electron: `${electronPath} ${path.join(DIST_ELECTRON, "main.cjs")}`,
+            electron: `${devElectronBinaryPath()} ${path.join(DIST_ELECTRON, "main.cjs")}`,
           },
           env: {
             VITE_PORT: childEnv.VITE_PORT,

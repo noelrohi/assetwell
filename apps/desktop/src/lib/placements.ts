@@ -1,17 +1,21 @@
 /**
- * Supported output sizes, confirmed against Higgsfield's supported dimensions.
- * Image placements feed the resize step; video placements feed the video composer.
+ * Supported output sizes. Keep this renderer copy in sync with
+ * docs/creative-sizes.md.
+ *
+ * Higgsfield generation currently accepts aspect-ratio params, not exact output
+ * dimensions, so some placements still need a post-process step before they can
+ * be guaranteed to match these target pixel sizes.
  */
 
 export const imagePlacements = [
   "1200x628",
   "1024x768",
   "768x1024",
+  "728x90",
+  "320x50",
   "300x250",
   "600x300",
   "480x400",
-  "728x90",
-  "320x50",
 ] as const
 
 export const videoPlacements = [
@@ -28,21 +32,85 @@ export type Placement = ImagePlacement | VideoPlacement
 export type PlacementSpec = {
   width: number
   height: number
+  aspectRatio: `${number}:${number}`
   label: string
 }
 
 export const placementSpecs: Record<Placement, PlacementSpec> = {
-  "1200x628": { width: 1200, height: 628, label: "Social landscape" },
-  "1024x768": { width: 1024, height: 768, label: "Landscape" },
-  "768x1024": { width: 768, height: 1024, label: "Portrait" },
-  "300x250": { width: 300, height: 250, label: "Medium rectangle" },
-  "600x300": { width: 600, height: 300, label: "Half banner" },
-  "480x400": { width: 480, height: 400, label: "Large rectangle" },
-  "728x90": { width: 728, height: 90, label: "Leaderboard" },
-  "320x50": { width: 320, height: 50, label: "Mobile leaderboard" },
-  "1280x720": { width: 1280, height: 720, label: "Wide video" },
-  "720x1280": { width: 720, height: 1280, label: "Vertical video" },
-  "1080x1080": { width: 1080, height: 1080, label: "Square video" },
+  "1200x628": {
+    width: 1200,
+    height: 628,
+    aspectRatio: "300:157",
+    label: "Social landscape",
+  },
+  "1024x768": {
+    width: 1024,
+    height: 768,
+    aspectRatio: "4:3",
+    label: "Landscape",
+  },
+  "768x1024": {
+    width: 768,
+    height: 1024,
+    aspectRatio: "3:4",
+    label: "Portrait",
+  },
+  "728x90": {
+    width: 728,
+    height: 90,
+    aspectRatio: "364:45",
+    label: "Leaderboard",
+  },
+  "320x50": {
+    width: 320,
+    height: 50,
+    aspectRatio: "32:5",
+    label: "Mobile leaderboard",
+  },
+  "300x250": {
+    width: 300,
+    height: 250,
+    aspectRatio: "6:5",
+    label: "Medium rectangle",
+  },
+  "600x300": {
+    width: 600,
+    height: 300,
+    aspectRatio: "2:1",
+    label: "Half banner",
+  },
+  "480x400": {
+    width: 480,
+    height: 400,
+    aspectRatio: "6:5",
+    label: "Large rectangle",
+  },
+  "1280x720": {
+    width: 1280,
+    height: 720,
+    aspectRatio: "16:9",
+    label: "Wide video",
+  },
+  "720x1280": {
+    width: 720,
+    height: 1280,
+    aspectRatio: "9:16",
+    label: "Vertical video",
+  },
+  "1080x1080": {
+    width: 1080,
+    height: 1080,
+    aspectRatio: "1:1",
+    label: "Square video",
+  },
+}
+
+export function getPlacementSpec(placement: Placement) {
+  return placementSpecs[placement]
+}
+
+export function getPlacementAspectRatio(placement: Placement) {
+  return placementSpecs[placement].aspectRatio
 }
 
 /** Aspect-ratio choices offered for the *base* creative in the composer. */

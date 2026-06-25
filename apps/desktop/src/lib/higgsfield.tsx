@@ -18,7 +18,6 @@ import {
   type VideoPlacement,
 } from "@/lib/placements"
 import {
-  demoCreative as seededDemoCreative,
   imageModels as fallbackImageModels,
   imagePromptLibrary,
   referenceLibrary as seededReferenceLibrary,
@@ -47,8 +46,7 @@ export interface PlacementResult extends SeedPlacementResult {
   error?: string
 }
 
-export interface Creative
-  extends Omit<SeedCreative, "takes" | "placements"> {
+export interface Creative extends Omit<SeedCreative, "takes" | "placements"> {
   takes: Take[]
   placements: PlacementResult[]
   outputDirectoryName?: string
@@ -109,7 +107,6 @@ interface HiggsfieldAppValue {
   imageModels: ModelOption[]
   videoModels: ModelOption[]
   creatives: Creative[]
-  demoCreative: Creative
   videos: VideoResult[]
   referenceLibrary: ReferenceAsset[]
   runningJobs: number
@@ -135,7 +132,6 @@ const HiggsfieldAppContext = React.createContext<HiggsfieldAppValue | null>(
   null,
 )
 
-const demoCreative = seededDemoCreative as Creative
 const seededReferences = seededReferenceLibrary as ReferenceAsset[]
 const BILLING_URL = "https://higgsfield.ai/billing"
 
@@ -150,19 +146,19 @@ export function HiggsfieldProvider({
   const signInRun = React.useRef<string | null>(null)
   const booted = React.useRef(false)
 
-  const [account, setAccount] =
-    React.useState<HiggsfieldAccountStatus | null>(null)
-  const [cliStatus, setCliStatus] =
-    React.useState<HiggsfieldCliStatus | null>(null)
+  const [account, setAccount] = React.useState<HiggsfieldAccountStatus | null>(
+    null,
+  )
+  const [cliStatus, setCliStatus] = React.useState<HiggsfieldCliStatus | null>(
+    null,
+  )
   const [workspace, setWorkspace] =
     React.useState<HiggsfieldWorkspaceContext | null>(null)
-  const [imageModels, setImageModels] = React.useState<ModelOption[]>(
-    fallbackImageModels,
-  )
-  const [videoModels, setVideoModels] = React.useState<ModelOption[]>(
-    fallbackVideoModels,
-  )
-  const [creatives, setCreatives] = React.useState<Creative[]>([demoCreative])
+  const [imageModels, setImageModels] =
+    React.useState<ModelOption[]>(fallbackImageModels)
+  const [videoModels, setVideoModels] =
+    React.useState<ModelOption[]>(fallbackVideoModels)
+  const [creatives, setCreatives] = React.useState<Creative[]>([])
   const [videos, setVideos] = React.useState<VideoResult[]>([])
   const [referenceLibrary, setReferenceLibrary] =
     React.useState<ReferenceAsset[]>(seededReferences)
@@ -207,14 +203,19 @@ export function HiggsfieldProvider({
     const higgsfield = bridge
 
     async function load() {
-      const [status, credits, workspaceContext, imageModelRows, videoModelRows] =
-        await Promise.allSettled([
-          higgsfield.getStatus(),
-          higgsfield.checkCredits(),
-          higgsfield.checkWorkspace(),
-          higgsfield.listModels({ mediaKind: "image" }),
-          higgsfield.listModels({ mediaKind: "video" }),
-        ])
+      const [
+        status,
+        credits,
+        workspaceContext,
+        imageModelRows,
+        videoModelRows,
+      ] = await Promise.allSettled([
+        higgsfield.getStatus(),
+        higgsfield.checkCredits(),
+        higgsfield.checkWorkspace(),
+        higgsfield.listModels({ mediaKind: "image" }),
+        higgsfield.listModels({ mediaKind: "video" }),
+      ])
 
       if (status.status === "fulfilled") setCliStatus(status.value)
       if (credits.status === "fulfilled") setAccount(credits.value)
@@ -252,7 +253,8 @@ export function HiggsfieldProvider({
       }
 
       if (event.kind === "exit") {
-        const succeeded = event.exitCode === 0 && completedRuns.current.has(event.runId)
+        const succeeded =
+          event.exitCode === 0 && completedRuns.current.has(event.runId)
         if (!succeeded) markRunFailed(pending, friendlyExit(event))
         pendingRuns.current.delete(event.runId)
         completedRuns.current.delete(event.runId)
@@ -304,7 +306,11 @@ export function HiggsfieldProvider({
       return
     }
 
-    if (pending.kind === "placement" && pending.creativeId && pending.placement) {
+    if (
+      pending.kind === "placement" &&
+      pending.creativeId &&
+      pending.placement
+    ) {
       setCreatives((current) =>
         current.map((creative) =>
           creative.id === pending.creativeId
@@ -365,7 +371,11 @@ export function HiggsfieldProvider({
       return
     }
 
-    if (pending.kind === "placement" && pending.creativeId && pending.placement) {
+    if (
+      pending.kind === "placement" &&
+      pending.creativeId &&
+      pending.placement
+    ) {
       setCreatives((current) =>
         current.map((creative) =>
           creative.id === pending.creativeId
@@ -491,7 +501,10 @@ export function HiggsfieldProvider({
               mediaKind: "image",
               assetPath: reference?.filePath,
               assetMediaKind: reference?.filePath ? "image" : undefined,
-              aspectRatio: nearestHiggsfieldRatio(request.ratioW, request.ratioH),
+              aspectRatio: nearestHiggsfieldRatio(
+                request.ratioW,
+                request.ratioH,
+              ),
               outputDirectoryName,
               outputFileName: `take-${index + 1}.png`,
               waitForResult: true,
@@ -505,7 +518,9 @@ export function HiggsfieldProvider({
                 ? {
                     ...creative,
                     takes: creative.takes.map((item) =>
-                      item.id === take.id ? { ...item, runId: run.runId } : item,
+                      item.id === take.id
+                        ? { ...item, runId: run.runId }
+                        : item,
                     ),
                   }
                 : creative,
@@ -542,10 +557,6 @@ export function HiggsfieldProvider({
   async function generateAllPlacements(creativeId: string) {
     const creative = creatives.find((item) => item.id === creativeId)
     if (!creative || !(await canGenerate()) || !bridge) return
-    if (creative.isDemo) {
-      toast("Remix the demo before generating new placements")
-      return
-    }
     const source = selectedTake(creative)
 
     if (!source?.filePath) {
@@ -586,10 +597,6 @@ export function HiggsfieldProvider({
   ) {
     const creative = creatives.find((item) => item.id === creativeId)
     if (!creative || !(await canGenerate()) || !bridge) return
-    if (creative.isDemo) {
-      toast("Remix the demo before regenerating placements")
-      return
-    }
     if (!supportedPlacementAspectRatio(placement)) {
       setCreatives((current) =>
         current.map((item) =>
@@ -658,7 +665,8 @@ export function HiggsfieldProvider({
           assetMediaKind: "image",
           aspectRatio,
           outputDirectoryName:
-            creative.outputDirectoryName ?? `${creative.createdAt.slice(0, 10)}-${slug(creative.prompt)}`,
+            creative.outputDirectoryName ??
+            `${creative.createdAt.slice(0, 10)}-${slug(creative.prompt)}`,
           outputFileName: `${placement}.png`,
           waitForResult: true,
         },
@@ -805,7 +813,6 @@ export function HiggsfieldProvider({
       imageModels,
       videoModels,
       creatives,
-      demoCreative,
       videos,
       referenceLibrary,
       runningJobs,
@@ -879,10 +886,7 @@ function selectedTake(creative: Creative) {
   )
 }
 
-function upsertPlacement(
-  placements: PlacementResult[],
-  next: PlacementResult,
-) {
+function upsertPlacement(placements: PlacementResult[], next: PlacementResult) {
   const found = placements.some((placement) => placement.size === next.size)
   return found
     ? placements.map((placement) =>
@@ -909,7 +913,8 @@ function friendlyError(error: unknown) {
 
 function friendlyExit(event: HiggsfieldCommandOutputEvent) {
   if (event.signal) return "Generation was stopped."
-  if (event.exitCode === 0) return "Higgsfield finished without returning an output."
+  if (event.exitCode === 0)
+    return "Higgsfield finished without returning an output."
   return "Higgsfield could not generate this output."
 }
 

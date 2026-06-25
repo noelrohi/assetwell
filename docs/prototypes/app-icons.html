@@ -1,0 +1,1096 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Kreeyts — App Mark Studio</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,300..700;1,9..144,300..600&family=JetBrains+Mono:wght@400;500;700&display=swap"
+      rel="stylesheet"
+    />
+    <style>
+      :root {
+        --void: #0a0a0c;
+        --panel: #111114;
+        --line: rgba(255, 255, 255, 0.1);
+        --line-soft: rgba(255, 255, 255, 0.06);
+        --ink: #f4f2ee;
+        --ink-dim: rgba(244, 242, 238, 0.52);
+        --ink-faint: rgba(244, 242, 238, 0.32);
+        --safelight: #ff3b1f;
+        --tile-radius: 27%;
+      }
+
+      * {
+        box-sizing: border-box;
+      }
+
+      html,
+      body {
+        margin: 0;
+        min-height: 100%;
+        background: var(--void);
+        color: var(--ink);
+        font-family: "JetBrains Mono", ui-monospace, monospace;
+        -webkit-font-smoothing: antialiased;
+      }
+
+      /* atmosphere: vignette + faint safelight bloom + grain */
+      body::before {
+        content: "";
+        position: fixed;
+        inset: 0;
+        z-index: 0;
+        pointer-events: none;
+        background:
+          radial-gradient(
+            120% 90% at 78% -10%,
+            rgba(255, 59, 31, 0.12),
+            transparent 55%
+          ),
+          radial-gradient(
+            100% 100% at 50% 120%,
+            rgba(255, 255, 255, 0.04),
+            transparent 60%
+          ),
+          radial-gradient(
+            140% 120% at 50% 40%,
+            transparent 60%,
+            rgba(0, 0, 0, 0.7)
+          );
+      }
+
+      body::after {
+        content: "";
+        position: fixed;
+        inset: 0;
+        z-index: 0;
+        pointer-events: none;
+        opacity: 0.05;
+        mix-blend-mode: overlay;
+        background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+      }
+
+      .page {
+        position: relative;
+        z-index: 1;
+        width: min(1500px, 100%);
+        margin: 0 auto;
+        padding: clamp(24px, 5vw, 72px) clamp(20px, 4vw, 56px) 96px;
+      }
+
+      /* ---------- hero ---------- */
+      .hero {
+        display: grid;
+        grid-template-columns: minmax(0, 1fr) auto;
+        align-items: end;
+        gap: 32px;
+        padding-bottom: 34px;
+        border-bottom: 1px solid var(--line);
+      }
+
+      .eyebrow {
+        display: inline-flex;
+        align-items: center;
+        gap: 10px;
+        margin: 0 0 26px;
+        font-size: 11px;
+        font-weight: 500;
+        letter-spacing: 0.32em;
+        text-transform: uppercase;
+        color: var(--ink-dim);
+      }
+
+      .eyebrow::before {
+        content: "";
+        width: 7px;
+        height: 7px;
+        border-radius: 50%;
+        background: var(--safelight);
+        box-shadow: 0 0 14px var(--safelight);
+        animation: pulse 3s ease-in-out infinite;
+      }
+
+      @keyframes pulse {
+        0%,
+        100% {
+          opacity: 1;
+        }
+        50% {
+          opacity: 0.35;
+        }
+      }
+
+      h1 {
+        margin: 0;
+        max-width: 16ch;
+        font-family: "Fraunces", serif;
+        font-optical-sizing: auto;
+        font-weight: 340;
+        font-size: clamp(40px, 6.4vw, 96px);
+        line-height: 0.94;
+        letter-spacing: -0.025em;
+      }
+
+      h1 em {
+        font-style: italic;
+        font-weight: 360;
+        color: var(--safelight);
+      }
+
+      .brief {
+        max-width: 56ch;
+        margin: 26px 0 0;
+        font-size: 13.5px;
+        line-height: 1.7;
+        color: var(--ink-dim);
+      }
+
+      .constraints {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 8px;
+        margin-top: 28px;
+      }
+
+      .chip {
+        padding: 7px 13px;
+        border: 1px solid var(--line);
+        border-radius: 999px;
+        font-size: 10.5px;
+        letter-spacing: 0.14em;
+        text-transform: uppercase;
+        color: var(--ink-dim);
+      }
+
+      .count {
+        text-align: right;
+      }
+
+      .count strong {
+        display: block;
+        font-family: "Fraunces", serif;
+        font-weight: 360;
+        font-size: clamp(64px, 9vw, 128px);
+        line-height: 0.8;
+        letter-spacing: -0.04em;
+      }
+
+      .count span {
+        display: block;
+        margin-top: 14px;
+        font-size: 10.5px;
+        letter-spacing: 0.26em;
+        text-transform: uppercase;
+        color: var(--ink-faint);
+      }
+
+      /* ---------- layout ---------- */
+      .layout {
+        display: grid;
+        grid-template-columns: minmax(0, 1fr) 348px;
+        gap: 44px;
+        align-items: start;
+        padding-top: 44px;
+      }
+
+      .section {
+        margin-bottom: 52px;
+      }
+
+      .section:last-child {
+        margin-bottom: 0;
+      }
+
+      .section-head {
+        display: flex;
+        align-items: baseline;
+        justify-content: space-between;
+        gap: 18px;
+        margin: 0 0 22px;
+      }
+
+      .section-head h2 {
+        margin: 0;
+        font-family: "Fraunces", serif;
+        font-weight: 360;
+        font-size: 27px;
+        letter-spacing: -0.02em;
+      }
+
+      .section-head span {
+        font-size: 10.5px;
+        letter-spacing: 0.2em;
+        text-transform: uppercase;
+        color: var(--ink-faint);
+      }
+
+      .grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(168px, 1fr));
+        gap: 18px;
+      }
+
+      .card {
+        display: grid;
+        gap: 14px;
+        padding: 16px 16px 18px;
+        border: 1px solid var(--line-soft);
+        border-radius: 18px;
+        background: linear-gradient(
+          180deg,
+          rgba(255, 255, 255, 0.022),
+          transparent
+        );
+        color: var(--ink);
+        text-align: left;
+        cursor: pointer;
+        font: inherit;
+        transition:
+          border-color 0.25s ease,
+          transform 0.25s ease,
+          background 0.25s ease;
+      }
+
+      .card:hover {
+        border-color: var(--line);
+        transform: translateY(-3px);
+        background: linear-gradient(
+          180deg,
+          rgba(255, 255, 255, 0.05),
+          transparent
+        );
+      }
+
+      .card[aria-pressed="true"] {
+        border-color: var(--safelight);
+        background: linear-gradient(
+          180deg,
+          rgba(255, 59, 31, 0.08),
+          transparent
+        );
+      }
+
+      .card:focus-visible {
+        outline: 2px solid var(--safelight);
+        outline-offset: 3px;
+      }
+
+      /* the macOS-style squircle tile */
+      .tile {
+        position: relative;
+        display: grid;
+        place-items: center;
+        aspect-ratio: 1;
+        border-radius: var(--tile-radius);
+        background: radial-gradient(120% 120% at 30% 20%, #1b1b1f, #000 70%);
+        box-shadow:
+          inset 0 1px 0 rgba(255, 255, 255, 0.12),
+          inset 0 0 0 1px rgba(255, 255, 255, 0.05),
+          0 16px 30px -16px rgba(0, 0, 0, 0.9);
+      }
+
+      .tile[data-invert] {
+        background: radial-gradient(120% 120% at 30% 20%, #fff, #d9d6cf 75%);
+        box-shadow:
+          inset 0 1px 0 rgba(255, 255, 255, 0.8),
+          inset 0 0 0 1px rgba(0, 0, 0, 0.08),
+          0 16px 30px -16px rgba(0, 0, 0, 0.9);
+      }
+
+      .tile svg {
+        width: 58%;
+        height: 58%;
+        color: #fff;
+      }
+
+      .tile[data-invert] svg {
+        color: #0a0a0c;
+      }
+
+      .meta {
+        display: flex;
+        align-items: baseline;
+        justify-content: space-between;
+        gap: 8px;
+      }
+
+      .meta .code {
+        font-size: 10px;
+        letter-spacing: 0.18em;
+        color: var(--safelight);
+      }
+
+      .meta .name {
+        font-family: "Fraunces", serif;
+        font-weight: 400;
+        font-size: 15px;
+        letter-spacing: -0.01em;
+        color: var(--ink);
+      }
+
+      /* ---------- inspector ---------- */
+      .inspector {
+        position: sticky;
+        top: 24px;
+        border: 1px solid var(--line);
+        border-radius: 22px;
+        background:
+          linear-gradient(180deg, rgba(255, 255, 255, 0.03), transparent),
+          var(--panel);
+        padding: 22px;
+      }
+
+      .inspector h3 {
+        margin: 0 0 18px;
+        font-size: 10.5px;
+        letter-spacing: 0.24em;
+        text-transform: uppercase;
+        color: var(--ink-faint);
+      }
+
+      .preview-tile {
+        position: relative;
+        display: grid;
+        place-items: center;
+        aspect-ratio: 1;
+        border-radius: var(--tile-radius);
+        background: radial-gradient(120% 120% at 30% 18%, #1d1d22, #000 72%);
+        box-shadow:
+          inset 0 1.5px 0 rgba(255, 255, 255, 0.14),
+          inset 0 0 0 1px rgba(255, 255, 255, 0.05),
+          0 28px 50px -22px rgba(0, 0, 0, 0.95);
+      }
+
+      .preview-tile[data-invert] {
+        background: radial-gradient(120% 120% at 30% 18%, #fff, #d9d6cf 75%);
+        box-shadow:
+          inset 0 1.5px 0 rgba(255, 255, 255, 0.85),
+          inset 0 0 0 1px rgba(0, 0, 0, 0.08),
+          0 28px 50px -22px rgba(0, 0, 0, 0.95);
+      }
+
+      .preview-tile svg {
+        width: 58%;
+        height: 58%;
+        color: #fff;
+      }
+
+      .preview-tile[data-invert] svg {
+        color: #0a0a0c;
+      }
+
+      .selected-name {
+        margin: 20px 0 3px;
+        font-family: "Fraunces", serif;
+        font-weight: 400;
+        font-size: 24px;
+        letter-spacing: -0.02em;
+      }
+
+      .selected-family {
+        margin: 0;
+        font-size: 10.5px;
+        letter-spacing: 0.18em;
+        text-transform: uppercase;
+        color: var(--ink-faint);
+      }
+
+      .strip-label {
+        margin: 24px 0 12px;
+        font-size: 10px;
+        letter-spacing: 0.2em;
+        text-transform: uppercase;
+        color: var(--ink-faint);
+      }
+
+      .size-strip {
+        display: flex;
+        align-items: flex-end;
+        gap: 12px;
+      }
+
+      .size-sample {
+        display: grid;
+        gap: 8px;
+        justify-items: center;
+      }
+
+      .mini-tile {
+        display: grid;
+        place-items: center;
+        border-radius: 27%;
+        background: radial-gradient(120% 120% at 30% 20%, #1b1b1f, #000 70%);
+        box-shadow: inset 0 0.5px 0 rgba(255, 255, 255, 0.12);
+      }
+
+      .mini-tile[data-invert] {
+        background: radial-gradient(120% 120% at 30% 20%, #fff, #d9d6cf 75%);
+      }
+
+      .mini-tile svg {
+        width: 58%;
+        height: 58%;
+        color: #fff;
+      }
+
+      .mini-tile[data-invert] svg {
+        color: #0a0a0c;
+      }
+
+      .size-sample span {
+        font-size: 9px;
+        letter-spacing: 0.06em;
+        color: var(--ink-faint);
+      }
+
+      /* dock context */
+      .dock {
+        display: flex;
+        align-items: flex-end;
+        justify-content: center;
+        gap: 7px;
+        margin-top: 14px;
+        padding: 10px 14px;
+        border-radius: 18px;
+        background: rgba(255, 255, 255, 0.06);
+        border: 1px solid var(--line-soft);
+        backdrop-filter: blur(8px);
+      }
+
+      .dock-app {
+        width: 38px;
+        height: 38px;
+        border-radius: 11px;
+        box-shadow:
+          inset 0 1px 0 rgba(255, 255, 255, 0.25),
+          0 4px 8px -4px rgba(0, 0, 0, 0.7);
+      }
+
+      .dock-app.a {
+        background: linear-gradient(160deg, #3a8dff, #1455c4);
+      }
+      .dock-app.b {
+        background: linear-gradient(160deg, #ff6b6b, #c0392b);
+      }
+      .dock-app.c {
+        background: linear-gradient(160deg, #2bd47d, #119057);
+      }
+      .dock-app.d {
+        background: linear-gradient(160deg, #b58bff, #6c3fc4);
+      }
+
+      .dock-slot {
+        display: grid;
+        place-items: center;
+        width: 46px;
+        height: 46px;
+        border-radius: 13px;
+        background: radial-gradient(120% 120% at 30% 20%, #1b1b1f, #000 70%);
+        box-shadow:
+          inset 0 1px 0 rgba(255, 255, 255, 0.18),
+          0 6px 12px -4px rgba(0, 0, 0, 0.8);
+        transform: translateY(-4px);
+      }
+
+      .dock-slot[data-invert] {
+        background: radial-gradient(120% 120% at 30% 20%, #fff, #d9d6cf 75%);
+      }
+
+      .dock-slot svg {
+        width: 58%;
+        height: 58%;
+        color: #fff;
+      }
+
+      .dock-slot[data-invert] svg {
+        color: #0a0a0c;
+      }
+
+      .copy {
+        width: 100%;
+        margin-top: 24px;
+        padding: 14px;
+        border: 1px solid var(--ink);
+        border-radius: 12px;
+        background: var(--ink);
+        color: var(--void);
+        cursor: pointer;
+        font: inherit;
+        font-weight: 700;
+        font-size: 11px;
+        letter-spacing: 0.18em;
+        text-transform: uppercase;
+        transition:
+          background 0.2s ease,
+          color 0.2s ease;
+      }
+
+      .copy:hover {
+        background: var(--safelight);
+        border-color: var(--safelight);
+        color: #fff;
+      }
+
+      .status {
+        min-height: 16px;
+        margin: 12px 0 0;
+        font-size: 10.5px;
+        letter-spacing: 0.06em;
+        color: var(--safelight);
+      }
+
+      @media (max-width: 980px) {
+        .hero,
+        .layout {
+          grid-template-columns: 1fr;
+        }
+        .count {
+          text-align: left;
+        }
+        .inspector {
+          position: static;
+          order: -1;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <main class="page">
+      <header class="hero">
+        <div>
+          <p class="eyebrow">Kreeyts · App Mark Studio</p>
+          <h1>One white mark, <em>alone</em> in a dark room.</h1>
+          <p class="brief">
+            A tight set of app-icon candidates for the Kreeyts dock mark. Bold,
+            solid forms that survive at 16&nbsp;px — built to stand out in a
+            dock full of glossy gradients by doing the opposite: a single
+            confident shape on a near-black squircle.
+          </p>
+          <div class="constraints" aria-label="Design constraints">
+            <span class="chip">Squircle tile</span>
+            <span class="chip">Monochrome</span>
+            <span class="chip">Bold weight</span>
+            <span class="chip">Reads at 16px</span>
+          </div>
+        </div>
+        <div class="count">
+          <strong>12</strong>
+          <span>candidates</span>
+        </div>
+      </header>
+
+      <div class="layout">
+        <div>
+          <section class="section" aria-labelledby="monogram">
+            <div class="section-head">
+              <h2 id="monogram">Monogram</h2>
+              <span>The K, eight ways</span>
+            </div>
+            <div class="grid">
+              <button
+                class="card"
+                type="button"
+                data-name="Monolith K"
+                data-family="Monogram"
+                aria-pressed="false"
+              >
+                <div class="tile">
+                  <svg
+                    viewBox="0 0 128 128"
+                    fill="none"
+                    stroke="currentColor"
+                    stroke-width="15"
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                    aria-hidden="true"
+                  >
+                    <path d="M46 28V100" />
+                    <path d="M92 30L54 64L94 100" />
+                  </svg>
+                </div>
+                <div class="meta">
+                  <span class="name">Monolith K</span
+                  ><span class="code">A1</span>
+                </div>
+              </button>
+
+              <button
+                class="card"
+                type="button"
+                data-name="Heavy K"
+                data-family="Monogram"
+                aria-pressed="false"
+              >
+                <div class="tile">
+                  <svg
+                    viewBox="0 0 128 128"
+                    fill="none"
+                    stroke="currentColor"
+                    stroke-width="23"
+                    stroke-linecap="square"
+                    stroke-linejoin="miter"
+                    aria-hidden="true"
+                  >
+                    <path d="M45 32V96" />
+                    <path d="M89 34L56 64L91 96" />
+                  </svg>
+                </div>
+                <div class="meta">
+                  <span class="name">Heavy K</span><span class="code">A2</span>
+                </div>
+              </button>
+
+              <button
+                class="card"
+                type="button"
+                data-name="Split K"
+                data-family="Monogram"
+                aria-pressed="false"
+              >
+                <div class="tile">
+                  <svg
+                    viewBox="0 0 128 128"
+                    fill="none"
+                    stroke="currentColor"
+                    stroke-width="14"
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                    aria-hidden="true"
+                  >
+                    <path d="M44 28V100" />
+                    <path d="M94 32L66 58" />
+                    <path d="M66 70L96 100" />
+                  </svg>
+                </div>
+                <div class="meta">
+                  <span class="name">Split K</span><span class="code">A3</span>
+                </div>
+              </button>
+
+              <button
+                class="card"
+                type="button"
+                data-name="Flow K"
+                data-family="Monogram"
+                aria-pressed="false"
+              >
+                <div class="tile">
+                  <svg
+                    viewBox="0 0 128 128"
+                    fill="none"
+                    stroke="currentColor"
+                    stroke-width="15"
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                    aria-hidden="true"
+                  >
+                    <path d="M47 28V100" />
+                    <path d="M90 32C72 44 60 54 56 64C60 74 72 84 92 100" />
+                  </svg>
+                </div>
+                <div class="meta">
+                  <span class="name">Flow K</span><span class="code">A4</span>
+                </div>
+              </button>
+
+              <button
+                class="card"
+                type="button"
+                data-name="Beam K"
+                data-family="Monogram"
+                aria-pressed="false"
+              >
+                <div class="tile">
+                  <svg
+                    viewBox="0 0 128 128"
+                    fill="none"
+                    stroke="currentColor"
+                    stroke-width="14"
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                    aria-hidden="true"
+                  >
+                    <path d="M44 32V96" />
+                    <path d="M50 64L78 96" />
+                    <path d="M50 64L92 36" />
+                    <path
+                      d="M104 26C104 33 102 35 95 35C102 35 104 37 104 44C104 37 106 35 113 35C106 35 104 33 104 26Z"
+                      fill="currentColor"
+                      stroke="none"
+                    />
+                  </svg>
+                </div>
+                <div class="meta">
+                  <span class="name">Beam K</span><span class="code">A5</span>
+                </div>
+              </button>
+
+              <button
+                class="card"
+                type="button"
+                data-name="Stencil K"
+                data-family="Monogram"
+                aria-pressed="false"
+              >
+                <div class="tile">
+                  <svg
+                    viewBox="0 0 128 128"
+                    fill="none"
+                    stroke="currentColor"
+                    stroke-width="13"
+                    stroke-linecap="butt"
+                    stroke-linejoin="miter"
+                    aria-hidden="true"
+                  >
+                    <path d="M46 28V100" />
+                    <path d="M92 28L60 60" />
+                    <path d="M60 68L94 100" />
+                  </svg>
+                </div>
+                <div class="meta">
+                  <span class="name">Stencil K</span
+                  ><span class="code">A6</span>
+                </div>
+              </button>
+
+              <button
+                class="card"
+                type="button"
+                data-name="Corner K"
+                data-family="Monogram"
+                aria-pressed="false"
+              >
+                <div class="tile">
+                  <svg
+                    viewBox="0 0 128 128"
+                    fill="none"
+                    stroke="currentColor"
+                    stroke-width="13"
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                    aria-hidden="true"
+                  >
+                    <path d="M30 30H50" />
+                    <path d="M30 30V50" />
+                    <path d="M98 98H78" />
+                    <path d="M98 98V78" />
+                    <path d="M48 34V94" />
+                    <path d="M86 38L56 64L88 94" />
+                  </svg>
+                </div>
+                <div class="meta">
+                  <span class="name">Corner K</span><span class="code">A7</span>
+                </div>
+              </button>
+
+              <button
+                class="card"
+                type="button"
+                data-name="Inverse K"
+                data-family="Monogram"
+                aria-pressed="false"
+              >
+                <div class="tile" data-invert>
+                  <svg
+                    viewBox="0 0 128 128"
+                    fill="none"
+                    stroke="currentColor"
+                    stroke-width="15"
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                    aria-hidden="true"
+                  >
+                    <path d="M46 28V100" />
+                    <path d="M92 30L54 64L94 100" />
+                  </svg>
+                </div>
+                <div class="meta">
+                  <span class="name">Inverse K</span
+                  ><span class="code">A8</span>
+                </div>
+              </button>
+            </div>
+          </section>
+
+          <section class="section" aria-labelledby="creative">
+            <div class="section-head">
+              <h2 id="creative">Creative mark</h2>
+              <span>Generation, not a letter</span>
+            </div>
+            <div class="grid">
+              <button
+                class="card"
+                type="button"
+                data-name="Spark"
+                data-family="Creative mark"
+                aria-pressed="false"
+              >
+                <div class="tile">
+                  <svg viewBox="0 0 128 128" fill="none" aria-hidden="true">
+                    <path
+                      d="M64 18C66.5 49 79 61.5 110 64C79 66.5 66.5 79 64 110C61.5 79 49 66.5 18 64C49 61.5 61.5 49 64 18Z"
+                      fill="currentColor"
+                    />
+                  </svg>
+                </div>
+                <div class="meta">
+                  <span class="name">Spark</span><span class="code">B1</span>
+                </div>
+              </button>
+
+              <button
+                class="card"
+                type="button"
+                data-name="Twin Spark"
+                data-family="Creative mark"
+                aria-pressed="false"
+              >
+                <div class="tile">
+                  <svg viewBox="0 0 128 128" fill="none" aria-hidden="true">
+                    <g fill="currentColor">
+                      <path
+                        transform="translate(52 72) scale(0.66) translate(-64 -64)"
+                        d="M64 18C66.5 49 79 61.5 110 64C79 66.5 66.5 79 64 110C61.5 79 49 66.5 18 64C49 61.5 61.5 49 64 18Z"
+                      />
+                      <path
+                        transform="translate(96 40) scale(0.3) translate(-64 -64)"
+                        d="M64 18C66.5 49 79 61.5 110 64C79 66.5 66.5 79 64 110C61.5 79 49 66.5 18 64C49 61.5 61.5 49 64 18Z"
+                      />
+                    </g>
+                  </svg>
+                </div>
+                <div class="meta">
+                  <span class="name">Twin Spark</span
+                  ><span class="code">B2</span>
+                </div>
+              </button>
+
+              <button
+                class="card"
+                type="button"
+                data-name="Aperture"
+                data-family="Creative mark"
+                aria-pressed="false"
+              >
+                <div class="tile">
+                  <svg
+                    viewBox="0 0 128 128"
+                    fill="none"
+                    stroke="currentColor"
+                    stroke-width="10"
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                    aria-hidden="true"
+                  >
+                    <circle cx="64" cy="64" r="40" />
+                    <path d="M73.24 48L96.2 87.76" />
+                    <path d="M54.76 48H100.68" />
+                    <path d="M45.52 64L68.48 24.24" />
+                    <path d="M54.76 80L31.8 40.24" />
+                    <path d="M73.24 80H27.32" />
+                    <path d="M82.48 64L59.52 103.76" />
+                  </svg>
+                </div>
+                <div class="meta">
+                  <span class="name">Aperture</span><span class="code">B3</span>
+                </div>
+              </button>
+
+              <button
+                class="card"
+                type="button"
+                data-name="Frame Spark"
+                data-family="Creative mark"
+                aria-pressed="false"
+              >
+                <div class="tile">
+                  <svg
+                    viewBox="0 0 128 128"
+                    fill="none"
+                    stroke="currentColor"
+                    stroke-width="12"
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                    aria-hidden="true"
+                  >
+                    <rect x="28" y="28" width="72" height="72" rx="22" />
+                    <path
+                      d="M64 46C65.4 60 71 65.6 85 67C71 68.4 65.4 74 64 88C62.6 74 57 68.4 43 67C57 65.6 62.6 60 64 46Z"
+                      fill="currentColor"
+                      stroke="none"
+                    />
+                  </svg>
+                </div>
+                <div class="meta">
+                  <span class="name">Frame Spark</span
+                  ><span class="code">B4</span>
+                </div>
+              </button>
+
+              <button
+                class="card"
+                type="button"
+                data-name="Inverse Spark"
+                data-family="Creative mark"
+                aria-pressed="false"
+              >
+                <div class="tile" data-invert>
+                  <svg viewBox="0 0 128 128" fill="none" aria-hidden="true">
+                    <path
+                      d="M64 18C66.5 49 79 61.5 110 64C79 66.5 66.5 79 64 110C61.5 79 49 66.5 18 64C49 61.5 61.5 49 64 18Z"
+                      fill="currentColor"
+                    />
+                  </svg>
+                </div>
+                <div class="meta">
+                  <span class="name">Inverse Spark</span
+                  ><span class="code">B5</span>
+                </div>
+              </button>
+            </div>
+          </section>
+        </div>
+
+        <aside class="inspector" aria-label="Selected mark preview">
+          <h3>Selected mark</h3>
+          <div class="preview-tile" id="previewTile"></div>
+          <p class="selected-name" id="selectedName">Select a mark</p>
+          <p class="selected-family" id="selectedFamily">—</p>
+
+          <p class="strip-label">Legibility · 16 → 64px</p>
+          <div class="size-strip" id="sizeStrip"></div>
+
+          <p class="strip-label">In the dock</p>
+          <div class="dock" aria-hidden="true">
+            <span class="dock-app a"></span>
+            <span class="dock-app b"></span>
+            <span class="dock-slot" id="dockSlot"></span>
+            <span class="dock-app c"></span>
+            <span class="dock-app d"></span>
+          </div>
+
+          <button class="copy" type="button" id="copyButton">Copy SVG</button>
+          <p class="status" id="copyStatus" aria-live="polite"></p>
+        </aside>
+      </div>
+    </main>
+
+    <script>
+      const cards = Array.from(document.querySelectorAll(".card"))
+      const previewTile = document.getElementById("previewTile")
+      const selectedName = document.getElementById("selectedName")
+      const selectedFamily = document.getElementById("selectedFamily")
+      const sizeStrip = document.getElementById("sizeStrip")
+      const dockSlot = document.getElementById("dockSlot")
+      const copyButton = document.getElementById("copyButton")
+      const copyStatus = document.getElementById("copyStatus")
+
+      let current = null
+
+      function freshSvg(svg) {
+        const clone = svg.cloneNode(true)
+        clone.removeAttribute("width")
+        clone.removeAttribute("height")
+        return clone
+      }
+
+      function setInvert(el, invert) {
+        if (invert) el.setAttribute("data-invert", "")
+        else el.removeAttribute("data-invert")
+      }
+
+      function select(card) {
+        cards.forEach((c) => c.setAttribute("aria-pressed", String(c === card)))
+
+        const svg = card.querySelector("svg")
+        const tile = card.querySelector(".tile")
+        const invert = tile.hasAttribute("data-invert")
+        current = { svg, invert }
+
+        selectedName.textContent = card.dataset.name
+        selectedFamily.textContent = card.dataset.family
+
+        // big preview
+        previewTile.replaceChildren(freshSvg(svg))
+        setInvert(previewTile, invert)
+
+        // dock slot
+        dockSlot.replaceChildren(freshSvg(svg))
+        setInvert(dockSlot, invert)
+
+        // legibility strip
+        sizeStrip.replaceChildren(
+          ...[16, 24, 32, 48, 64].map((size) => {
+            const sample = document.createElement("div")
+            sample.className = "size-sample"
+
+            const mini = document.createElement("div")
+            mini.className = "mini-tile"
+            mini.style.width = `${size}px`
+            mini.style.height = `${size}px`
+            setInvert(mini, invert)
+            mini.appendChild(freshSvg(svg))
+
+            const label = document.createElement("span")
+            label.textContent = size
+
+            sample.append(mini, label)
+            return sample
+          }),
+        )
+
+        copyStatus.textContent = ""
+      }
+
+      async function writeClipboard(text) {
+        if (navigator.clipboard && window.isSecureContext) {
+          await navigator.clipboard.writeText(text)
+          return
+        }
+        const area = document.createElement("textarea")
+        area.value = text
+        area.style.position = "fixed"
+        area.style.left = "-9999px"
+        document.body.appendChild(area)
+        area.select()
+        document.execCommand("copy")
+        area.remove()
+      }
+
+      copyButton.addEventListener("click", async () => {
+        if (!current) return
+        const fg = current.invert ? "#0a0a0c" : "#ffffff"
+        const bg = current.invert ? "#ffffff" : "#000000"
+
+        const clone = current.svg.cloneNode(true)
+        clone.setAttribute("xmlns", "http://www.w3.org/2000/svg")
+        clone.setAttribute("width", "1024")
+        clone.setAttribute("height", "1024")
+        // squircle background to match the app tile
+        clone.insertAdjacentHTML(
+          "afterbegin",
+          `<rect x="0" y="0" width="128" height="128" rx="29" fill="${bg}"/>`,
+        )
+
+        const source = new XMLSerializer()
+          .serializeToString(clone)
+          .replace(/currentColor/g, fg)
+
+        try {
+          await writeClipboard(source)
+          copyStatus.textContent = "Copied 1024px SVG with tile background."
+        } catch {
+          copyStatus.textContent = "Copy failed — select source manually."
+        }
+      })
+
+      cards.forEach((card) =>
+        card.addEventListener("click", () => select(card)),
+      )
+      if (cards[0]) select(cards[0])
+    </script>
+  </body>
+</html>

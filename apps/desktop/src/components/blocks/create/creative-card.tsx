@@ -1,9 +1,9 @@
 import { Link } from "@tanstack/react-router"
 import { IconLayoutGrid, IconLoader2 } from "@tabler/icons-react"
 
-import { cn } from "@/lib/utils"
-import { aspectOf, type ImagePlacement } from "@/lib/placements"
 import type { Creative } from "@/lib/higgsfield"
+import { aspectOf, type ImagePlacement } from "@/lib/placements"
+import { cn } from "@/lib/utils"
 
 function readyCount(placements: Creative["placements"]) {
   return placements.filter((p) => p.status === "ready").length
@@ -46,12 +46,6 @@ export function CreativeCard({
               className="size-full object-cover transition-transform duration-500 ease-out group-hover:scale-[1.03]"
             />
           )}
-
-          {creative.isDemo && (
-            <span className="absolute top-2.5 left-2.5 rounded-full border border-ember/40 bg-background/70 px-2 py-0.5 font-mono text-[0.6rem] tracking-[0.2em] text-ember uppercase backdrop-blur-sm">
-              demo
-            </span>
-          )}
         </div>
 
         <div className="flex items-start justify-between gap-3 px-3.5 py-3">
@@ -69,7 +63,9 @@ export function CreativeCard({
             <span
               className={cn(
                 "mt-0.5 flex shrink-0 items-center gap-1 font-mono text-[0.65rem]",
-                placements > 0 ? "text-foreground/70" : "text-muted-foreground/60",
+                placements > 0
+                  ? "text-foreground/70"
+                  : "text-muted-foreground/60",
               )}
             >
               <IconLayoutGrid className="size-3" />

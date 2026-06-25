@@ -45,7 +45,6 @@ export interface Creative {
   takes: Take[]
   selectedTakeId: string
   placements: PlacementResult[]
-  isDemo?: boolean
 }
 
 export const imageModels = [
@@ -110,12 +109,11 @@ export interface ReferenceAsset {
   id: string
   name: string
   url: string
-  isDemo?: boolean
 }
 
 export const referenceLibrary: ReferenceAsset[] = [
-  { id: "r1", name: "Brand logo", url: img("ref-logo", 240, 240), isDemo: true },
-  { id: "r2", name: "Hero product", url: img("ref-prod", 240, 240), isDemo: true },
+  { id: "r1", name: "Brand logo", url: img("ref-logo", 240, 240) },
+  { id: "r2", name: "Hero product", url: img("ref-prod", 240, 240) },
   { id: "r3", name: "Mood board", url: img("ref-mood", 240, 240) },
 ]
 
@@ -142,26 +140,7 @@ function takes(seed: string, w: number, h: number): Take[] {
   }))
 }
 
-export const demoCreative: Creative = {
-  id: "demo",
-  title: "Neon sneaker — launch hero",
-  prompt:
-    "A futuristic neon sneaker floating above wet asphalt, electric magenta and cyan rim light, billows of vapor, premium product advertising, dramatic studio backdrop",
-  ratioId: "1:1",
-  ratioW: 1024,
-  ratioH: 1024,
-  model: "soul-v2",
-  createdAt: "2026-06-22T10:00:00Z",
-  heroUrl: img("demo-take-1", 1024, 1024),
-  status: "ready",
-  takes: takes("demo", 1024, 1024),
-  selectedTakeId: "demo-take-1",
-  placements: fullPlacements("demo", "ready"),
-  isDemo: true,
-}
-
 export const creatives: Creative[] = [
-  demoCreative,
   {
     id: "c1",
     title: "Citrus spritz — summer set",
@@ -223,16 +202,6 @@ export const creatives: Creative[] = [
 ]
 
 export const videos: VideoResult[] = [
-  {
-    id: "vid1",
-    size: "1280x720",
-    status: "ready",
-    posterUrl: img("demo-take-1", 1280, 720),
-    prompt: "Slow cinematic push-in, drifting vapor",
-    sourceCreativeId: "demo",
-    sourceTitle: "Neon sneaker — launch hero",
-    createdAt: "2026-06-22T11:30:00Z",
-  },
   {
     id: "vid2",
     size: "720x1280",

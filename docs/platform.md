@@ -12,7 +12,7 @@ The desired flow is mirrored by the reference app at `~/sandbox/dilag`-adjacent 
 
 - Bespoke, not a public general-purpose tool. The audience is a specific creative team that chose Higgsfield.
 - Users know Higgsfield powers the app; the CLI, npm, accounts, and exit codes are implementation details they must never see.
-- "10/10 custom" means *their* small set of controls, pre-tuned — not feature parity with higgsfield.ai.
+- "10/10 custom" means _their_ small set of controls, pre-tuned — not feature parity with higgsfield.ai.
 
 ## 2. Onboarding
 
@@ -20,7 +20,7 @@ The desired flow is mirrored by the reference app at `~/sandbox/dilag`-adjacent 
 - First run: if not authenticated, a single **"Sign in to Higgsfield"** screen → browser login → land directly on **Create**.
 - **One workspace**, auto-selected, never asked.
 - CLI version, install state, and workspace IDs are never shown.
-- After sign-in, show a **seeded showcase demo**: a finished example creative (base + placements + a sample video) the user can explore, backed by **bundled demo assets**, with a **"Remix this"** button that drops the demo prompt into the composer.
+- After sign-in, open to the composer with an empty recent grid; generated creatives become the user's working set.
 
 ## 3. Create (image)
 
@@ -45,7 +45,7 @@ Flow:
 - **Image (8):** 1200×628, 1024×768, 768×1024, 728×90, 320×50, 300×250, 600×300, 480×400.
 - **Video (4):** 1280×720, 720×1280, 1080×1080, 300×250.
 
-Canonical definitions live in `apps/desktop/src/lib/placements.ts`.
+Canonical target sizes and aspect ratios live in [`creative-sizes.md`](./creative-sizes.md). The renderer copy in `apps/desktop/src/lib/placements.ts` should stay in sync with that doc.
 
 ## 5. Video
 
@@ -57,7 +57,7 @@ Canonical definitions live in `apps/desktop/src/lib/placements.ts`.
 ## 6. Libraries
 
 - **Prompt library splits Image / Video** — each shipped-starters + user-saved, plain text.
-- **Reference library** — a flat grid of saved images (logo/product/mood), shipped 1–2 demo refs + user-saved, no tags/roles.
+- **Reference library** — a flat grid of saved images (logo/product/mood) + user-saved references, no tags/roles.
 - Both are **inline pickers inside the composers, NOT navigation destinations**.
 - **soul-id is deferred to phase 2** (the marquee consistency feature, but it adds training/onboarding weight).
 

@@ -6,7 +6,8 @@ Higgsfield owns authentication, accounts, workspaces, models, generation, upload
 
 ## Runtime Modules
 
-- `apps/desktop/src`: renderer UI. Screen routing and shared renderer state should stay here until Kreeyts has more than one real screen.
+- `apps/desktop/src`: renderer UI. Routes should stay thin and compose product blocks.
+- `apps/desktop/src/components/blocks`: product-specific renderer blocks grouped by surface (`layout`, `create`, `creative`, `videos`, `composer`). Keep page-local UI here before promoting anything to shared primitives.
 - `apps/desktop/electron`: Electron Host code. Native capabilities, IPC channel names, and Electron APIs stay here.
 - `packages/desktop-bridge`: the Desktop Bridge type contract shared by the renderer and Electron Host.
 - `packages/ui`: reusable UI primitives only. Product-specific blocks stay in the desktop app.

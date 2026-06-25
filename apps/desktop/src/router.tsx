@@ -5,7 +5,7 @@ import {
   createRouter,
 } from "@tanstack/react-router"
 
-import { AppShell } from "@/components/app-shell"
+import { AppShell } from "@/components/blocks/layout/app-shell"
 import { CreatePage } from "@/pages/create"
 import { VideosPage } from "@/pages/videos"
 import { CreativePage } from "@/pages/creative"
