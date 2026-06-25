@@ -3,6 +3,7 @@ import path from "node:path"
 
 import { registerAppInfoIpc } from "./ipc/app-info"
 import { registerHiggsfieldIpc } from "./ipc/higgsfield"
+import { registerLibraryIpc } from "./ipc/library"
 
 const APP_NAME = "Kreeyts"
 const isDev = Boolean(process.env.VITE_DEV_SERVER_URL)
@@ -49,6 +50,7 @@ app.whenReady().then(() => {
   setDockIcon()
   registerAppInfoIpc()
   registerHiggsfieldIpc()
+  registerLibraryIpc()
   createWindow()
 })
 

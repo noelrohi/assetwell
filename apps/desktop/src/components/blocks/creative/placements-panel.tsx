@@ -1,3 +1,4 @@
+import type { Dispatch, SetStateAction } from "react"
 import { IconPhoto } from "@tabler/icons-react"
 
 import { PlacementTile } from "@/components/blocks/creative/placement-tile"
@@ -7,12 +8,16 @@ import { cn } from "@/lib/utils"
 
 export function PlacementsPanel({
   creative,
+  selectedUrl,
+  setSelectedUrl,
   selectedSourceFilePath,
   generateAllPlacements,
   regeneratePlacement,
   openOutput,
 }: {
   creative: Creative
+  selectedUrl: string
+  setSelectedUrl: Dispatch<SetStateAction<string>>
   selectedSourceFilePath?: string
   generateAllPlacements: (creativeId: string) => Promise<void>
   regeneratePlacement: (
@@ -64,8 +69,14 @@ export function PlacementsPanel({
             <PlacementTile
               key={placement.size}
               p={placement}
+              active={placement.url === selectedUrl}
               canRegenerate={Boolean(selectedSourceFilePath)}
               canReveal={Boolean(placement.filePath)}
+              onSelect={() => {
+                if (placement.status === "ready" && placement.url) {
+                  setSelectedUrl(placement.url)
+                }
+              }}
               onRegenerate={() =>
                 void regeneratePlacement(creative.id, placement.size)
               }

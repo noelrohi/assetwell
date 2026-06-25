@@ -19,6 +19,8 @@ const bridge: DesktopBridge = {
       ipcRenderer.invoke(IPC_CHANNELS.higgsfield.checkWorkspace),
     listModels: (request) =>
       ipcRenderer.invoke(IPC_CHANNELS.higgsfield.listModels, request),
+    getModelDetails: (request) =>
+      ipcRenderer.invoke(IPC_CHANNELS.higgsfield.getModelDetails, request),
     chooseAsset: (mediaKind) =>
       ipcRenderer.invoke(IPC_CHANNELS.higgsfield.chooseAsset, mediaKind),
     uploadAsset: (request) =>
@@ -46,6 +48,18 @@ const bridge: DesktopBridge = {
         )
       }
     },
+  },
+  library: {
+    loadSnapshot: () => ipcRenderer.invoke(IPC_CHANNELS.library.loadSnapshot),
+    saveSnapshot: (snapshot) =>
+      ipcRenderer.invoke(IPC_CHANNELS.library.saveSnapshot, snapshot),
+    getSettings: () => ipcRenderer.invoke(IPC_CHANNELS.library.getSettings),
+    chooseOutputRoot: () =>
+      ipcRenderer.invoke(IPC_CHANNELS.library.chooseOutputRoot),
+    revealOutputRoot: () =>
+      ipcRenderer.invoke(IPC_CHANNELS.library.revealOutputRoot),
+    exportCreativeZip: (request) =>
+      ipcRenderer.invoke(IPC_CHANNELS.library.exportCreativeZip, request),
   },
 }
 

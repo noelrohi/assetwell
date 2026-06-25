@@ -14,15 +14,17 @@ import {
   PopoverTrigger,
 } from "@/components/ui/popover"
 import { Textarea } from "@/components/ui/textarea"
-import { videoPromptLibrary, useHiggsfieldApp } from "@/lib/higgsfield"
+import { useHiggsfieldApp } from "@/lib/higgsfield"
 import { videoPlacements, type VideoPlacement } from "@/lib/placements"
 import { cn } from "@/lib/utils"
 
 export function VideoComposer() {
   const {
     videoModels,
+    videoPrompts,
     videoDraftSource,
     chooseVideoSource,
+    savePromptPreset,
     setVideoDraftSource,
     makeVideos,
   } = useHiggsfieldApp()
@@ -108,7 +110,15 @@ export function VideoComposer() {
                 <p className="px-2 py-1.5 text-xs font-medium text-muted-foreground">
                   Video prompts
                 </p>
-                {videoPromptLibrary.map((preset) => (
+                {prompt.trim().length >= 3 && (
+                  <button
+                    onClick={() => savePromptPreset("video", prompt)}
+                    className="mb-1 flex w-full rounded-md px-2 py-2 text-left text-sm font-medium text-ember transition-colors hover:bg-accent"
+                  >
+                    Save current prompt
+                  </button>
+                )}
+                {videoPrompts.map((preset) => (
                   <button
                     key={preset.id}
                     onClick={() => {

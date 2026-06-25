@@ -4,17 +4,21 @@ import { describe, expect, test } from "bun:test"
 import {
   parseAccountStatus,
   parseGenerationResult,
+  parseModelDetails,
   parseModelList,
   parseWorkspaceContext,
 } from "./higgsfield-output"
 
 describe("higgsfield output parsing", () => {
   test("parses JSON account status", () => {
-    const account = parseAccountStatus(`{
+    const account = parseAccountStatus(
+      `{
       "email": "marketing@endlessmotion.ph",
       "credits": 2680.8,
       "subscription_plan_type": "creator"
-    }`, "2026-06-24T00:00:00.000Z")
+    }`,
+      "2026-06-24T00:00:00.000Z",
+    )
 
     expect(account).toEqual({
       email: "marketing@endlessmotion.ph",
@@ -36,7 +40,8 @@ describe("higgsfield output parsing", () => {
   })
 
   test("parses JSON model list", () => {
-    const models = parseModelList(`[
+    const models = parseModelList(
+      `[
       {
         "display_name": "Nano Banana Pro",
         "job_set_type": "nano_banana_2",
@@ -47,7 +52,9 @@ describe("higgsfield output parsing", () => {
         "job_set_type": "text2image_soul_v2",
         "type": "image"
       }
-    ]`, "image")
+    ]`,
+      "image",
+    )
 
     expect(models).toEqual([
       {
@@ -65,6 +72,33 @@ describe("higgsfield output parsing", () => {
     ])
   })
 
+  test("parses model details aspect ratios", () => {
+    const details = parseModelDetails(
+      `{
+        "display_name": "Higgsfield Soul V2",
+        "job_set_type": "text2image_soul_v2",
+        "type": "image",
+        "params": [
+          {
+            "name": "aspect_ratio",
+            "type": "string",
+            "default": "1:1",
+            "required": false,
+            "enum": ["1:1", "16:9", "9:16", "auto"]
+          },
+          { "name": "prompt", "type": "string", "required": true }
+        ]
+      }`,
+      "text2image_soul_v2",
+      "image",
+    )
+
+    expect(details.aspectRatios).toEqual(["1:1", "16:9", "9:16"])
+    expect(
+      details.params.find((param) => param.name === "prompt")?.required,
+    ).toBe(true)
+  })
+
   test("parses text model list fallback", () => {
     const models = parseModelList(
       `JOB SET TYPE                NAME                        TYPE
@@ -73,15 +107,13 @@ kling3_0                    Kling v3.0                  video`,
       "video",
     )
 
-    expect(models.map((model) => model.id)).toEqual([
-      "veo3_1_lite",
-      "kling3_0",
-    ])
+    expect(models.map((model) => model.id)).toEqual(["veo3_1_lite", "kling3_0"])
     expect(models[0].label).toBe("Google Veo 3.1 Lite")
   })
 
   test("parses workspace list", () => {
-    const workspace = parseWorkspaceContext(`[
+    const workspace = parseWorkspaceContext(
+      `[
       {
         "id": "54343c6a-aeb7-4499-a546-31bd6c14760c",
         "name": null,
@@ -90,7 +122,9 @@ kling3_0                    Kling v3.0                  video`,
         "is_selected": false,
         "user_role": "owner"
       }
-    ]`, "2026-06-24T00:00:00.000Z")
+    ]`,
+      "2026-06-24T00:00:00.000Z",
+    )
 
     expect(workspace.selected).toBeNull()
     expect(workspace.workspaces[0]).toMatchObject({

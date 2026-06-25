@@ -11,12 +11,16 @@ import { cn } from "@/lib/utils"
 
 export function PlacementTile({
   p,
+  active,
+  onSelect,
   onRegenerate,
   onReveal,
   canRegenerate,
   canReveal,
 }: {
   p: PlacementResult
+  active: boolean
+  onSelect: () => void
   onRegenerate: () => void
   onReveal: () => void
   canRegenerate: boolean
@@ -24,13 +28,25 @@ export function PlacementTile({
 }) {
   const spec = placementSpecs[p.size]
   return (
-    <div className="group relative overflow-hidden rounded-lg border border-border/70 bg-card/30">
+    <div
+      className={cn(
+        "group relative overflow-hidden rounded-lg border bg-card/30 transition-colors",
+        active ? "border-ember/70" : "border-border/70",
+      )}
+    >
       <div
         className="relative w-full overflow-hidden bg-muted/30"
         style={{ aspectRatio: aspectOf(spec.width, spec.height) }}
       >
         {p.status === "ready" && p.url && (
-          <img src={p.url} alt={p.size} className="size-full object-cover" />
+          <button
+            type="button"
+            onClick={onSelect}
+            className="size-full cursor-zoom-in"
+            aria-label={`View ${p.size} placement`}
+          >
+            <img src={p.url} alt={p.size} className="size-full object-cover" />
+          </button>
         )}
         {p.status === "pending" && (
           <div className="absolute inset-0 grid place-items-center">

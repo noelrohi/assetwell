@@ -81,7 +81,7 @@ Canonical target sizes and aspect ratios live in [`creative-sizes.md`](./creativ
 
 ## 10. UI implementation status
 
-The renderer is built (Darkroom Gallery aesthetic, TanStack Router, shadcn) but is currently **mock-driven** (`apps/desktop/src/lib/mock-data.ts`) and **not yet wired to the Higgsfield bridge**. The onboarding gate, local-output persistence, and credit/auth handling are not yet built. The bridge currently streams raw CLI text rather than structured results — a normalization layer is the next major task.
+The renderer is built (Darkroom Gallery aesthetic, TanStack Router, shadcn) and now routes real generation through the Higgsfield bridge. Local library state is persisted as a small JSON snapshot, outputs are written to the configurable `~/Kreeyts`-style output root, image/video outputs are post-processed to exact target dimensions, and auth/zero-credit states block generation. Remaining v1 hardening: durable recovery for Higgsfield jobs after app exit, richer model-parameter UX beyond aspect ratio, and a reindex/import flow for existing output folders.
 
 ---
 

@@ -4,6 +4,8 @@ import type {
   HiggsfieldGeneratedArtifact,
   HiggsfieldMediaKind,
   HiggsfieldModel,
+  HiggsfieldModelDetails,
+  HiggsfieldModelParam,
   HiggsfieldWorkspaceContext,
   HiggsfieldWorkspaceSummary,
 } from "@kreeyts/desktop-bridge"
@@ -12,6 +14,18 @@ interface RawModel {
   display_name?: unknown
   job_set_type?: unknown
   type?: unknown
+}
+
+interface RawModelParam {
+  name?: unknown
+  type?: unknown
+  default?: unknown
+  required?: unknown
+  enum?: unknown
+}
+
+interface RawModelDetails extends RawModel {
+  params?: unknown
 }
 
 interface RawAccount {
@@ -89,6 +103,33 @@ export function parseModelList(
   return parseModelTable(stdout, fallbackMediaKind)
 }
 
+export function parseModelDetails(
+  stdout: string,
+  fallbackModel: string,
+  fallbackMediaKind: HiggsfieldMediaKind,
+): HiggsfieldModelDetails {
+  const json = parseJson<RawModelDetails>(stdout)
+  if (!json || Array.isArray(json)) {
+    throw new Error("Could not read Higgsfield model details.")
+  }
+
+  const id = stringOrNull(json.job_set_type) ?? fallbackModel
+  const mediaKind = normalizeMediaKind(json.type, fallbackMediaKind)
+  const params = Array.isArray(json.params)
+    ? json.params.flatMap(normalizeModelParam)
+    : []
+  const aspectRatios =
+    params.find((param) => param.name === "aspect_ratio")?.enumValues ?? []
+
+  return {
+    id,
+    label: stringOrNull(json.display_name) ?? titleFromId(id),
+    mediaKind,
+    params,
+    aspectRatios: aspectRatios.filter((ratio) => ratio !== "auto"),
+  }
+}
+
 export function parseWorkspaceContext(
   stdout: string,
   checkedAt = new Date().toISOString(),
@@ -122,7 +163,9 @@ export function bestArtifactExtension(
   fallbackMediaKind: HiggsfieldMediaKind,
 ) {
   const source = artifact.filePath ?? artifact.url ?? ""
-  const extension = source.match(/\.(png|jpe?g|webp|gif|mp4|mov|webm|m4v)(?:[?#].*)?$/i)
+  const extension = source.match(
+    /\.(png|jpe?g|webp|gif|mp4|mov|webm|m4v)(?:[?#].*)?$/i,
+  )
     ? `.${source.match(/\.(png|jpe?g|webp|gif|mp4|mov|webm|m4v)(?:[?#].*)?$/i)![1].toLowerCase()}`
     : null
 
@@ -157,7 +200,32 @@ function parseModelTable(
     })
 }
 
-function parseWorkspaceStatusText(stdout: string): HiggsfieldWorkspaceSummary[] {
+function normalizeModelParam(param: unknown): HiggsfieldModelParam[] {
+  if (!param || typeof param !== "object") return []
+
+  const raw = param as RawModelParam
+  const name = stringOrNull(raw.name)
+  if (!name) return []
+
+  return [
+    {
+      name,
+      type: stringOrNull(raw.type),
+      required: raw.required === true,
+      defaultValue: scalarOrNull(raw.default),
+      enumValues: Array.isArray(raw.enum)
+        ? raw.enum.flatMap((value) => {
+            const text = stringOrNull(value)
+            return text ? [text] : []
+          })
+        : [],
+    },
+  ]
+}
+
+function parseWorkspaceStatusText(
+  stdout: string,
+): HiggsfieldWorkspaceSummary[] {
   if (/no workspace selected/i.test(stdout)) return []
   return []
 }
@@ -284,7 +352,12 @@ function normalizeMediaKind(
   value: unknown,
   fallback: HiggsfieldMediaKind,
 ): HiggsfieldMediaKind {
-  if (value === "image" || value === "video" || value === "audio" || value === "text") {
+  if (
+    value === "image" ||
+    value === "video" ||
+    value === "audio" ||
+    value === "text"
+  ) {
     return value
   }
 
@@ -309,10 +382,12 @@ function parseJson<T>(value: string): T | null {
 }
 
 function firstLine(value: string) {
-  return value
-    .split(/\r?\n/)
-    .map((part) => part.trim())
-    .find(Boolean) ?? ""
+  return (
+    value
+      .split(/\r?\n/)
+      .map((part) => part.trim())
+      .find(Boolean) ?? ""
+  )
 }
 
 function stringOrNull(value: unknown) {
@@ -324,6 +399,13 @@ function numberOrNull(value: unknown) {
   if (typeof value !== "string") return null
   const parsed = Number(value)
   return Number.isFinite(parsed) ? parsed : null
+}
+
+function scalarOrNull(value: unknown) {
+  if (typeof value === "string" && value.trim()) return value.trim()
+  if (typeof value === "number" && Number.isFinite(value)) return value
+  if (typeof value === "boolean") return value
+  return null
 }
 
 function titleFromId(id: string) {

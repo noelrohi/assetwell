@@ -23,20 +23,36 @@ import {
   SelectValue,
 } from "@/components/ui/select"
 import { Textarea } from "@/components/ui/textarea"
-import { imagePromptLibrary, useHiggsfieldApp } from "@/lib/higgsfield"
+import { useHiggsfieldApp } from "@/lib/higgsfield"
 import { baseRatios } from "@/lib/placements"
 import { cn } from "@/lib/utils"
 
 export function ImageComposer() {
   const navigate = useNavigate()
-  const { imageModels, referenceLibrary, chooseReferenceAsset, makeCreative } =
-    useHiggsfieldApp()
+  const {
+    imageModels,
+    referenceLibrary,
+    imagePrompts,
+    chooseReferenceAsset,
+    savePromptPreset,
+    getModelAspectRatios,
+    makeCreative,
+  } = useHiggsfieldApp()
   const [prompt, setPrompt] = React.useState("")
   const [ratioId, setRatioId] = React.useState<string>(baseRatios[0].id)
   const [model, setModel] = React.useState(imageModels[0]?.id ?? "")
   const [refs, setRefs] = React.useState<string[]>([])
+  const [modelRatios, setModelRatios] = React.useState<string[]>(
+    baseRatios.map((ratio) => ratio.id),
+  )
 
-  const ratio = baseRatios.find((r) => r.id === ratioId)!
+  const ratioOptions = baseRatios.filter((ratio) =>
+    modelRatios.includes(ratio.id),
+  )
+  const ratio =
+    ratioOptions.find((item) => item.id === ratioId) ??
+    ratioOptions[0] ??
+    baseRatios[0]
   const canMake = prompt.trim().length > 0 && model.length > 0
 
   React.useEffect(() => {
@@ -45,6 +61,27 @@ export function ImageComposer() {
       setModel(imageModels[0]?.id ?? "")
     }
   }, [imageModels, model])
+
+  React.useEffect(() => {
+    if (!model) return
+    let cancelled = false
+    void getModelAspectRatios(model, "image").then((ratios) => {
+      if (cancelled) return
+      setModelRatios(ratios)
+    })
+    return () => {
+      cancelled = true
+    }
+  }, [getModelAspectRatios, model])
+
+  React.useEffect(() => {
+    if (
+      ratioOptions.length > 0 &&
+      !ratioOptions.some((r) => r.id === ratioId)
+    ) {
+      setRatioId(ratioOptions[0].id)
+    }
+  }, [ratioId, ratioOptions])
 
   async function make() {
     if (!canMake) return
@@ -127,7 +164,7 @@ export function ImageComposer() {
               <SelectValue />
             </SelectTrigger>
             <SelectContent>
-              {baseRatios.map((r) => (
+              {ratioOptions.map((r) => (
                 <SelectItem key={r.id} value={r.id}>
                   <span className="font-mono text-xs">{r.id}</span>
                   <span className="text-muted-foreground">{r.label}</span>
@@ -206,7 +243,15 @@ export function ImageComposer() {
                 Prompt library
               </p>
               <div className="max-h-72 space-y-0.5 overflow-auto">
-                {imagePromptLibrary.map((p) => (
+                {prompt.trim().length >= 3 && (
+                  <button
+                    onClick={() => savePromptPreset("image", prompt)}
+                    className="mb-1 flex w-full rounded-md px-2 py-2 text-left text-sm font-medium text-ember transition-colors hover:bg-accent"
+                  >
+                    Save current prompt
+                  </button>
+                )}
+                {imagePrompts.map((p) => (
                   <button
                     key={p.id}
                     onClick={() => {

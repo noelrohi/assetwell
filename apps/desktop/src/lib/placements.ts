@@ -3,8 +3,8 @@
  * docs/creative-sizes.md.
  *
  * Higgsfield generation currently accepts aspect-ratio params, not exact output
- * dimensions, so some placements still need a post-process step before they can
- * be guaranteed to match these target pixel sizes.
+ * dimensions, so the Electron Host post-processes image artifacts to these
+ * exact target pixel sizes before saving them locally.
  */
 
 export const imagePlacements = [
@@ -117,9 +117,15 @@ export function getPlacementAspectRatio(placement: Placement) {
 export const baseRatios = [
   { id: "1:1", label: "Square", width: 1024, height: 1024 },
   { id: "4:5", label: "Portrait", width: 864, height: 1080 },
+  { id: "5:4", label: "Landscape crop", width: 1080, height: 864 },
   { id: "3:4", label: "Tall", width: 768, height: 1024 },
+  { id: "4:3", label: "Landscape", width: 1024, height: 768 },
+  { id: "2:3", label: "Poster", width: 768, height: 1152 },
+  { id: "3:2", label: "Frame", width: 1152, height: 768 },
   { id: "16:9", label: "Wide", width: 1280, height: 720 },
   { id: "9:16", label: "Story", width: 720, height: 1280 },
+  { id: "21:9", label: "Cinema wide", width: 1344, height: 576 },
+  { id: "9:21", label: "Cinema vertical", width: 576, height: 1344 },
   { id: "1.91:1", label: "Social landscape", width: 1200, height: 628 },
 ] as const
 

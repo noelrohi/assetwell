@@ -1,4 +1,4 @@
-import type { CSSProperties } from "react"
+import type { CSSProperties, ReactNode } from "react"
 import { Outlet } from "@tanstack/react-router"
 
 import { AppSidebar } from "@/components/blocks/layout/app-sidebar"
@@ -61,6 +61,43 @@ function InsetHeader() {
   )
 }
 
+function OnboardingGate({ children }: { children: ReactNode }) {
+  const { cliStatus, signIn } = useHiggsfieldApp()
+
+  if (
+    cliStatus?.installed === false ||
+    cliStatus?.authStatus === "unauthenticated"
+  ) {
+    return (
+      <div className="grid min-h-full place-items-center px-6 py-16">
+        <div className="max-w-md rounded-3xl border border-border bg-card/70 p-8 text-center shadow-2xl shadow-black/10">
+          <p className="font-display text-3xl">Connect Higgsfield</p>
+          <p className="mt-3 text-sm leading-6 text-muted-foreground">
+            Sign in once, then Kreeyts will open directly to Create and use your
+            Higgsfield account, models, and credits behind the scenes.
+          </p>
+          {cliStatus?.installed === false ? (
+            <p className="mt-4 rounded-2xl bg-destructive/10 px-3 py-2 text-sm text-destructive">
+              Higgsfield is not available in this build. Reinstall Kreeyts or
+              contact support.
+            </p>
+          ) : null}
+          <button
+            type="button"
+            onClick={() => void signIn()}
+            disabled={cliStatus?.installed === false}
+            className="mt-6 inline-flex h-10 items-center justify-center rounded-full bg-ember px-5 text-sm font-medium text-ember-foreground ember-glow transition-all hover:brightness-105 disabled:cursor-not-allowed disabled:bg-muted disabled:text-muted-foreground"
+          >
+            Sign in to Higgsfield
+          </button>
+        </div>
+      </div>
+    )
+  }
+
+  return children
+}
+
 export function AppShell() {
   return (
     <SidebarProvider
@@ -91,7 +128,9 @@ export function AppShell() {
       <SidebarInset className="min-h-0 overflow-hidden border-l border-border bg-background">
         <InsetHeader />
         <div className="min-h-0 flex-1 overflow-y-auto">
-          <Outlet />
+          <OnboardingGate>
+            <Outlet />
+          </OnboardingGate>
         </div>
       </SidebarInset>
     </SidebarProvider>

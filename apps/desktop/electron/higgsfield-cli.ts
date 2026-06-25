@@ -1,12 +1,13 @@
 import { spawn, type ChildProcessWithoutNullStreams } from "node:child_process"
 import { randomUUID } from "node:crypto"
 import { copyFileSync, existsSync, mkdirSync, readFileSync } from "node:fs"
-import { copyFile, mkdir, writeFile } from "node:fs/promises"
+import { copyFile, mkdir, rename, unlink, writeFile } from "node:fs/promises"
 import { createRequire } from "node:module"
 import os from "node:os"
 import path from "node:path"
 
-import { app } from "electron"
+import { app, nativeImage } from "electron"
+import ffmpegStaticPath from "ffmpeg-static"
 import type {
   HiggsfieldAccountStatus,
   HiggsfieldCliStatus,
@@ -18,7 +19,10 @@ import type {
   HiggsfieldGenerateRequest,
   HiggsfieldMediaKind,
   HiggsfieldModel,
+  HiggsfieldModelDetails,
+  HiggsfieldModelDetailsRequest,
   HiggsfieldModelListRequest,
+  HiggsfieldOutputSize,
   HiggsfieldProductAction,
   HiggsfieldUploadAssetRequest,
   HiggsfieldWorkspaceContext,
@@ -29,9 +33,11 @@ import {
   bestArtifactExtension,
   parseAccountStatus,
   parseGenerationResult,
+  parseModelDetails,
   parseModelList,
   parseWorkspaceContext,
 } from "./higgsfield-output"
+import { getKreeytsOutputRootSync } from "./local-store"
 
 const GLOBAL_HIGGSFIELD_EXECUTABLE =
   process.platform === "win32" ? "higgsfield.cmd" : "higgsfield"
@@ -39,6 +45,7 @@ const VENDORED_HIGGSFIELD_EXECUTABLE =
   process.platform === "win32" ? "hf.exe" : "hf"
 const requireFromHere = createRequire(import.meta.url)
 const activeRuns = new Map<string, ChildProcessWithoutNullStreams>()
+const queuedRuns: QueuedHiggsfieldCommand[] = []
 
 interface ResolvedHiggsfieldExecutable {
   source: Exclude<HiggsfieldExecutableSource, "missing">
@@ -61,6 +68,7 @@ interface HiggsfieldActionCommand {
   resultMediaKind?: HiggsfieldMediaKind
   outputDirectoryName?: string
   outputFileName?: string
+  outputSize?: HiggsfieldOutputSize
 }
 
 interface CollectedCommand {
@@ -70,6 +78,13 @@ interface CollectedCommand {
   signal: NodeJS.Signals | null
   error?: NodeJS.ErrnoException
   timedOut: boolean
+}
+
+interface QueuedHiggsfieldCommand {
+  run: HiggsfieldCommandRun
+  command: HiggsfieldActionCommand
+  executable: ResolvedHiggsfieldExecutable
+  emit: CommandOutputEmitter
 }
 
 type CommandOutputEmitter = (event: HiggsfieldCommandOutputEvent) => void
@@ -179,6 +194,22 @@ export async function getHiggsfieldModels(
   return parseModelList(result.stdout, mediaKind)
 }
 
+export async function getHiggsfieldModelDetails(
+  request: HiggsfieldModelDetailsRequest,
+): Promise<HiggsfieldModelDetails> {
+  const model = normalizeModel(request.model)
+  const mediaKind = request.mediaKind ?? "image"
+  const executable = resolveHiggsfieldExecutable()
+  const result = await collectHiggsfieldOutput(
+    executable,
+    ["--json", "model", "get", model],
+    15_000,
+  )
+
+  ensureCommandSucceeded(result, "Load model details")
+  return parseModelDetails(result.stdout, model, mediaKind)
+}
+
 export function startSignInCommand(emit: CommandOutputEmitter) {
   return startHiggsfieldCommand(
     {
@@ -267,10 +298,15 @@ export function startGenerateCommand(
     args.push("--aspect_ratio", normalizeAspectRatio(request.aspectRatio))
   }
 
-  if (request.assetPath?.trim()) {
+  const assetPaths = [
+    ...(request.assetPaths ?? []),
+    ...(request.assetPath ? [request.assetPath] : []),
+  ]
+  for (const assetPath of assetPaths) {
+    if (!assetPath.trim()) continue
     args.push(
       mediaFlagForKind(request.assetMediaKind ?? mediaKind),
-      normalizeFilePath(request.assetPath),
+      normalizeFilePath(assetPath),
     )
   }
 
@@ -287,6 +323,7 @@ export function startGenerateCommand(
       resultMediaKind: mediaKind,
       outputDirectoryName: request.outputDirectoryName,
       outputFileName: request.outputFileName,
+      outputSize: request.outputSize,
     },
     emit,
   )
@@ -295,9 +332,29 @@ export function startGenerateCommand(
 export function cancelHiggsfieldCommand(runId: string): boolean {
   const child = activeRuns.get(runId)
 
-  if (!child) return false
+  if (child) {
+    child.kill()
+    return true
+  }
 
-  child.kill()
+  const queuedIndex = queuedRuns.findIndex(
+    (queued) => queued.run.runId === runId,
+  )
+  if (queuedIndex === -1) return false
+
+  const [queued] = queuedRuns.splice(queuedIndex, 1)
+  if (queued) {
+    emitCommandOutput(
+      queued.emit,
+      queued.run.runId,
+      "system",
+      "Removed from the local queue.\n",
+    )
+    emitCommandOutput(queued.emit, queued.run.runId, "exit", "Stopped.\n", {
+      exitCode: null,
+      signal: "SIGTERM",
+    })
+  }
   return true
 }
 
@@ -305,14 +362,53 @@ function startHiggsfieldCommand(
   command: HiggsfieldActionCommand,
   emit: CommandOutputEmitter,
 ): HiggsfieldCommandRun {
-  const executable = resolveHiggsfieldExecutable()
-  const run: HiggsfieldCommandRun = {
-    runId: randomUUID(),
-    action: command.action,
-    title: command.title,
-    startedAt: new Date().toISOString(),
+  const queued: QueuedHiggsfieldCommand = {
+    executable: resolveHiggsfieldExecutable(),
+    command,
+    emit,
+    run: {
+      runId: randomUUID(),
+      action: command.action,
+      title: command.title,
+      startedAt: new Date().toISOString(),
+    },
   }
 
+  if (shouldQueueCommand(command)) {
+    queuedRuns.push(queued)
+    emitCommandOutput(
+      emit,
+      queued.run.runId,
+      "system",
+      "Queued locally. Kreeyts will start this when a generation slot is free.\n",
+    )
+    drainHiggsfieldQueue()
+  } else {
+    startQueuedHiggsfieldCommand(queued)
+  }
+
+  return queued.run
+}
+
+function shouldQueueCommand(command: HiggsfieldActionCommand) {
+  return (
+    command.action === "generate" &&
+    (queuedRuns.length > 0 || activeRuns.size >= maxConcurrentHiggsfieldRuns())
+  )
+}
+
+function drainHiggsfieldQueue() {
+  while (
+    queuedRuns.length > 0 &&
+    activeRuns.size < maxConcurrentHiggsfieldRuns()
+  ) {
+    const queued = queuedRuns.shift()
+    if (queued) startQueuedHiggsfieldCommand(queued)
+  }
+}
+
+function startQueuedHiggsfieldCommand(queued: QueuedHiggsfieldCommand) {
+  const { command, emit, executable, run } = queued
   emitCommandOutput(emit, run.runId, "system", `${command.startMessage}\n`)
 
   const child = spawn(executable.command, command.args, {
@@ -351,9 +447,8 @@ function startHiggsfieldCommand(
       exitCode,
       signal,
     })
+    drainHiggsfieldQueue()
   })
-
-  return run
 }
 
 function collectHiggsfieldOutput(
@@ -361,9 +456,23 @@ function collectHiggsfieldOutput(
   args: readonly string[],
   timeoutMs: number,
 ) {
+  return collectProcessOutput(
+    executable.command,
+    args,
+    timeoutMs,
+    higgsfieldEnvironment(executable),
+  )
+}
+
+function collectProcessOutput(
+  command: string,
+  args: readonly string[],
+  timeoutMs: number,
+  env = process.env,
+) {
   return new Promise<CollectedCommand>((resolve) => {
-    const child = spawn(executable.command, args, {
-      env: higgsfieldEnvironment(executable),
+    const child = spawn(command, args, {
+      env,
       windowsHide: true,
     })
     let stdout = ""
@@ -421,13 +530,7 @@ async function emitGenerationResult(
   if (!parsed) return
 
   const result = await saveGeneratedArtifacts(parsed, command)
-  emitCommandOutput(
-    emit,
-    runId,
-    "result",
-    "Generation finished.\n",
-    { result },
-  )
+  emitCommandOutput(emit, runId, "result", "Generation finished.\n", { result })
 }
 
 async function saveGeneratedArtifacts(
@@ -437,8 +540,7 @@ async function saveGeneratedArtifacts(
   if (!command.outputDirectoryName && !command.outputFileName) return result
 
   const outputDirectory = path.join(
-    os.homedir(),
-    "Kreeyts",
+    getKreeytsOutputRootSync(),
     safePathPart(command.outputDirectoryName ?? dateSlug()),
   )
   await mkdir(outputDirectory, { recursive: true })
@@ -457,7 +559,7 @@ async function saveGeneratedArtifacts(
         index,
       )
       const filePath = path.join(outputDirectory, fileName)
-      const savedPath = await saveArtifactToPath(artifact, filePath)
+      const savedPath = await saveArtifactToPath(artifact, filePath, command)
       artifacts.push({ ...artifact, filePath: savedPath ?? artifact.filePath })
     } catch {
       artifacts.push(artifact)
@@ -470,11 +572,13 @@ async function saveGeneratedArtifacts(
 async function saveArtifactToPath(
   artifact: HiggsfieldGeneratedArtifact,
   targetPath: string,
+  command: HiggsfieldActionCommand,
 ) {
   if (artifact.filePath && existsSync(artifact.filePath)) {
     if (artifact.filePath !== targetPath) {
       await copyFile(artifact.filePath, targetPath)
     }
+    await postProcessArtifact(targetPath, command)
     return targetPath
   }
 
@@ -485,7 +589,108 @@ async function saveArtifactToPath(
 
   const buffer = Buffer.from(await response.arrayBuffer())
   await writeFile(targetPath, buffer)
+  await postProcessArtifact(targetPath, command)
   return targetPath
+}
+
+async function postProcessArtifact(
+  targetPath: string,
+  command: HiggsfieldActionCommand,
+) {
+  if (!command.outputSize) return
+
+  if (command.resultMediaKind === "image") {
+    await writeFile(
+      targetPath,
+      normalizeImageToExactSize(targetPath, command.outputSize),
+    )
+    return
+  }
+
+  if (command.resultMediaKind === "video") {
+    await normalizeVideoToExactSize(targetPath, command.outputSize)
+  }
+}
+
+function normalizeImageToExactSize(
+  imagePath: string,
+  target: HiggsfieldOutputSize,
+) {
+  const image = nativeImage.createFromPath(imagePath)
+
+  if (image.isEmpty()) {
+    throw new Error("Generated image could not be opened for sizing.")
+  }
+
+  const size = image.getSize()
+  const sourceRatio = size.width / size.height
+  const targetRatio = target.width / target.height
+  const crop =
+    sourceRatio > targetRatio
+      ? {
+          x: Math.floor((size.width - size.height * targetRatio) / 2),
+          y: 0,
+          width: Math.floor(size.height * targetRatio),
+          height: size.height,
+        }
+      : {
+          x: 0,
+          y: Math.floor((size.height - size.width / targetRatio) / 2),
+          width: size.width,
+          height: Math.floor(size.width / targetRatio),
+        }
+
+  return image
+    .crop(crop)
+    .resize({
+      width: target.width,
+      height: target.height,
+      quality: "best",
+    })
+    .toPNG()
+}
+
+async function normalizeVideoToExactSize(
+  videoPath: string,
+  target: HiggsfieldOutputSize,
+) {
+  const ffmpegPath = resolveFfmpegExecutable()
+  const tempPath = `${videoPath}.${process.pid}.${Date.now()}.tmp.mp4`
+  const result = await collectProcessOutput(
+    ffmpegPath,
+    [
+      "-y",
+      "-i",
+      videoPath,
+      "-vf",
+      `scale=${target.width}:${target.height}:force_original_aspect_ratio=increase,crop=${target.width}:${target.height}`,
+      "-c:v",
+      "libx264",
+      "-pix_fmt",
+      "yuv420p",
+      "-movflags",
+      "+faststart",
+      "-c:a",
+      "copy",
+      tempPath,
+    ],
+    15 * 60_000,
+  )
+
+  if (result.exitCode !== 0) {
+    await unlink(tempPath).catch(() => undefined)
+    throw new Error("Generated video could not be prepared at the target size.")
+  }
+
+  await rename(tempPath, videoPath)
+}
+
+function resolveFfmpegExecutable() {
+  if (!ffmpegStaticPath) {
+    throw new Error("The bundled video processor is not available.")
+  }
+
+  return asUnpackedPath(ffmpegStaticPath)
 }
 
 function resolveHiggsfieldExecutable(): ResolvedHiggsfieldExecutable {
@@ -553,6 +758,12 @@ function asUnpackedPath(filePath: string) {
   )
 }
 
+function maxConcurrentHiggsfieldRuns() {
+  const configured = Number(process.env.KREEYTS_MAX_HIGGSFIELD_RUNS)
+  if (Number.isInteger(configured) && configured > 0) return configured
+  return 3
+}
+
 function higgsfieldEnvironment(executable: ResolvedHiggsfieldExecutable) {
   return {
     ...process.env,
@@ -565,7 +776,11 @@ function higgsfieldEnvironment(executable: ResolvedHiggsfieldExecutable) {
 
 function ensureHiggsfieldConfigHome() {
   const configHome = path.join(app.getPath("userData"), "higgsfield-cli-config")
-  const credentialsPath = path.join(configHome, "higgsfield", "credentials.json")
+  const credentialsPath = path.join(
+    configHome,
+    "higgsfield",
+    "credentials.json",
+  )
 
   if (!existsSync(credentialsPath)) {
     const legacyCredentialsPath = path.join(

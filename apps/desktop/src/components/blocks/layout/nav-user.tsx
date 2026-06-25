@@ -31,7 +31,8 @@ function AccountAvatar({ initial }: { initial: string }) {
 
 export function NavUser() {
   const { isMobile } = useSidebar()
-  const { account, signIn } = useHiggsfieldApp()
+  const { account, settings, signIn, chooseOutputRoot, revealOutputRoot } =
+    useHiggsfieldApp()
 
   const isSignedIn = Boolean(account?.email)
   const name = account?.email?.split("@")[0] ?? "Kreeyts"
@@ -80,10 +81,19 @@ export function NavUser() {
               </div>
             </DropdownMenuLabel>
             <DropdownMenuSeparator />
-            <DropdownMenuItem>
+            <DropdownMenuItem onClick={() => void chooseOutputRoot()}>
               <IconFolderCog />
               Library folder…
             </DropdownMenuItem>
+            <DropdownMenuItem onClick={() => void revealOutputRoot()}>
+              <IconFolderCog />
+              Reveal library folder
+            </DropdownMenuItem>
+            {settings?.outputRoot ? (
+              <DropdownMenuLabel className="truncate px-2 py-1 text-[11px] font-normal text-muted-foreground">
+                {settings.outputRoot}
+              </DropdownMenuLabel>
+            ) : null}
             <DropdownMenuSeparator />
             {isSignedIn ? (
               <DropdownMenuItem variant="destructive">

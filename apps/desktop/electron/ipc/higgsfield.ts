@@ -1,5 +1,6 @@
 import { statSync } from "node:fs"
 import path from "node:path"
+import { fileURLToPath } from "node:url"
 
 import {
   BrowserWindow,
@@ -14,6 +15,7 @@ import type {
   HiggsfieldCommandOutputEvent,
   HiggsfieldGenerateRequest,
   HiggsfieldMediaKind,
+  HiggsfieldModelDetailsRequest,
   HiggsfieldModelListRequest,
   HiggsfieldOpenOutputRequest,
   HiggsfieldUploadAssetRequest,
@@ -23,6 +25,7 @@ import {
   cancelHiggsfieldCommand,
   getHiggsfieldAccountStatus,
   getHiggsfieldCliStatus,
+  getHiggsfieldModelDetails,
   getHiggsfieldModels,
   getHiggsfieldWorkspaceContext,
   startGenerateCommand,
@@ -50,8 +53,15 @@ export function registerHiggsfieldIpc() {
 
   ipcMain.handle(
     IPC_CHANNELS.higgsfield.listModels,
-    (event, request?: HiggsfieldModelListRequest) => {
+    (_event, request?: HiggsfieldModelListRequest) => {
       return getHiggsfieldModels(request)
+    },
+  )
+
+  ipcMain.handle(
+    IPC_CHANNELS.higgsfield.getModelDetails,
+    (_event, request: HiggsfieldModelDetailsRequest) => {
+      return getHiggsfieldModelDetails(request)
     },
   )
 
@@ -129,17 +139,25 @@ async function openOutput(request: HiggsfieldOpenOutputRequest) {
       return true
     }
 
-    return false
-  } catch {
-    const stat = statSync(target, { throwIfNoEntry: false })
-    if (stat?.isFile()) {
-      shell.showItemInFolder(target)
-      return true
+    if (url.protocol === "file:") {
+      return openLocalPath(fileURLToPath(url))
     }
 
-    const error = await shell.openPath(target)
-    return error.length === 0
+    return false
+  } catch {
+    return openLocalPath(target)
   }
+}
+
+async function openLocalPath(target: string) {
+  const stat = statSync(target, { throwIfNoEntry: false })
+  if (stat?.isFile()) {
+    shell.showItemInFolder(target)
+    return true
+  }
+
+  const error = await shell.openPath(target)
+  return error.length === 0
 }
 
 function streamToInvoker(event: IpcMainInvokeEvent) {

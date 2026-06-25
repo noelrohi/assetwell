@@ -2,7 +2,7 @@
 
 Kreeyts is a small Electron desktop wrapper for the Higgsfield CLI. The architecture should grow from that product behavior, not from Dilag's larger product model.
 
-Higgsfield owns authentication, accounts, workspaces, models, generation, uploads, Soul ID, Marketing Studio, and version reporting through the Higgsfield CLI. Kreeyts provides a native desktop host, a typed bridge, status checks, sign-in launch, a local asset picker, generation/upload actions, output opening, and streamed progress.
+Higgsfield owns authentication, accounts, workspaces, models, generation, uploads, Soul ID, Marketing Studio, and version reporting through the Higgsfield CLI. Kreeyts provides a native desktop host, a typed bridge, status checks, sign-in launch, a local asset picker, generation/upload actions, exact image output post-processing, local output folders, a persisted local library snapshot, output opening, and streamed progress.
 
 ## Runtime Modules
 
@@ -24,9 +24,10 @@ The current contract is:
 - `higgsfield.checkCredits()`: checks account plan and credits.
 - `higgsfield.checkWorkspace()`: checks the active account/workspace context.
 - `higgsfield.listModels({ mediaKind })`: lists available Higgsfield models for a creative format.
+- `higgsfield.getModelDetails({ model, mediaKind })`: reads model params such as supported aspect ratios so the renderer can show valid controls.
 - `higgsfield.chooseAsset(mediaKind)`: opens a native file picker for image, video, or audio assets.
 - `higgsfield.uploadAsset({ filePath })`: uploads a selected local asset.
-- `higgsfield.generate({ model, prompt, mediaKind, assetPath, waitForResult })`: creates a Higgsfield generation job and streams progress.
+- `higgsfield.generate({ model, prompt, mediaKind, assetPath, assetPaths, aspectRatio, outputSize, waitForResult })`: creates a Higgsfield generation job, streams progress, and saves local artifacts. Outputs with `outputSize` are center-cropped/resized to the exact target dimensions before saving locally.
 - `higgsfield.openOutput({ target })`: opens a generated URL or local output path.
 - `higgsfield.cancelCommand(runId)`: stops a running CLI process owned by the Electron Host.
 - `higgsfield.onCommandOutput(listener)`: subscribes to product-level command output events.
@@ -37,10 +38,11 @@ This is intentionally small. New bridge methods should be product-level Higgsfie
 
 Electron IPC channels are registered under `apps/desktop/electron/ipc`. Shared channel names live in `apps/desktop/electron/shared/channels.ts`.
 
-The current IPC domain is:
+The current IPC domains are:
 
 - `app-info`: owns Electron metadata exposed through `DesktopBridge.app.getInfo()`.
-- `higgsfield`: owns CLI process invocation, bundled/global executable resolution, install/auth/workspace detection, sign-in, model/account/generation/upload actions, cancellation, file picking, output opening, and streamed command output.
+- `higgsfield`: owns CLI process invocation, bundled/global executable resolution, install/auth/workspace detection, sign-in, model/account/generation/upload actions, cancellation, file picking, output opening, exact image post-processing, and streamed command output.
+- `library`: owns the local library snapshot, settings, output-root picker/reveal, and ZIP export.
 
 Add another IPC domain only when there is real behavior behind it. A folder of pass-through modules would make the interface larger without improving locality.
 
@@ -51,23 +53,24 @@ Add another IPC domain only when there is real behavior behind it. A folder of p
 The adapter:
 
 - invokes the resolved executable directly with argument arrays, not through a shell,
+- owns a small local FIFO queue for generation commands (default three concurrent Higgsfield runs; override with `KREEYTS_MAX_HIGGSFIELD_RUNS` for development),
 - checks version, authentication status, and workspace status,
-- starts sign-in, credit checks, model listing, uploads, and generation through product actions,
-- validates model, prompt, and file inputs before spawning the CLI,
-- streams stdout, stderr, system messages, and exit events to the renderer without showing raw command invocations.
+- starts sign-in, credit checks, model listing/detail inspection, uploads, and generation through product actions,
+- validates model, prompt, aspect-ratio, and file inputs before spawning the CLI,
+- saves generated artifacts under the configured Kreeyts Output Root,
+- post-processes generated images/videos to exact target dimensions when the renderer supplies `outputSize` (Electron `nativeImage` for images, bundled `ffmpeg-static` for videos),
+- streams stdout, stderr, system messages, result artifacts, and exit events to the renderer without showing raw command invocations.
 
 `apps/desktop/scripts/ensure-higgsfield-cli.mjs` materializes the pinned vendored binary for Bun-based development and build flows when the package postinstall did not run.
 
 ## Storage Ownership
 
-Kreeyts does not persist user data yet. Before adding persistence, define:
+Kreeyts has two storage locations:
 
-- the canonical App Data Root,
-- what data belongs to the app rather than a user-selected workspace,
-- migration and fallback rules,
-- privacy expectations for local files.
+- **App Data Root:** Electron `app.getPath("userData")`; app-owned JSON state lives under `state/` (`library.v1.json` and `settings.json`).
+- **Kreeyts Output Root:** defaults to `~/Kreeyts` and can be changed by the user; generated images/videos are written as plain files in folder-per-creative directories.
 
-Until those rules exist, modules should not invent storage paths independently.
+The local library snapshot is a convenience index and can be rebuilt from future import/reindex flows. Generated artifacts are user-owned files. If Kreeyts closes while a CLI command is pending, the next launch marks that local item as failed/interrupted rather than pretending Higgsfield job state is recoverable.
 
 ## Deferred Seams
 

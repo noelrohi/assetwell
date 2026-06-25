@@ -9,11 +9,13 @@ export function CreativeStage({
   creative,
   selectedUrl,
   setSelectedUrl,
+  selectedSize,
   selectTake,
 }: {
   creative: Creative
   selectedUrl: string
   setSelectedUrl: Dispatch<SetStateAction<string>>
+  selectedSize: { width: number; height: number }
   selectTake: (creativeId: string, takeId: string) => void
 }) {
   return (
@@ -22,7 +24,7 @@ export function CreativeStage({
         <div
           className="mx-auto max-h-[70vh] w-full"
           style={{
-            aspectRatio: aspectOf(creative.ratioW, creative.ratioH),
+            aspectRatio: aspectOf(selectedSize.width, selectedSize.height),
           }}
         >
           {selectedUrl ? (
