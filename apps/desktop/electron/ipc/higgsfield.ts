@@ -19,7 +19,7 @@ import type {
   HiggsfieldModelListRequest,
   HiggsfieldOpenOutputRequest,
   HiggsfieldUploadAssetRequest,
-} from "@kreeyts/desktop-bridge"
+} from "@assetwell/desktop-bridge"
 
 import {
   cancelHiggsfieldCommand,

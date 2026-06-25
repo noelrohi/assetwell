@@ -138,7 +138,7 @@ kling3_0                    Kling v3.0                  video`,
 
   test("extracts generation artifacts from text output", () => {
     const result = parseGenerationResult(
-      "Result: https://cdn.example.com/output.png\nSaved /Users/rohi/Kreeyts/demo/1200x628.png",
+      "Result: https://cdn.example.com/output.png\nSaved /Users/rohi/Assetwell/demo/1200x628.png",
       "image",
     )
 
@@ -151,7 +151,7 @@ kling3_0                    Kling v3.0                  video`,
       },
       {
         url: null,
-        filePath: "/Users/rohi/Kreeyts/demo/1200x628.png",
+        filePath: "/Users/rohi/Assetwell/demo/1200x628.png",
         id: null,
         mediaKind: "image",
       },

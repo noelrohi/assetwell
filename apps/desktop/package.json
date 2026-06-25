@@ -1,5 +1,5 @@
 {
-  "name": "@kreeyts/desktop",
+  "name": "@assetwell/desktop",
   "private": true,
   "version": "1.0.0",
   "description": "Assetwell desktop app.",
@@ -58,7 +58,7 @@
       {
         "provider": "github",
         "owner": "noelrohi",
-        "repo": "kreeyts"
+        "repo": "assetwell"
       }
     ]
   },
@@ -67,8 +67,8 @@
     "@fontsource-variable/hanken-grotesk": "^5.2.8",
     "@fontsource-variable/jetbrains-mono": "^5.2.8",
     "@higgsfield/cli": "0.2.3",
-    "@kreeyts/desktop-bridge": "workspace:*",
-    "@kreeyts/ui": "workspace:*",
+    "@assetwell/desktop-bridge": "workspace:*",
+    "@assetwell/ui": "workspace:*",
     "@tabler/icons-react": "catalog:",
     "@tailwindcss/vite": "^4.1.18",
     "@tanstack/react-router": "^1.170.16",

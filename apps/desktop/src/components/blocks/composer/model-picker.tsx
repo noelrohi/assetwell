@@ -24,7 +24,7 @@ import { cn } from "@/lib/utils"
 
 export type ModelOption = { id: string; label: string; hint: string | null }
 
-const MODEL_FAVOURITES_STORAGE_KEY = "kreeyts.model-favourites.v1"
+const MODEL_FAVOURITES_STORAGE_KEY = "assetwell.model-favourites.v1"
 
 function readFavouriteModelIds() {
   if (typeof window === "undefined") return []

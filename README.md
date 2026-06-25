@@ -1,12 +1,12 @@
-# Kreeyts
+# Assetwell
 
-Kreeyts is an early desktop app for creating image and video ad assets with the Higgsfield CLI. It wraps the pinned `@higgsfield/cli` package in an Electron + React interface and streams generation output back into the app.
+Assetwell is an early desktop app for creating image and video ad assets with the Higgsfield CLI. It wraps the pinned `@higgsfield/cli` package in an Electron + React interface and streams generation output back into the app.
 
 ## Status
 
 This project is **very early**. Expect rough edges, missing persistence, incomplete flows, and frequent changes without migration guarantees.
 
-Kreeyts is public for visibility, but it is **not open to external contributions right now**. Please do not open PRs or issues expecting support. That may change later once the product direction and architecture settle.
+Assetwell is public for visibility, but it is **not open to external contributions right now**. Please do not open PRs or issues expecting support. That may change later once the product direction and architecture settle.
 
 ## Development
 
@@ -14,13 +14,13 @@ This repo uses Bun.
 
 ```bash
 bun install
-bun --filter @kreeyts/desktop dev
+bun --filter @assetwell/desktop dev
 ```
 
 Useful checks:
 
 ```bash
-bun --filter @kreeyts/desktop typecheck
+bun --filter @assetwell/desktop typecheck
 ```
 
 ## Notes

@@ -1,1 +1,1 @@
-export { cn } from "@kreeyts/ui/lib/utils"
+export { cn } from "@assetwell/ui/lib/utils"

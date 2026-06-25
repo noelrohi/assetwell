@@ -15,7 +15,7 @@ const installScript = path.join(packageRoot, "install.js")
 
 if (!existsSync(installScript)) {
   throw new Error(
-    "@higgsfield/cli is missing. Run `bun install` before building Kreeyts.",
+    "@higgsfield/cli is missing. Run `bun install` before building Assetwell.",
   )
 }
 

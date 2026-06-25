@@ -8,7 +8,7 @@ import type {
   HiggsfieldModelParam,
   HiggsfieldWorkspaceContext,
   HiggsfieldWorkspaceSummary,
-} from "@kreeyts/desktop-bridge"
+} from "@assetwell/desktop-bridge"
 
 interface RawModel {
   display_name?: unknown

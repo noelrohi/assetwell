@@ -1,4 +1,4 @@
-import type { HiggsfieldCommandOutputEvent } from "@kreeyts/desktop-bridge"
+import type { HiggsfieldCommandOutputEvent } from "@assetwell/desktop-bridge"
 
 export function friendlyError(error: unknown) {
   if (error instanceof Error && error.message.trim()) return error.message

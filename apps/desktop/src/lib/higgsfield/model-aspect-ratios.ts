@@ -1,11 +1,11 @@
 import * as React from "react"
-import type { HiggsfieldMediaKind } from "@kreeyts/desktop-bridge"
+import type { HiggsfieldMediaKind } from "@assetwell/desktop-bridge"
 
 import { baseRatios } from "@/lib/placements"
 
 import type { HiggsfieldBridge } from "./types"
 
-const MODEL_ASPECT_RATIOS_STORAGE_KEY = "kreeyts.model-aspect-ratios.v1"
+const MODEL_ASPECT_RATIOS_STORAGE_KEY = "assetwell.model-aspect-ratios.v1"
 const MODEL_ASPECT_RATIOS_CACHE_MAX_AGE_MS = 7 * 24 * 60 * 60 * 1000
 
 interface StoredModelAspectRatioCache {

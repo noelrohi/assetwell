@@ -4,10 +4,10 @@ import type {
   HiggsfieldCliStatus,
   HiggsfieldMediaKind,
   HiggsfieldWorkspaceContext,
-  KreeytsPromptKind,
-  KreeytsPromptPreset,
-  KreeytsSettings,
-} from "@kreeyts/desktop-bridge"
+  AssetwellPromptKind,
+  AssetwellPromptPreset,
+  AssetwellSettings,
+} from "@assetwell/desktop-bridge"
 
 import type { ImagePlacement, VideoPlacement } from "@/lib/placements"
 import type {
@@ -54,7 +54,7 @@ export interface ReferenceAsset extends SeedReferenceAsset {
   modifiedAt?: string | null
 }
 
-export type PromptPreset = KreeytsPromptPreset
+export type PromptPreset = AssetwellPromptPreset
 
 export interface ModelOption {
   id: string
@@ -104,7 +104,7 @@ export interface HiggsfieldAppValue {
   referenceLibrary: ReferenceAsset[]
   imagePrompts: PromptPreset[]
   videoPrompts: PromptPreset[]
-  settings: KreeytsSettings | null
+  settings: AssetwellSettings | null
   runningJobs: number
   videoDraftSource: VideoSource | null
   refreshAccount: () => Promise<void>
@@ -117,7 +117,7 @@ export interface HiggsfieldAppValue {
   chooseOutputRoot: () => Promise<void>
   revealOutputRoot: () => Promise<void>
   savePromptPreset: (
-    kind: KreeytsPromptKind,
+    kind: AssetwellPromptKind,
     body: string,
     title?: string,
   ) => void

@@ -3,22 +3,22 @@
   "configVersion": 1,
   "workspaces": {
     "": {
-      "name": "kreeyts",
+      "name": "assetwell",
       "devDependencies": {
         "prettier": "^3.7.4",
         "turbo": "^2.7.3",
       },
     },
     "apps/desktop": {
-      "name": "@kreeyts/desktop",
+      "name": "@assetwell/desktop",
       "version": "1.0.0",
       "dependencies": {
         "@fontsource-variable/fraunces": "^5.2.9",
         "@fontsource-variable/hanken-grotesk": "^5.2.8",
         "@fontsource-variable/jetbrains-mono": "^5.2.8",
         "@higgsfield/cli": "0.2.3",
-        "@kreeyts/desktop-bridge": "workspace:*",
-        "@kreeyts/ui": "workspace:*",
+        "@assetwell/desktop-bridge": "workspace:*",
+        "@assetwell/ui": "workspace:*",
         "@tabler/icons-react": "catalog:",
         "@tailwindcss/vite": "^4.1.18",
         "@tanstack/react-router": "^1.170.16",
@@ -53,7 +53,7 @@
       },
     },
     "packages/desktop-bridge": {
-      "name": "@kreeyts/desktop-bridge",
+      "name": "@assetwell/desktop-bridge",
       "version": "0.0.0",
       "devDependencies": {
         "@types/node": "^25.0.2",
@@ -61,7 +61,7 @@
       },
     },
     "packages/ui": {
-      "name": "@kreeyts/ui",
+      "name": "@assetwell/ui",
       "version": "0.1.0",
       "dependencies": {
         "@tabler/icons-react": "catalog:",
@@ -237,11 +237,11 @@
 
     "@jridgewell/trace-mapping": ["@jridgewell/trace-mapping@0.3.31", "", { "dependencies": { "@jridgewell/resolve-uri": "^3.1.0", "@jridgewell/sourcemap-codec": "^1.4.14" } }, "sha512-zzNR+SdQSDJzc8joaeP8QQoCQr8NuYx2dIIytl1QeBEZHJ9uW6hebsrYgbz8hJwUQao3TWCMtmfV8Nu1twOLAw=="],
 
-    "@kreeyts/desktop": ["@kreeyts/desktop@workspace:apps/desktop"],
+    "@assetwell/desktop": ["@assetwell/desktop@workspace:apps/desktop"],
 
-    "@kreeyts/desktop-bridge": ["@kreeyts/desktop-bridge@workspace:packages/desktop-bridge"],
+    "@assetwell/desktop-bridge": ["@assetwell/desktop-bridge@workspace:packages/desktop-bridge"],
 
-    "@kreeyts/ui": ["@kreeyts/ui@workspace:packages/ui"],
+    "@assetwell/ui": ["@assetwell/ui@workspace:packages/ui"],
 
     "@malept/cross-spawn-promise": ["@malept/cross-spawn-promise@2.0.0", "", { "dependencies": { "cross-spawn": "^7.0.1" } }, "sha512-1DpKU0Z5ThltBwjNySMC14g0CkbyhCaz9FkhxqNsZI6uAPJXFS8cMXlBKo26FJ8ZuW6S9GCMcR9IO5k2X5/9Fg=="],
 

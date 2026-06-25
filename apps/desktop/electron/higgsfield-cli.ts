@@ -27,7 +27,7 @@ import type {
   HiggsfieldUploadAssetRequest,
   HiggsfieldWorkspaceContext,
   HiggsfieldWorkspaceStatus,
-} from "@kreeyts/desktop-bridge"
+} from "@assetwell/desktop-bridge"
 
 import {
   bestArtifactExtension,
@@ -37,7 +37,7 @@ import {
   parseModelList,
   parseWorkspaceContext,
 } from "./higgsfield-output"
-import { getKreeytsOutputRootSync } from "./local-store"
+import { getAssetwellOutputRootSync } from "./local-store"
 
 const GLOBAL_HIGGSFIELD_EXECUTABLE =
   process.platform === "win32" ? "higgsfield.cmd" : "higgsfield"
@@ -540,7 +540,7 @@ async function saveGeneratedArtifacts(
   if (!command.outputDirectoryName && !command.outputFileName) return result
 
   const outputDirectory = path.join(
-    getKreeytsOutputRootSync(),
+    getAssetwellOutputRootSync(),
     safePathPart(command.outputDirectoryName ?? dateSlug()),
   )
   await mkdir(outputDirectory, { recursive: true })
@@ -759,7 +759,7 @@ function asUnpackedPath(filePath: string) {
 }
 
 function maxConcurrentHiggsfieldRuns() {
-  const configured = Number(process.env.KREEYTS_MAX_HIGGSFIELD_RUNS)
+  const configured = Number(process.env.ASSETWELL_MAX_HIGGSFIELD_RUNS)
   if (Number.isInteger(configured) && configured > 0) return configured
   return 3
 }
@@ -769,7 +769,7 @@ function higgsfieldEnvironment(executable: ResolvedHiggsfieldExecutable) {
     ...process.env,
     XDG_CONFIG_HOME: ensureHiggsfieldConfigHome(),
     HIGGSFIELD_INSTALL_METHOD:
-      executable.source === "bundled" ? "kreeyts" : "global",
+      executable.source === "bundled" ? "assetwell" : "global",
     HIGGSFIELD_PACKAGE_MANAGER: "bun",
   }
 }

@@ -5,10 +5,10 @@ import type {
   HiggsfieldCliStatus,
   HiggsfieldCommandOutputEvent,
   HiggsfieldWorkspaceContext,
-  KreeytsLibrarySnapshot,
-  KreeytsPromptKind,
-  KreeytsSettings,
-} from "@kreeyts/desktop-bridge"
+  AssetwellLibrarySnapshot,
+  AssetwellPromptKind,
+  AssetwellSettings,
+} from "@assetwell/desktop-bridge"
 
 import {
   imageModels as fallbackImageModels,
@@ -96,7 +96,7 @@ export function HiggsfieldProvider({
     ReferenceAsset[]
   >(libraryBridge ? [] : seededReferences)
   const [customPrompts, setCustomPrompts] = React.useState<PromptPreset[]>([])
-  const [settings, setSettings] = React.useState<KreeytsSettings | null>(null)
+  const [settings, setSettings] = React.useState<AssetwellSettings | null>(null)
   const [localStateReady, setLocalStateReady] = React.useState(!libraryBridge)
   const [runningJobs, setRunningJobs] = React.useState(0)
   const [videoDraftSource, setVideoDraftSource] =
@@ -150,7 +150,7 @@ export function HiggsfieldProvider({
   }, [libraryBridge])
 
   const restoreSnapshot = React.useCallback(
-    (snapshot: KreeytsLibrarySnapshot) => {
+    (snapshot: AssetwellLibrarySnapshot) => {
       setCreatives(
         (snapshot.creatives as Creative[]).map(normalizeCreativeUrls),
       )
@@ -293,7 +293,7 @@ export function HiggsfieldProvider({
   }, [libraryBridge])
 
   const savePromptPreset = React.useCallback(
-    (kind: KreeytsPromptKind, body: string, title?: string) => {
+    (kind: AssetwellPromptKind, body: string, title?: string) => {
       const trimmed = body.trim()
       if (trimmed.length < 3) return
       const trimmedTitle = title?.trim()
@@ -564,5 +564,5 @@ export function useHiggsfieldApp() {
 }
 
 function getDesktopBridge() {
-  return typeof window === "undefined" ? undefined : window.kreeyts
+  return typeof window === "undefined" ? undefined : window.assetwell
 }

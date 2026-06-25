@@ -1,10 +1,10 @@
-# Kreeyts Platform — Product Model & v1 Spec
+# Assetwell Platform — Product Model & v1 Spec
 
-Kreeyts is **bespoke desktop software for a small team of non-technical creatives who already use Higgsfield** and want a tailored 10/10 version of the parts they care about. Higgsfield is the AI image/video generation engine; users know it powers the app. The web app (higgsfield.ai) is their current 7/10 — the pain is its GUI.
+Assetwell is **bespoke desktop software for a small team of non-technical creatives who already use Higgsfield** and want a tailored 10/10 version of the parts they care about. Higgsfield is the AI image/video generation engine; users know it powers the app. The web app (higgsfield.ai) is their current 7/10 — the pain is its GUI.
 
 The core thesis is **create efficiently**: a base creative image → resized into ad-placement sizes → optional video. Everything else is a bonus.
 
-The desired flow is mirrored by the reference app at `~/sandbox/dilag`-adjacent `~/sandbox/assetwell` (same create→resize→video model, but built on OpenAI/Gemini + trigger.dev; Kreeyts uses Higgsfield + a **local** queue instead).
+The desired flow is mirrored by the reference app at `~/sandbox/dilag`-adjacent `~/sandbox/assetwell` (same create→resize→video model, but built on OpenAI/Gemini + trigger.dev; Assetwell uses Higgsfield + a **local** queue instead).
 
 > This document is the product source of truth. For the runtime/module layout and the bridge contract, see [architecture.md](./architecture.md). For the UI redesign stack and conventions, see [Section 9](#9-ui-implementation-status).
 
@@ -68,7 +68,7 @@ Canonical target sizes and aspect ratios live in [`creative-sizes.md`](./creativ
 
 ## 8. Local-first output (the "why desktop" differentiator)
 
-- Every generation **auto-saves to a local folder-per-creative** (`~/Kreeyts` default, user-configurable), named by date + prompt slug, with files named by size (`1200x628.png`, `1280x720.mp4`).
+- Every generation **auto-saves to a local folder-per-creative** (`~/Assetwell` default, user-configurable), named by date + prompt slug, with files named by size (`1200x628.png`, `1280x720.mp4`).
 - **The folder is the deliverable.** Primary action is **Reveal in Finder**; **Export as ZIP** is secondary (for off-machine sharing).
 - The app keeps a small local index for the grids; the image/video files themselves are plain, user-owned files.
 
@@ -81,7 +81,7 @@ Canonical target sizes and aspect ratios live in [`creative-sizes.md`](./creativ
 
 ## 10. UI implementation status
 
-The renderer is built (Darkroom Gallery aesthetic, TanStack Router, shadcn) and now routes real generation through the Higgsfield bridge. Local library state is persisted in SQLite with the previous JSON snapshot retained as a fallback, outputs are written to the configurable `~/Kreeyts`-style output root, image/video outputs are post-processed to exact target dimensions, narrow banner placements are paused pending quality tuning, and auth/zero-credit states block generation. Remaining v1 hardening: durable recovery for Higgsfield jobs after app exit, richer model-parameter UX beyond aspect ratio, and a reindex/import flow for existing output folders.
+The renderer is built (Darkroom Gallery aesthetic, TanStack Router, shadcn) and now routes real generation through the Higgsfield bridge. Local library state is persisted in SQLite with the previous JSON snapshot retained as a fallback, outputs are written to the configurable `~/Assetwell`-style output root, image/video outputs are post-processed to exact target dimensions, narrow banner placements are paused pending quality tuning, and auth/zero-credit states block generation. Remaining v1 hardening: durable recovery for Higgsfield jobs after app exit, richer model-parameter UX beyond aspect ratio, and a reindex/import flow for existing output folders.
 
 ---
 

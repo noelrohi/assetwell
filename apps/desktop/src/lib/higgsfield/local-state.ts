@@ -1,7 +1,7 @@
 import type {
   HiggsfieldGeneratedArtifact,
-  KreeytsLibrarySnapshot,
-} from "@kreeyts/desktop-bridge"
+  AssetwellLibrarySnapshot,
+} from "@assetwell/desktop-bridge"
 
 import type {
   Creative,
@@ -16,7 +16,7 @@ export function createSnapshot(
   videos: VideoResult[],
   referenceLibrary: ReferenceAsset[],
   customPrompts: PromptPreset[],
-): KreeytsLibrarySnapshot {
+): AssetwellLibrarySnapshot {
   return {
     schemaVersion: 1,
     creatives,
@@ -100,7 +100,7 @@ export function localPreviewUrl(url: string, filePath?: string) {
 
 export function fileUrl(filePath: string) {
   if (/^https?:\/\//.test(filePath)) return filePath
-  if (filePath.startsWith("kreeyts-local://")) return filePath
+  if (filePath.startsWith("assetwell-local://")) return filePath
 
-  return `kreeyts-local://asset/${encodeURIComponent(filePath)}`
+  return `assetwell-local://asset/${encodeURIComponent(filePath)}`
 }

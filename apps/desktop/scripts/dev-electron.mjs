@@ -38,7 +38,7 @@ const DEV_APP_MARKER = path.join(
   DEV_APP_BUNDLE,
   "Contents",
   "Resources",
-  ".kreeyts-dev-app.json",
+  ".assetwell-dev-app.json",
 )
 
 const children = new Set()

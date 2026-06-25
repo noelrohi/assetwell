@@ -1,8 +1,8 @@
-# Kreeyts Architecture
+# Assetwell Architecture
 
-Kreeyts is a small Electron desktop wrapper for the Higgsfield CLI. The architecture should grow from that product behavior, not from Dilag's larger product model.
+Assetwell is a small Electron desktop wrapper for the Higgsfield CLI. The architecture should grow from that product behavior, not from Dilag's larger product model.
 
-Higgsfield owns authentication, accounts, workspaces, models, generation, uploads, Soul ID, Marketing Studio, and version reporting through the Higgsfield CLI. Kreeyts provides a native desktop host, a typed bridge, status checks, sign-in launch, a local asset picker, generation/upload actions, exact image output post-processing, local output folders, a persisted local library snapshot, output opening, and streamed progress.
+Higgsfield owns authentication, accounts, workspaces, models, generation, uploads, Soul ID, Marketing Studio, and version reporting through the Higgsfield CLI. Assetwell provides a native desktop host, a typed bridge, status checks, sign-in launch, a local asset picker, generation/upload actions, exact image output post-processing, local output folders, a persisted local library snapshot, output opening, and streamed progress.
 
 ## Runtime Modules
 
@@ -15,7 +15,7 @@ Higgsfield owns authentication, accounts, workspaces, models, generation, upload
 
 ## Desktop Bridge
 
-The renderer talks to the Electron Host through `window.kreeyts`, typed by `DesktopBridge`.
+The renderer talks to the Electron Host through `window.assetwell`, typed by `DesktopBridge`.
 
 The current contract is:
 
@@ -55,16 +55,16 @@ Add another IPC domain only when there is real behavior behind it. A folder of p
 
 ## Higgsfield CLI Adapter
 
-`apps/desktop/electron/higgsfield-cli.ts` is the Electron Host adapter for the Higgsfield CLI. Kreeyts pins `@higgsfield/cli` as a desktop app dependency and prefers the package's vendored `hf` binary. If that bundled executable is unavailable, the adapter falls back to a global `higgsfield` command so development machines can still recover.
+`apps/desktop/electron/higgsfield-cli.ts` is the Electron Host adapter for the Higgsfield CLI. Assetwell pins `@higgsfield/cli` as a desktop app dependency and prefers the package's vendored `hf` binary. If that bundled executable is unavailable, the adapter falls back to a global `higgsfield` command so development machines can still recover.
 
 The adapter:
 
 - invokes the resolved executable directly with argument arrays, not through a shell,
-- owns a small local FIFO queue for generation commands (default three concurrent Higgsfield runs; override with `KREEYTS_MAX_HIGGSFIELD_RUNS` for development),
+- owns a small local FIFO queue for generation commands (default three concurrent Higgsfield runs; override with `ASSETWELL_MAX_HIGGSFIELD_RUNS` for development),
 - checks version, authentication status, and workspace status,
 - starts sign-in, credit checks, model listing/detail inspection, uploads, and generation through product actions,
 - validates model, prompt, aspect-ratio, and file inputs before spawning the CLI,
-- saves generated artifacts under the configured Kreeyts Output Root,
+- saves generated artifacts under the configured Assetwell Output Root,
 - post-processes generated images/videos to exact target dimensions when the renderer supplies `outputSize` (Electron `nativeImage` for images, bundled `ffmpeg-static` for videos),
 - streams stdout, stderr, system messages, result artifacts, and exit events to the renderer without showing raw command invocations.
 
@@ -72,16 +72,16 @@ The adapter:
 
 ## Storage Ownership
 
-Kreeyts has two storage locations:
+Assetwell has two storage locations:
 
 - **App Data Root:** Electron `app.getPath("userData")`; app-owned state lives under `state/` (`library.v1.sqlite` as the primary local library store, `library.v1.json` as a fallback snapshot, and `settings.json`).
-- **Kreeyts Output Root:** defaults to `~/Kreeyts` and can be changed by the user; generated images/videos are written as plain files in folder-per-creative directories. The `Brand Memory/` child folder stores reusable reference images that the renderer scans through the library bridge.
+- **Assetwell Output Root:** defaults to `~/Assetwell` and can be changed by the user; generated images/videos are written as plain files in folder-per-creative directories. The `Brand Memory/` child folder stores reusable reference images that the renderer scans through the library bridge.
 
-The local library store remains a convenience index and can be rebuilt from future import/reindex flows. On launch Kreeyts reads SQLite first, then falls back to the JSON snapshot and migrates it forward. Generated artifacts and Brand Memory files are user-owned files. If Kreeyts closes while a CLI command is pending, the next launch marks that local item as failed/interrupted rather than pretending Higgsfield job state is recoverable.
+The local library store remains a convenience index and can be rebuilt from future import/reindex flows. On launch Assetwell reads SQLite first, then falls back to the JSON snapshot and migrates it forward. Generated artifacts and Brand Memory files are user-owned files. If Assetwell closes while a CLI command is pending, the next launch marks that local item as failed/interrupted rather than pretending Higgsfield job state is recoverable.
 
 ## Deferred Seams
 
-These are deliberate non-goals until Kreeyts has matching product behavior:
+These are deliberate non-goals until Assetwell has matching product behavior:
 
 - project and session models,
 - generated artifact policy,

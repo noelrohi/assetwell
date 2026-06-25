@@ -1,19 +1,19 @@
 import { BrowserWindow, ipcMain, type IpcMainInvokeEvent } from "electron"
 import type {
-  KreeytsDeleteReferenceAssetRequest,
-  KreeytsExportCreativeZipRequest,
-  KreeytsLibrarySnapshot,
-} from "@kreeyts/desktop-bridge"
+  AssetwellDeleteReferenceAssetRequest,
+  AssetwellExportCreativeZipRequest,
+  AssetwellLibrarySnapshot,
+} from "@assetwell/desktop-bridge"
 
 import {
-  chooseKreeytsOutputRoot,
+  chooseAssetwellOutputRoot,
   deleteReferenceAsset,
   exportCreativeZip,
-  getKreeytsSettings,
+  getAssetwellSettings,
   importReferenceAssets,
   listReferenceAssets,
   loadLibrarySnapshot,
-  revealKreeytsOutputRoot,
+  revealAssetwellOutputRoot,
   revealReferenceAssets,
   saveLibrarySnapshot,
 } from "../local-store"
@@ -26,21 +26,21 @@ export function registerLibraryIpc() {
 
   ipcMain.handle(
     IPC_CHANNELS.library.saveSnapshot,
-    (_event, snapshot: KreeytsLibrarySnapshot) => {
+    (_event, snapshot: AssetwellLibrarySnapshot) => {
       return saveLibrarySnapshot(snapshot)
     },
   )
 
   ipcMain.handle(IPC_CHANNELS.library.getSettings, () => {
-    return getKreeytsSettings()
+    return getAssetwellSettings()
   })
 
   ipcMain.handle(IPC_CHANNELS.library.chooseOutputRoot, (event) => {
-    return chooseKreeytsOutputRoot(ownerWindow(event))
+    return chooseAssetwellOutputRoot(ownerWindow(event))
   })
 
   ipcMain.handle(IPC_CHANNELS.library.revealOutputRoot, () => {
-    return revealKreeytsOutputRoot()
+    return revealAssetwellOutputRoot()
   })
 
   ipcMain.handle(IPC_CHANNELS.library.listReferenceAssets, () => {
@@ -57,14 +57,14 @@ export function registerLibraryIpc() {
 
   ipcMain.handle(
     IPC_CHANNELS.library.deleteReferenceAsset,
-    (_event, request: KreeytsDeleteReferenceAssetRequest) => {
+    (_event, request: AssetwellDeleteReferenceAssetRequest) => {
       return deleteReferenceAsset(request)
     },
   )
 
   ipcMain.handle(
     IPC_CHANNELS.library.exportCreativeZip,
-    (event, request: KreeytsExportCreativeZipRequest) => {
+    (event, request: AssetwellExportCreativeZipRequest) => {
       return exportCreativeZip(request, ownerWindow(event))
     },
   )

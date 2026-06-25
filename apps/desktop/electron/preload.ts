@@ -2,7 +2,7 @@ import { contextBridge, ipcRenderer } from "electron"
 import type {
   DesktopBridge,
   HiggsfieldCommandOutputEvent,
-} from "@kreeyts/desktop-bridge"
+} from "@assetwell/desktop-bridge"
 
 import { IPC_CHANNELS } from "./shared/channels"
 
@@ -71,4 +71,4 @@ const bridge: DesktopBridge = {
   },
 }
 
-contextBridge.exposeInMainWorld("kreeyts", bridge)
+contextBridge.exposeInMainWorld("assetwell", bridge)

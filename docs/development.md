@@ -1,4 +1,4 @@
-# Kreeyts Development
+# Assetwell Development
 
 ## Toolchain
 
@@ -25,7 +25,7 @@ Use Bun commands; do not add npm lockfiles.
 
 CI and release automation are documented in [CI/CD](./ci.md).
 
-Authentication should normally happen inside Kreeyts through the Sign in action.
+Authentication should normally happen inside Assetwell through the Sign in action.
 
 ## Completion Checks
 

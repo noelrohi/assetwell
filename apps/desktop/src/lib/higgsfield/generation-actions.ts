@@ -5,7 +5,7 @@ import type {
   HiggsfieldCliStatus,
   HiggsfieldGenerateRequest,
   HiggsfieldMediaKind,
-} from "@kreeyts/desktop-bridge"
+} from "@assetwell/desktop-bridge"
 
 import {
   availableImagePlacements,

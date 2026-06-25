@@ -1,8 +1,8 @@
-import type { DesktopBridge } from "@kreeyts/desktop-bridge"
+import type { DesktopBridge } from "@assetwell/desktop-bridge"
 
 declare global {
   interface Window {
-    kreeyts?: DesktopBridge
+    assetwell?: DesktopBridge
   }
 }
 

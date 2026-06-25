@@ -19,13 +19,13 @@ import {
 } from "electron"
 import { zipSync } from "fflate"
 import type {
-  KreeytsChooseOutputRootResult,
-  KreeytsDeleteReferenceAssetRequest,
-  KreeytsExportCreativeZipRequest,
-  KreeytsExportCreativeZipResult,
-  KreeytsReferenceAsset,
-  KreeytsSettings,
-} from "@kreeyts/desktop-bridge"
+  AssetwellChooseOutputRootResult,
+  AssetwellDeleteReferenceAssetRequest,
+  AssetwellExportCreativeZipRequest,
+  AssetwellExportCreativeZipResult,
+  AssetwellReferenceAsset,
+  AssetwellSettings,
+} from "@assetwell/desktop-bridge"
 
 export {
   loadLibrarySnapshot,
@@ -33,7 +33,7 @@ export {
 } from "./library-snapshot-store"
 
 const REFERENCE_ASSETS_FOLDER = "Brand Memory"
-export const LOCAL_ASSET_PROTOCOL = "kreeyts-local"
+export const LOCAL_ASSET_PROTOCOL = "assetwell-local"
 const LOCAL_ASSET_HOST = "asset"
 const REFERENCE_IMAGE_EXTENSIONS = new Set([
   ".avif",
@@ -53,21 +53,21 @@ interface SettingsFile {
   outputRoot?: unknown
 }
 
-export async function getKreeytsSettings(): Promise<KreeytsSettings> {
+export async function getAssetwellSettings(): Promise<AssetwellSettings> {
   const settings = readSettingsSync()
   await mkdir(settings.outputRoot, { recursive: true })
   return settings
 }
 
-export function getKreeytsOutputRootSync() {
+export function getAssetwellOutputRootSync() {
   const settings = readSettingsSync()
   mkdirSync(settings.outputRoot, { recursive: true })
   return settings.outputRoot
 }
 
-export async function chooseKreeytsOutputRoot(
+export async function chooseAssetwellOutputRoot(
   owner?: BrowserWindow | null,
-): Promise<KreeytsChooseOutputRootResult | null> {
+): Promise<AssetwellChooseOutputRootResult | null> {
   const current = readSettingsSync()
   const result = owner
     ? await dialog.showOpenDialog(owner, {
@@ -90,13 +90,15 @@ export async function chooseKreeytsOutputRoot(
   return { outputRoot }
 }
 
-export async function revealKreeytsOutputRoot() {
-  const { outputRoot } = await getKreeytsSettings()
+export async function revealAssetwellOutputRoot() {
+  const { outputRoot } = await getAssetwellSettings()
   const error = await shell.openPath(outputRoot)
   return error.length === 0
 }
 
-export async function listReferenceAssets(): Promise<KreeytsReferenceAsset[]> {
+export async function listReferenceAssets(): Promise<
+  AssetwellReferenceAsset[]
+> {
   const assetsRoot = await referenceAssetsDirectory()
   const entries = await readdir(assetsRoot, { withFileTypes: true }).catch(
     () => [],
@@ -130,7 +132,7 @@ export async function listReferenceAssets(): Promise<KreeytsReferenceAsset[]> {
 
 export async function importReferenceAssets(
   owner?: BrowserWindow | null,
-): Promise<KreeytsReferenceAsset[]> {
+): Promise<AssetwellReferenceAsset[]> {
   const assetsRoot = await referenceAssetsDirectory()
   const options: OpenDialogOptions = {
     title: "Add files to Brand Memory",
@@ -169,7 +171,7 @@ export async function revealReferenceAssets() {
 }
 
 export async function deleteReferenceAsset(
-  request: KreeytsDeleteReferenceAssetRequest,
+  request: AssetwellDeleteReferenceAssetRequest,
 ) {
   const asset = (await listReferenceAssets()).find(
     (item) => item.id === request.id,
@@ -181,9 +183,9 @@ export async function deleteReferenceAsset(
 }
 
 export async function exportCreativeZip(
-  request: KreeytsExportCreativeZipRequest,
+  request: AssetwellExportCreativeZipRequest,
   owner?: BrowserWindow | null,
-): Promise<KreeytsExportCreativeZipResult | null> {
+): Promise<AssetwellExportCreativeZipResult | null> {
   const files = request.files
     .map((file) => ({
       path: file.path.trim(),
@@ -198,7 +200,7 @@ export async function exportCreativeZip(
 
   if (files.length === 0) return null
 
-  const { outputRoot } = await getKreeytsSettings()
+  const { outputRoot } = await getAssetwellSettings()
   const defaultDir = request.outputDirectoryName
     ? path.join(outputRoot, safePathPart(request.outputDirectoryName))
     : outputRoot
@@ -223,7 +225,7 @@ export async function exportCreativeZip(
 }
 
 function saveZipDialogOptions(
-  request: KreeytsExportCreativeZipRequest,
+  request: AssetwellExportCreativeZipRequest,
   defaultDir: string,
 ) {
   return {
@@ -233,7 +235,7 @@ function saveZipDialogOptions(
   }
 }
 
-function readSettingsSync(): KreeytsSettings {
+function readSettingsSync(): AssetwellSettings {
   const raw = readJsonFileSync<SettingsFile>(settingsPath())
   const outputRoot =
     typeof raw?.outputRoot === "string" && raw.outputRoot.trim()
@@ -271,7 +273,7 @@ function settingsPath() {
 }
 
 async function referenceAssetsDirectory() {
-  const { outputRoot } = await getKreeytsSettings()
+  const { outputRoot } = await getAssetwellSettings()
   const assetsRoot = path.join(outputRoot, REFERENCE_ASSETS_FOLDER)
   await mkdir(assetsRoot, { recursive: true })
   return assetsRoot

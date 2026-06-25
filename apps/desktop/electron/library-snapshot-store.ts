@@ -4,14 +4,14 @@ import type { DatabaseSync as SqliteDatabase } from "node:sqlite"
 
 import { app } from "electron"
 import type {
-  KreeytsJobStatus,
-  KreeytsLibrarySnapshot,
-  KreeytsPersistedCreative,
-  KreeytsPersistedPlacement,
-  KreeytsPersistedReferenceAsset,
-  KreeytsPersistedTake,
-  KreeytsPersistedVideo,
-} from "@kreeyts/desktop-bridge"
+  AssetwellJobStatus,
+  AssetwellLibrarySnapshot,
+  AssetwellPersistedCreative,
+  AssetwellPersistedPlacement,
+  AssetwellPersistedReferenceAsset,
+  AssetwellPersistedTake,
+  AssetwellPersistedVideo,
+} from "@assetwell/desktop-bridge"
 
 const SNAPSHOT_SCHEMA_VERSION = 1
 const SQLITE_LIBRARY_SCHEMA_VERSION = 1
@@ -24,7 +24,7 @@ interface SnapshotRow {
   snapshot_json: string
 }
 
-export async function loadLibrarySnapshot(): Promise<KreeytsLibrarySnapshot | null> {
+export async function loadLibrarySnapshot(): Promise<AssetwellLibrarySnapshot | null> {
   const sqliteSnapshot = await loadSqliteSnapshot()
   if (sqliteSnapshot) return sqliteSnapshot
 
@@ -38,7 +38,7 @@ export async function loadLibrarySnapshot(): Promise<KreeytsLibrarySnapshot | nu
 }
 
 export async function saveLibrarySnapshot(
-  snapshot: KreeytsLibrarySnapshot,
+  snapshot: AssetwellLibrarySnapshot,
 ): Promise<boolean> {
   const normalized = normalizeSnapshot(snapshot)
   const savedToSqlite = await saveSqliteSnapshot(normalized)
@@ -77,7 +77,7 @@ async function loadSqliteSnapshot() {
   }
 }
 
-async function saveSqliteSnapshot(snapshot: KreeytsLibrarySnapshot) {
+async function saveSqliteSnapshot(snapshot: AssetwellLibrarySnapshot) {
   const database = await openDatabase()
   if (!database) return false
 
@@ -140,7 +140,7 @@ async function loadJsonSnapshot() {
   const raw = await readJsonFile<unknown>(jsonSnapshotPath())
   if (!raw || typeof raw !== "object") return null
 
-  const snapshot = raw as Partial<KreeytsLibrarySnapshot>
+  const snapshot = raw as Partial<AssetwellLibrarySnapshot>
   if (snapshot.schemaVersion !== SNAPSHOT_SCHEMA_VERSION) return null
 
   return normalizeSnapshot(snapshot)
@@ -162,8 +162,8 @@ async function writeJsonFile(filePath: string, value: unknown) {
 }
 
 function normalizeSnapshot(
-  snapshot: Partial<KreeytsLibrarySnapshot>,
-): KreeytsLibrarySnapshot {
+  snapshot: Partial<AssetwellLibrarySnapshot>,
+): AssetwellLibrarySnapshot {
   return {
     schemaVersion: SNAPSHOT_SCHEMA_VERSION,
     creatives: Array.isArray(snapshot.creatives)
@@ -185,7 +185,7 @@ function normalizeSnapshot(
   }
 }
 
-function normalizeCreative(value: KreeytsPersistedCreative) {
+function normalizeCreative(value: AssetwellPersistedCreative) {
   if (!value?.id || !value.prompt) return []
 
   const takes = Array.isArray(value.takes) ? value.takes.map(normalizeTake) : []
@@ -194,7 +194,7 @@ function normalizeCreative(value: KreeytsPersistedCreative) {
     : []
   const stillPending = takes.some((take) => take.status === "pending")
   const hasReady = takes.some((take) => take.status === "ready")
-  const status: KreeytsJobStatus = stillPending
+  const status: AssetwellJobStatus = stillPending
     ? "pending"
     : hasReady
       ? "ready"
@@ -203,7 +203,7 @@ function normalizeCreative(value: KreeytsPersistedCreative) {
   return [{ ...value, status, takes, placements }]
 }
 
-function normalizeTake(take: KreeytsPersistedTake): KreeytsPersistedTake {
+function normalizeTake(take: AssetwellPersistedTake): AssetwellPersistedTake {
   return take.status === "pending"
     ? {
         ...take,
@@ -215,8 +215,8 @@ function normalizeTake(take: KreeytsPersistedTake): KreeytsPersistedTake {
 }
 
 function normalizePlacement(
-  placement: KreeytsPersistedPlacement,
-): KreeytsPersistedPlacement {
+  placement: AssetwellPersistedPlacement,
+): AssetwellPersistedPlacement {
   return placement.status === "pending"
     ? {
         ...placement,
@@ -227,7 +227,7 @@ function normalizePlacement(
     : placement
 }
 
-function normalizeVideo(video: KreeytsPersistedVideo) {
+function normalizeVideo(video: AssetwellPersistedVideo) {
   if (!video?.id || !video.prompt) return []
   return [
     video.status === "pending"
@@ -241,7 +241,7 @@ function normalizeVideo(video: KreeytsPersistedVideo) {
   ]
 }
 
-function normalizeReference(reference: KreeytsPersistedReferenceAsset) {
+function normalizeReference(reference: AssetwellPersistedReferenceAsset) {
   if (!reference?.id || !reference.name || !reference.url) return []
   return [reference]
 }

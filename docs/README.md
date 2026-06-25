@@ -1,6 +1,6 @@
-# Kreeyts Docs
+# Assetwell Docs
 
-Kreeyts is a desktop wrapper for the Higgsfield CLI. These docs describe the wrapper architecture and the deliberately small foundations that should grow only from Higgsfield CLI product behavior.
+Assetwell is a desktop wrapper for the Higgsfield CLI. These docs describe the wrapper architecture and the deliberately small foundations that should grow only from Higgsfield CLI product behavior.
 
 Maintained docs:
 

@@ -1,7 +1,7 @@
 import type {
   HiggsfieldMediaKind,
   HiggsfieldModel,
-} from "@kreeyts/desktop-bridge"
+} from "@assetwell/desktop-bridge"
 
 import type { ModelOption } from "./types"
 

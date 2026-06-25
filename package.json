@@ -1,5 +1,5 @@
 {
-  "name": "kreeyts",
+  "name": "assetwell",
   "private": true,
   "workspaces": {
     "packages": [
@@ -18,11 +18,11 @@
   },
   "scripts": {
     "dev": "turbo dev",
-    "dev:desktop": "turbo dev --filter=@kreeyts/desktop",
+    "dev:desktop": "turbo dev --filter=@assetwell/desktop",
     "electron:dev": "bun run --cwd apps/desktop dev",
     "electron:dist": "bun run --cwd apps/desktop dist",
     "build": "turbo build",
-    "build:desktop": "turbo build --filter=@kreeyts/desktop",
+    "build:desktop": "turbo build --filter=@assetwell/desktop",
     "typecheck": "turbo typecheck",
     "lint": "turbo lint",
     "fmt": "prettier --write .",

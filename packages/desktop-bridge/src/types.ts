@@ -172,27 +172,27 @@ export interface HiggsfieldCommandOutputEvent {
   signal?: string | null
 }
 
-export type KreeytsJobStatus = "pending" | "ready" | "failed"
+export type AssetwellJobStatus = "pending" | "ready" | "failed"
 
-export interface KreeytsPersistedTake {
+export interface AssetwellPersistedTake {
   id: string
   url: string
-  status: KreeytsJobStatus
+  status: AssetwellJobStatus
   filePath?: string
   runId?: string
   error?: string
 }
 
-export interface KreeytsPersistedPlacement {
+export interface AssetwellPersistedPlacement {
   size: string
-  status: KreeytsJobStatus
+  status: AssetwellJobStatus
   url?: string
   filePath?: string
   runId?: string
   error?: string
 }
 
-export interface KreeytsPersistedCreative {
+export interface AssetwellPersistedCreative {
   id: string
   title: string
   prompt: string
@@ -202,17 +202,17 @@ export interface KreeytsPersistedCreative {
   model: string
   createdAt: string
   heroUrl: string
-  status: KreeytsJobStatus
-  takes: KreeytsPersistedTake[]
+  status: AssetwellJobStatus
+  takes: AssetwellPersistedTake[]
   selectedTakeId: string
-  placements: KreeytsPersistedPlacement[]
+  placements: AssetwellPersistedPlacement[]
   outputDirectoryName?: string
 }
 
-export interface KreeytsPersistedVideo {
+export interface AssetwellPersistedVideo {
   id: string
   size: string
-  status: KreeytsJobStatus
+  status: AssetwellJobStatus
   posterUrl: string
   prompt: string
   sourceCreativeId?: string
@@ -224,7 +224,7 @@ export interface KreeytsPersistedVideo {
   error?: string
 }
 
-export interface KreeytsPersistedReferenceAsset {
+export interface AssetwellPersistedReferenceAsset {
   id: string
   name: string
   url: string
@@ -233,55 +233,55 @@ export interface KreeytsPersistedReferenceAsset {
   modifiedAt?: string | null
 }
 
-export interface KreeytsReferenceAsset extends KreeytsPersistedReferenceAsset {
+export interface AssetwellReferenceAsset extends AssetwellPersistedReferenceAsset {
   filePath: string
   sizeBytes: number | null
   modifiedAt: string | null
 }
 
-export interface KreeytsDeleteReferenceAssetRequest {
+export interface AssetwellDeleteReferenceAssetRequest {
   id: string
 }
 
-export type KreeytsPromptKind = "image" | "video"
+export type AssetwellPromptKind = "image" | "video"
 
-export interface KreeytsPromptPreset {
+export interface AssetwellPromptPreset {
   id: string
   title: string
   body: string
-  kind: KreeytsPromptKind
+  kind: AssetwellPromptKind
   createdAt: string
 }
 
-export interface KreeytsLibrarySnapshot {
+export interface AssetwellLibrarySnapshot {
   schemaVersion: 1
-  creatives: KreeytsPersistedCreative[]
-  videos: KreeytsPersistedVideo[]
-  referenceLibrary: KreeytsPersistedReferenceAsset[]
-  customPrompts: KreeytsPromptPreset[]
+  creatives: AssetwellPersistedCreative[]
+  videos: AssetwellPersistedVideo[]
+  referenceLibrary: AssetwellPersistedReferenceAsset[]
+  customPrompts: AssetwellPromptPreset[]
   savedAt: string
 }
 
-export interface KreeytsSettings {
+export interface AssetwellSettings {
   outputRoot: string
 }
 
-export interface KreeytsChooseOutputRootResult {
+export interface AssetwellChooseOutputRootResult {
   outputRoot: string
 }
 
-export interface KreeytsExportZipFile {
+export interface AssetwellExportZipFile {
   path: string
   name: string
 }
 
-export interface KreeytsExportCreativeZipRequest {
+export interface AssetwellExportCreativeZipRequest {
   title: string
   outputDirectoryName?: string
-  files: KreeytsExportZipFile[]
+  files: AssetwellExportZipFile[]
 }
 
-export interface KreeytsExportCreativeZipResult {
+export interface AssetwellExportCreativeZipResult {
   filePath: string
 }
 
@@ -312,19 +312,19 @@ export interface DesktopBridge {
     ): () => void
   }
   library: {
-    loadSnapshot(): Promise<KreeytsLibrarySnapshot | null>
-    saveSnapshot(snapshot: KreeytsLibrarySnapshot): Promise<boolean>
-    getSettings(): Promise<KreeytsSettings>
-    chooseOutputRoot(): Promise<KreeytsChooseOutputRootResult | null>
+    loadSnapshot(): Promise<AssetwellLibrarySnapshot | null>
+    saveSnapshot(snapshot: AssetwellLibrarySnapshot): Promise<boolean>
+    getSettings(): Promise<AssetwellSettings>
+    chooseOutputRoot(): Promise<AssetwellChooseOutputRootResult | null>
     revealOutputRoot(): Promise<boolean>
-    listReferenceAssets(): Promise<KreeytsReferenceAsset[]>
-    importReferenceAssets(): Promise<KreeytsReferenceAsset[]>
+    listReferenceAssets(): Promise<AssetwellReferenceAsset[]>
+    importReferenceAssets(): Promise<AssetwellReferenceAsset[]>
     revealReferenceAssets(): Promise<boolean>
     deleteReferenceAsset(
-      request: KreeytsDeleteReferenceAssetRequest,
+      request: AssetwellDeleteReferenceAssetRequest,
     ): Promise<boolean>
     exportCreativeZip(
-      request: KreeytsExportCreativeZipRequest,
-    ): Promise<KreeytsExportCreativeZipResult | null>
+      request: AssetwellExportCreativeZipRequest,
+    ): Promise<AssetwellExportCreativeZipResult | null>
   }
 }

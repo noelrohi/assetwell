@@ -1,6 +1,6 @@
 import * as React from "react"
 import { IconMovie, IconPhoto, IconPlus, IconTrash } from "@tabler/icons-react"
-import type { KreeytsPromptKind } from "@kreeyts/desktop-bridge"
+import type { AssetwellPromptKind } from "@assetwell/desktop-bridge"
 import { useQueryState } from "nuqs"
 
 import { Button } from "@/components/ui/button"
@@ -21,7 +21,7 @@ export function PromptTemplatesPage() {
   const { imagePrompts, videoPrompts, savePromptPreset, deletePromptPreset } =
     useHiggsfieldApp()
   const [filter, setFilter] = useQueryState("filter", promptFilterParser)
-  const [kind, setKind] = React.useState<KreeytsPromptKind>("image")
+  const [kind, setKind] = React.useState<AssetwellPromptKind>("image")
   const [title, setTitle] = React.useState("")
   const [body, setBody] = React.useState("")
 
@@ -87,7 +87,7 @@ export function PromptTemplatesPage() {
           <div className="flex gap-2">
             <Select
               value={kind}
-              onValueChange={(value) => setKind(value as KreeytsPromptKind)}
+              onValueChange={(value) => setKind(value as AssetwellPromptKind)}
             >
               <SelectTrigger className="w-32 bg-card/50">
                 <SelectValue />

@@ -1,5 +1,5 @@
 import { app, ipcMain } from "electron"
-import type { HostAppInfo } from "@kreeyts/desktop-bridge"
+import type { HostAppInfo } from "@assetwell/desktop-bridge"
 
 import { IPC_CHANNELS } from "../shared/channels"
 
