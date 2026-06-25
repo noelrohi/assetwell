@@ -1,11 +1,12 @@
 import { spawn } from "node:child_process"
 import { existsSync } from "node:fs"
+import { createRequire } from "node:module"
 import path from "node:path"
 import { fileURLToPath } from "node:url"
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url))
-const appRoot = path.resolve(__dirname, "..")
-const packageRoot = path.join(appRoot, "node_modules", "@higgsfield", "cli")
+const requireFromHere = createRequire(import.meta.url)
+const packageRoot = resolvePackageRoot()
 const vendorBinary = path.join(
   packageRoot,
   "vendor",
@@ -21,6 +22,16 @@ if (!existsSync(installScript)) {
 
 if (!existsSync(vendorBinary)) {
   await run(process.execPath, [installScript], packageRoot)
+}
+
+function resolvePackageRoot() {
+  try {
+    return path.dirname(requireFromHere.resolve("@higgsfield/cli/package.json"))
+  } catch {
+    throw new Error(
+      "@higgsfield/cli is missing. Run `bun install` before building Assetwell.",
+    )
+  }
 }
 
 function run(command, args, cwd) {
