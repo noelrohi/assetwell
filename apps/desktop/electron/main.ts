@@ -1,13 +1,28 @@
-import { app, BrowserWindow, nativeImage } from "electron"
+import { app, BrowserWindow, nativeImage, protocol } from "electron"
+import { readFile } from "node:fs/promises"
 import path from "node:path"
 
 import { registerAppInfoIpc } from "./ipc/app-info"
 import { registerHiggsfieldIpc } from "./ipc/higgsfield"
 import { registerLibraryIpc } from "./ipc/library"
+import {
+  isPreviewableLocalAsset,
+  LOCAL_ASSET_PROTOCOL,
+  localAssetContentType,
+  resolveLocalAssetUrl,
+} from "./local-store"
+import { startAutoUpdates } from "./updater"
 
-const APP_NAME = "Kreeyts"
+const APP_NAME = "Assetwell"
 const isDev = Boolean(process.env.VITE_DEV_SERVER_URL)
 const appIconPath = path.join(__dirname, "../build/icon.png")
+
+protocol.registerSchemesAsPrivileged([
+  {
+    scheme: LOCAL_ASSET_PROTOCOL,
+    privileges: { bypassCSP: false, secure: true, standard: true },
+  },
+])
 
 app.setName(APP_NAME)
 process.title = APP_NAME
@@ -19,6 +34,27 @@ function setDockIcon() {
   if (!dockIcon.isEmpty()) {
     app.dock.setIcon(dockIcon)
   }
+}
+
+function registerLocalAssetProtocol() {
+  protocol.handle(LOCAL_ASSET_PROTOCOL, async (request) => {
+    const filePath = resolveLocalAssetUrl(request.url)
+    if (!filePath || !isPreviewableLocalAsset(filePath)) {
+      return new Response(null, { status: 404 })
+    }
+
+    try {
+      const bytes = await readFile(filePath)
+      return new Response(new Uint8Array(bytes), {
+        headers: {
+          "Cache-Control": "no-store",
+          "Content-Type": localAssetContentType(filePath),
+        },
+      })
+    } catch {
+      return new Response(null, { status: 404 })
+    }
+  })
 }
 
 function createWindow() {
@@ -48,10 +84,12 @@ function createWindow() {
 
 app.whenReady().then(() => {
   setDockIcon()
+  registerLocalAssetProtocol()
   registerAppInfoIpc()
   registerHiggsfieldIpc()
   registerLibraryIpc()
   createWindow()
+  startAutoUpdates()
 })
 
 app.on("window-all-closed", () => {

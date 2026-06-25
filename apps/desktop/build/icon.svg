@@ -4,7 +4,7 @@
   height="1024"
   viewBox="0 0 1024 1024"
   role="img"
-  aria-label="Kreeyts Beam K app icon"
+  aria-label="Assetwell A app icon"
 >
   <defs>
     <radialGradient
@@ -40,9 +40,9 @@
       gradientUnits="userSpaceOnUse"
       gradientTransform="translate(744 344) rotate(122) scale(340)"
     >
-      <stop offset="0" stop-color="#ffffff" stop-opacity="0.14" />
-      <stop offset="0.58" stop-color="#ffffff" stop-opacity="0.035" />
-      <stop offset="1" stop-color="#ffffff" stop-opacity="0" />
+      <stop offset="0" stop-color="#e7a23c" stop-opacity="0.20" />
+      <stop offset="0.58" stop-color="#e7a23c" stop-opacity="0.05" />
+      <stop offset="1" stop-color="#e7a23c" stop-opacity="0" />
     </radialGradient>
     <clipPath id="tileClip">
       <rect x="64" y="72" width="896" height="896" rx="242" />
@@ -58,7 +58,7 @@
       <feDropShadow
         dx="0"
         dy="0"
-        stdDeviation="4"
+        stdDeviation="5"
         flood-color="#ffffff"
         flood-opacity="0.10"
       />
@@ -88,22 +88,29 @@
     />
   </g>
 
-  <g
-    transform="translate(238 247) scale(4.26)"
-    filter="url(#markGlow)"
-    fill="none"
-    stroke="#f6f3ec"
-    stroke-width="14"
-    stroke-linecap="round"
-    stroke-linejoin="round"
-  >
-    <path d="M44 32V96" />
-    <path d="M50 64L78 96" />
-    <path d="M50 64L92 36" />
-    <path
-      d="M104 26C104 33 102 35 95 35C102 35 104 37 104 44C104 37 106 35 113 35C106 35 104 33 104 26Z"
+  <!--
+    "A" assembled from placement-style tiles: two tall rectangular bars
+    splayed into the legs, with an ember crossbar reading as a placement.
+  -->
+  <g transform="translate(0 -8)" filter="url(#markGlow)">
+    <rect
+      x="372"
+      y="300"
+      width="128"
+      height="480"
+      rx="44"
       fill="#f6f3ec"
-      stroke="none"
+      transform="rotate(17 436 540)"
     />
+    <rect
+      x="524"
+      y="300"
+      width="128"
+      height="480"
+      rx="44"
+      fill="#f6f3ec"
+      transform="rotate(-17 588 540)"
+    />
+    <rect x="389" y="566" width="246" height="92" rx="26" fill="#e7a23c" />
   </g>
 </svg>

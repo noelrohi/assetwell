@@ -1,7 +1,17 @@
-import type { CSSProperties, ReactNode } from "react"
-import { Outlet } from "@tanstack/react-router"
+import { Fragment, type CSSProperties, type ReactNode } from "react"
+import { Link, Outlet, useRouterState } from "@tanstack/react-router"
+import { NuqsAdapter } from "nuqs/adapters/tanstack-router"
 
+import { PAGE_HEADER_ACTIONS_SLOT } from "@/components/blocks/layout/page-header-actions"
 import { AppSidebar } from "@/components/blocks/layout/app-sidebar"
+import {
+  Breadcrumb,
+  BreadcrumbItem,
+  BreadcrumbLink,
+  BreadcrumbList,
+  BreadcrumbPage,
+  BreadcrumbSeparator,
+} from "@/components/ui/breadcrumb"
 import {
   SidebarInset,
   SidebarProvider,
@@ -10,6 +20,46 @@ import {
 } from "@/components/ui/sidebar"
 import { useHiggsfieldApp } from "@/lib/higgsfield"
 import { cn } from "@/lib/utils"
+
+function PageBreadcrumb() {
+  const pathname = useRouterState({ select: (s) => s.location.pathname })
+  const { creativeById } = useHiggsfieldApp()
+
+  // Main nav pages already show their location in the sidebar, so the header
+  // breadcrumb is reserved for nested pages that need a path back.
+  if (!pathname.startsWith("/creative/")) return null
+
+  const trail: { label: string; to?: string }[] = [
+    { label: "Create", to: "/" },
+    { label: creativeById(pathname.split("/")[2] ?? "")?.title ?? "Creative" },
+  ]
+
+  return (
+    <Breadcrumb className="min-w-0">
+      <BreadcrumbList className="flex-nowrap">
+        {trail.map((item, index) => {
+          const isLast = index === trail.length - 1
+          return (
+            <Fragment key={`${item.label}-${index}`}>
+              <BreadcrumbItem className="min-w-0">
+                {item.to && !isLast ? (
+                  <BreadcrumbLink asChild>
+                    <Link to={item.to}>{item.label}</Link>
+                  </BreadcrumbLink>
+                ) : (
+                  <BreadcrumbPage className="truncate">
+                    {item.label}
+                  </BreadcrumbPage>
+                )}
+              </BreadcrumbItem>
+              {!isLast && <BreadcrumbSeparator />}
+            </Fragment>
+          )
+        })}
+      </BreadcrumbList>
+    </Breadcrumb>
+  )
+}
 
 function JobsIndicator() {
   const { runningJobs } = useHiggsfieldApp()
@@ -49,12 +99,19 @@ function InsetHeader() {
   return (
     <header
       className={cn(
-        "drag flex h-[44px] shrink-0 items-center gap-2 border-b border-border px-3 transition-[padding] duration-150 ease-out",
+        "drag flex h-[52px] shrink-0 items-center gap-3 px-5 transition-[padding] duration-150 ease-out",
         state === "collapsed" &&
           "pl-[var(--titlebar-page-header-collapsed-left)]",
       )}
     >
-      <div className="no-drag ml-auto">
+      <div className="no-drag flex min-w-0 flex-1 items-center">
+        <PageBreadcrumb />
+      </div>
+      <div className="no-drag flex shrink-0 items-center gap-2">
+        <div
+          id={PAGE_HEADER_ACTIONS_SLOT}
+          className="flex items-center gap-2"
+        />
         <JobsIndicator />
       </div>
     </header>
@@ -73,12 +130,12 @@ function OnboardingGate({ children }: { children: ReactNode }) {
         <div className="max-w-md rounded-3xl border border-border bg-card/70 p-8 text-center shadow-2xl shadow-black/10">
           <p className="font-display text-3xl">Connect Higgsfield</p>
           <p className="mt-3 text-sm leading-6 text-muted-foreground">
-            Sign in once, then Kreeyts will open directly to Create and use your
-            Higgsfield account, models, and credits behind the scenes.
+            Sign in once, then Assetwell will open directly to Create and use
+            your Higgsfield account, models, and credits behind the scenes.
           </p>
           {cliStatus?.installed === false ? (
             <p className="mt-4 rounded-2xl bg-destructive/10 px-3 py-2 text-sm text-destructive">
-              Higgsfield is not available in this build. Reinstall Kreeyts or
+              Higgsfield is not available in this build. Reinstall Assetwell or
               contact support.
             </p>
           ) : null}
@@ -100,39 +157,41 @@ function OnboardingGate({ children }: { children: ReactNode }) {
 
 export function AppShell() {
   return (
-    <SidebarProvider
-      defaultOpen
-      style={
-        {
-          "--sidebar-width": "16.5rem",
-          "--traffic-light-left": "16px",
-          "--traffic-light-top": "15px",
-          "--traffic-light-size": "12px",
-          "--traffic-light-gap": "10px",
-          "--titlebar-control-gap": "12px",
-          "--titlebar-control-size": "24px",
-          "--titlebar-control-left":
-            "calc(var(--traffic-light-left) + (var(--traffic-light-size) * 3) + (var(--traffic-light-gap) * 2) + var(--titlebar-control-gap))",
-          "--titlebar-control-offset-y": "1px",
-          "--titlebar-control-center-y":
-            "calc(var(--traffic-light-top) + (var(--traffic-light-size) / 2) + var(--titlebar-control-offset-y))",
-          "--titlebar-content-left":
-            "calc(var(--titlebar-control-left) + var(--titlebar-control-size) + 4px)",
-          "--titlebar-page-header-collapsed-left":
-            "calc(var(--titlebar-content-left) + var(--titlebar-control-size) + 8px)",
-        } as CSSProperties
-      }
-    >
-      <AppSidebar />
-      <PersistentSidebarTrigger />
-      <SidebarInset className="min-h-0 overflow-hidden border-l border-border bg-background">
-        <InsetHeader />
-        <div className="min-h-0 flex-1 overflow-y-auto">
-          <OnboardingGate>
-            <Outlet />
-          </OnboardingGate>
-        </div>
-      </SidebarInset>
-    </SidebarProvider>
+    <NuqsAdapter>
+      <SidebarProvider
+        defaultOpen
+        style={
+          {
+            "--sidebar-width": "16.5rem",
+            "--traffic-light-left": "16px",
+            "--traffic-light-top": "15px",
+            "--traffic-light-size": "12px",
+            "--traffic-light-gap": "10px",
+            "--titlebar-control-gap": "12px",
+            "--titlebar-control-size": "24px",
+            "--titlebar-control-left":
+              "calc(var(--traffic-light-left) + (var(--traffic-light-size) * 3) + (var(--traffic-light-gap) * 2) + var(--titlebar-control-gap))",
+            "--titlebar-control-offset-y": "1px",
+            "--titlebar-control-center-y":
+              "calc(var(--traffic-light-top) + (var(--traffic-light-size) / 2) + var(--titlebar-control-offset-y))",
+            "--titlebar-content-left":
+              "calc(var(--titlebar-control-left) + var(--titlebar-control-size) + 4px)",
+            "--titlebar-page-header-collapsed-left":
+              "calc(var(--titlebar-content-left) + var(--titlebar-control-size) + 8px)",
+          } as CSSProperties
+        }
+      >
+        <AppSidebar />
+        <PersistentSidebarTrigger />
+        <SidebarInset className="min-h-0 overflow-hidden border-l border-border bg-background">
+          <InsetHeader />
+          <div className="min-h-0 flex-1 overflow-y-auto">
+            <OnboardingGate>
+              <Outlet />
+            </OnboardingGate>
+          </div>
+        </SidebarInset>
+      </SidebarProvider>
+    </NuqsAdapter>
   )
 }

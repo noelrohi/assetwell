@@ -229,6 +229,18 @@ export interface KreeytsPersistedReferenceAsset {
   name: string
   url: string
   filePath?: string
+  sizeBytes?: number | null
+  modifiedAt?: string | null
+}
+
+export interface KreeytsReferenceAsset extends KreeytsPersistedReferenceAsset {
+  filePath: string
+  sizeBytes: number | null
+  modifiedAt: string | null
+}
+
+export interface KreeytsDeleteReferenceAssetRequest {
+  id: string
 }
 
 export type KreeytsPromptKind = "image" | "video"
@@ -305,6 +317,12 @@ export interface DesktopBridge {
     getSettings(): Promise<KreeytsSettings>
     chooseOutputRoot(): Promise<KreeytsChooseOutputRootResult | null>
     revealOutputRoot(): Promise<boolean>
+    listReferenceAssets(): Promise<KreeytsReferenceAsset[]>
+    importReferenceAssets(): Promise<KreeytsReferenceAsset[]>
+    revealReferenceAssets(): Promise<boolean>
+    deleteReferenceAsset(
+      request: KreeytsDeleteReferenceAssetRequest,
+    ): Promise<boolean>
     exportCreativeZip(
       request: KreeytsExportCreativeZipRequest,
     ): Promise<KreeytsExportCreativeZipResult | null>

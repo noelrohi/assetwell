@@ -35,7 +35,7 @@ export function NavUser() {
     useHiggsfieldApp()
 
   const isSignedIn = Boolean(account?.email)
-  const name = account?.email?.split("@")[0] ?? "Kreeyts"
+  const name = account?.email?.split("@")[0] ?? "Assetwell"
   const email = account?.email ?? "Not signed in"
   const initial = name.charAt(0).toUpperCase()
   const credits =

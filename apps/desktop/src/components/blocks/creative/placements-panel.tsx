@@ -1,24 +1,35 @@
-import type { Dispatch, SetStateAction } from "react"
-import { IconPhoto } from "@tabler/icons-react"
+import { IconLayoutGrid, IconLoader2 } from "@tabler/icons-react"
 
 import { PlacementTile } from "@/components/blocks/creative/placement-tile"
-import type { Creative } from "@/lib/higgsfield"
-import type { ImagePlacement } from "@/lib/placements"
+import type { Creative, PlacementResult } from "@/lib/higgsfield"
+import {
+  availableImagePlacements,
+  imagePlacements,
+  isUnavailableImagePlacement,
+  type ImagePlacement,
+} from "@/lib/placements"
 import { cn } from "@/lib/utils"
+
+type DisplayedPlacement =
+  | PlacementResult
+  | {
+      size: ImagePlacement
+      status: "idle"
+      url?: undefined
+      filePath?: undefined
+    }
 
 export function PlacementsPanel({
   creative,
-  selectedUrl,
-  setSelectedUrl,
-  selectedSourceFilePath,
+  selectedSize,
+  onSelectPlacement,
   generateAllPlacements,
   regeneratePlacement,
   openOutput,
 }: {
   creative: Creative
-  selectedUrl: string
-  setSelectedUrl: Dispatch<SetStateAction<string>>
-  selectedSourceFilePath?: string
+  selectedSize: ImagePlacement | null
+  onSelectPlacement: (size: ImagePlacement) => void
   generateAllPlacements: (creativeId: string) => Promise<void>
   regeneratePlacement: (
     creativeId: string,
@@ -26,67 +37,111 @@ export function PlacementsPanel({
   ) => Promise<void>
   openOutput: (target?: string | null) => Promise<void>
 }) {
-  const hasPlacements = creative.placements.length > 0
+  const displayedPlacements: DisplayedPlacement[] = imagePlacements.map(
+    (size) =>
+      creative.placements.find((placement) => placement.size === size) ?? {
+        size,
+        status: "idle" as const,
+        url: undefined,
+        filePath: undefined,
+      },
+  )
   const readyPlacements = creative.placements.filter(
-    (placement) => placement.status === "ready",
+    (placement) =>
+      placement.status === "ready" &&
+      availableImagePlacements.includes(placement.size),
+  )
+  const pendingPlacements = creative.placements.filter(
+    (placement) =>
+      placement.status === "pending" &&
+      availableImagePlacements.includes(placement.size),
+  )
+  const heroSource =
+    creative.takes.find((take) => take.id === creative.selectedTakeId) ??
+    creative.takes.find((take) => take.status === "ready")
+  const canGenerate = Boolean(heroSource?.filePath)
+
+  const isGeneratingAll = pendingPlacements.length > 0
+  const progress = Math.round(
+    (readyPlacements.length / availableImagePlacements.length) * 100,
   )
 
   return (
     <aside className="space-y-3">
       <div className="flex items-center justify-between">
-        <p className="font-display text-base">Placements</p>
-        {hasPlacements && (
-          <span className="font-mono text-[0.65rem] text-muted-foreground">
-            {readyPlacements.length}/{creative.placements.length}
-          </span>
-        )}
+        <div className="flex items-center gap-2">
+          <IconLayoutGrid className="size-4 text-muted-foreground" />
+          <p className="font-display text-base">Placements</p>
+        </div>
+        <span className="font-mono text-[0.65rem] text-muted-foreground tabular-nums">
+          {readyPlacements.length}/{availableImagePlacements.length}
+        </span>
       </div>
 
-      {!hasPlacements ? (
-        <div className="rounded-xl border border-dashed border-border bg-card/20 p-5 text-center">
-          <IconPhoto className="mx-auto size-6 text-muted-foreground/60" />
-          <p className="mt-2 text-sm text-muted-foreground">
-            {creative.status === "pending"
-              ? "Finishing the base — pick a hero, then make every ad size."
-              : "Turn this hero into all 8 ad placements in one pass."}
-          </p>
-          <button
-            disabled={creative.status === "pending"}
-            onClick={() => void generateAllPlacements(creative.id)}
-            className={cn(
-              "mt-3 inline-flex h-9 w-full items-center justify-center gap-2 rounded-full text-sm font-medium transition-all",
-              creative.status === "pending"
-                ? "cursor-not-allowed bg-muted text-muted-foreground"
-                : "bg-ember text-ember-foreground ember-glow hover:brightness-105",
-            )}
-          >
-            Generate all placements
-          </button>
-        </div>
-      ) : (
-        <div className="grid grid-cols-2 gap-2.5">
-          {creative.placements.map((placement) => (
+      <div className="h-0.5 w-full overflow-hidden rounded-full bg-border/60">
+        <div
+          className="h-full rounded-full bg-ember transition-[width] duration-500"
+          style={{ width: `${progress}%` }}
+        />
+      </div>
+
+      <button
+        disabled={!canGenerate}
+        onClick={() => void generateAllPlacements(creative.id)}
+        className={cn(
+          "inline-flex h-9 w-full items-center justify-center gap-2 rounded-full text-sm font-medium transition-all",
+          canGenerate
+            ? "bg-ember text-ember-foreground ember-glow hover:brightness-105"
+            : "cursor-not-allowed bg-muted text-muted-foreground",
+        )}
+      >
+        {isGeneratingAll && <IconLoader2 className="size-4 animate-spin" />}
+        {isGeneratingAll ? "Generating…" : "Generate available sizes"}
+      </button>
+
+      <p className="px-0.5 text-xs leading-5 text-muted-foreground">
+        Narrow banners are paused while we tune quality.
+      </p>
+
+      {!canGenerate && (
+        <p className="px-0.5 text-xs leading-5 text-muted-foreground">
+          {creative.status === "pending"
+            ? "Finishing the base — pick a hero, then make each ad size."
+            : "Pick a saved hero before generating placements."}
+        </p>
+      )}
+
+      <div className="space-y-0.5 pt-1">
+        {displayedPlacements.map((placement) => {
+          const isUnavailable = isUnavailableImagePlacement(placement.size)
+
+          return (
             <PlacementTile
               key={placement.size}
               p={placement}
-              active={placement.url === selectedUrl}
-              canRegenerate={Boolean(selectedSourceFilePath)}
-              canReveal={Boolean(placement.filePath)}
+              active={!isUnavailable && placement.size === selectedSize}
+              unavailableReason={
+                isUnavailable
+                  ? "Paused while we tune narrow banner quality."
+                  : undefined
+              }
+              canRegenerate={canGenerate && !isUnavailable}
+              canReveal={Boolean(placement.filePath) && !isUnavailable}
               onSelect={() => {
-                if (placement.status === "ready" && placement.url) {
-                  setSelectedUrl(placement.url)
+                if (!isUnavailable) onSelectPlacement(placement.size)
+              }}
+              onRegenerate={() => {
+                if (!isUnavailable) {
+                  void regeneratePlacement(creative.id, placement.size)
                 }
               }}
-              onRegenerate={() =>
-                void regeneratePlacement(creative.id, placement.size)
-              }
               onReveal={() =>
                 void openOutput(placement.filePath ?? placement.url)
               }
             />
-          ))}
-        </div>
-      )}
+          )
+        })}
+      </div>
     </aside>
   )
 }

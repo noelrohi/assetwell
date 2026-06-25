@@ -5,6 +5,7 @@ import {
   IconPhotoPlus,
   IconX,
 } from "@tabler/icons-react"
+import { useQueryState } from "nuqs"
 import { toast } from "sonner"
 
 import { ModelPicker } from "@/components/blocks/composer/model-picker"
@@ -16,6 +17,7 @@ import {
 import { Textarea } from "@/components/ui/textarea"
 import { useHiggsfieldApp } from "@/lib/higgsfield"
 import { videoPlacements, type VideoPlacement } from "@/lib/placements"
+import { videoPlacementSelectionParser } from "@/lib/query-state"
 import { cn } from "@/lib/utils"
 
 export function VideoComposer() {
@@ -30,7 +32,10 @@ export function VideoComposer() {
   } = useHiggsfieldApp()
   const [prompt, setPrompt] = React.useState("")
   const [model, setModel] = React.useState(videoModels[0]?.id ?? "")
-  const [sizes, setSizes] = React.useState<VideoPlacement[]>(["1280x720"])
+  const [sizes, setSizes] = useQueryState(
+    "sizes",
+    videoPlacementSelectionParser,
+  )
 
   const canMake =
     Boolean(videoDraftSource) &&
@@ -46,10 +51,10 @@ export function VideoComposer() {
   }, [model, videoModels])
 
   function toggleSize(size: VideoPlacement) {
-    setSizes(
-      sizes.includes(size)
-        ? sizes.filter((item) => item !== size)
-        : [...sizes, size],
+    void setSizes((current) =>
+      current.includes(size)
+        ? current.filter((item) => item !== size)
+        : [...current, size],
     )
   }
 
@@ -104,18 +109,18 @@ export function VideoComposer() {
             <Popover>
               <PopoverTrigger className="flex h-8 items-center gap-1.5 rounded-full border border-border/70 bg-background/45 px-3 text-xs font-medium transition-colors hover:bg-accent">
                 <IconBook className="size-3.5" />
-                Prompts
+                Templates
               </PopoverTrigger>
               <PopoverContent align="start" className="w-72 p-1.5">
                 <p className="px-2 py-1.5 text-xs font-medium text-muted-foreground">
-                  Video prompts
+                  Video templates
                 </p>
                 {prompt.trim().length >= 3 && (
                   <button
                     onClick={() => savePromptPreset("video", prompt)}
                     className="mb-1 flex w-full rounded-md px-2 py-2 text-left text-sm font-medium text-ember transition-colors hover:bg-accent"
                   >
-                    Save current prompt
+                    Save as template
                   </button>
                 )}
                 {videoPrompts.map((preset) => (

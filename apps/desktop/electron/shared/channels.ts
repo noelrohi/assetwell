@@ -22,6 +22,10 @@ export const IPC_CHANNELS = {
     getSettings: "kreeyts:library:get-settings",
     chooseOutputRoot: "kreeyts:library:choose-output-root",
     revealOutputRoot: "kreeyts:library:reveal-output-root",
+    listReferenceAssets: "kreeyts:library:list-reference-assets",
+    importReferenceAssets: "kreeyts:library:import-reference-assets",
+    revealReferenceAssets: "kreeyts:library:reveal-reference-assets",
+    deleteReferenceAsset: "kreeyts:library:delete-reference-asset",
     exportCreativeZip: "kreeyts:library:export-creative-zip",
   },
 } as const

@@ -194,6 +194,29 @@
       0 0 18px -2px oklch(0.782 0.142 63 / 0.5);
   }
 
+  /* sweeping highlight for generating skeletons */
+  @keyframes stage-shimmer {
+    100% {
+      transform: translateX(100%);
+    }
+  }
+
+  .stage-shimmer::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    transform: translateX(-100%);
+    background: linear-gradient(
+      90deg,
+      transparent,
+      oklch(1 0 0 / 0.06) 45%,
+      color-mix(in oklab, var(--ember) 12%, transparent) 50%,
+      oklch(1 0 0 / 0.06) 55%,
+      transparent
+    );
+    animation: stage-shimmer 1.6s ease-in-out infinite;
+  }
+
   .no-drag {
     -webkit-app-region: no-drag;
   }

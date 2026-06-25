@@ -225,8 +225,8 @@ export const videos: VideoResult[] = [
 ]
 
 export const account = {
-  name: "Studio Kreeyts",
-  email: "studio@kreeyts.app",
+  name: "Studio Assetwell",
+  email: "studio@assetwell.app",
   credits: 240,
 }
 

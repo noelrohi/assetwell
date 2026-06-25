@@ -34,15 +34,16 @@ Composer inputs:
 
 Flow:
 
-- Generate produces **~4 takes** of the base; the user picks the hero.
-- Then **one-click "Generate all placements"** — the (B) checkpoint flow: review the base before mass-producing the 8 sizes.
-- Placements = **regenerate at each target size, referencing the base image** (Higgsfield is pure generation, not reframe/outpaint; content may drift but stays on-brand via the reference).
-- Each placement tile is single-shot with its own **Regenerate**. Failures are **isolated** — one bad size never kills the batch.
+- Generate produces **1 base image**; the user can then generate placements from that hero.
+- Then **one-click "Generate available sizes"** — the (B) checkpoint flow: review the base before mass-producing the currently-enabled placements.
+- Placements = **regenerate at each target size, referencing the base image**. Ultra-wide banner sizes (`728×90`, `320×50`) are paused until their quality is reliable.
+- Each available placement tile is single-shot with its own **Regenerate**. Failures are **isolated** — one bad size never kills the batch.
 - **Parallel creatives** are allowed — a global "X jobs running" indicator.
 
 ## 4. Supported sizes
 
-- **Image (8):** 1200×628, 1024×768, 768×1024, 728×90, 320×50, 300×250, 600×300, 480×400.
+- **Image active (6):** 1200×628, 1024×768, 768×1024, 300×250, 600×300, 480×400.
+- **Image paused (2):** 728×90, 320×50.
 - **Video (4):** 1280×720, 720×1280, 1080×1080, 300×250.
 
 Canonical target sizes and aspect ratios live in [`creative-sizes.md`](./creative-sizes.md). The renderer copy in `apps/desktop/src/lib/placements.ts` should stay in sync with that doc.
@@ -56,14 +57,13 @@ Canonical target sizes and aspect ratios live in [`creative-sizes.md`](./creativ
 
 ## 6. Libraries
 
-- **Prompt library splits Image / Video** — each shipped-starters + user-saved, plain text.
-- **Reference library** — a flat grid of saved images (logo/product/mood) + user-saved references, no tags/roles.
-- Both are **inline pickers inside the composers, NOT navigation destinations**.
+- **Prompt templates split Image / Video** — each shipped-starters + user-saved, plain text. They are managed from **Prompt templates** and picked inline from composers.
+- **Brand memory** — a flat local folder of saved images (logo/product/mood), no tags/roles. The **Brand memory** screen adds/removes files; composer references query that folder before showing the picker.
 - **soul-id is deferred to phase 2** (the marquee consistency feature, but it adds training/onboarding weight).
 
 ## 7. Navigation
 
-- Only two top-level destinations: **Create** (composer + your creatives grid) and **Videos** (composer + videos gallery) — plus detail pages, inline pickers, and an account corner menu (credit balance + sign out).
+- Top-level destinations: **Create** (composer + your creatives grid), **Videos** (composer + videos gallery), **Brand memory**, and **Prompt templates** — plus detail pages and an account corner menu (credit balance + sign out).
 - **Starred is cut for v1** (a flat recent-first grid is enough).
 
 ## 8. Local-first output (the "why desktop" differentiator)
@@ -81,7 +81,7 @@ Canonical target sizes and aspect ratios live in [`creative-sizes.md`](./creativ
 
 ## 10. UI implementation status
 
-The renderer is built (Darkroom Gallery aesthetic, TanStack Router, shadcn) and now routes real generation through the Higgsfield bridge. Local library state is persisted as a small JSON snapshot, outputs are written to the configurable `~/Kreeyts`-style output root, image/video outputs are post-processed to exact target dimensions, and auth/zero-credit states block generation. Remaining v1 hardening: durable recovery for Higgsfield jobs after app exit, richer model-parameter UX beyond aspect ratio, and a reindex/import flow for existing output folders.
+The renderer is built (Darkroom Gallery aesthetic, TanStack Router, shadcn) and now routes real generation through the Higgsfield bridge. Local library state is persisted in SQLite with the previous JSON snapshot retained as a fallback, outputs are written to the configurable `~/Kreeyts`-style output root, image/video outputs are post-processed to exact target dimensions, narrow banner placements are paused pending quality tuning, and auth/zero-credit states block generation. Remaining v1 hardening: durable recovery for Higgsfield jobs after app exit, richer model-parameter UX beyond aspect ratio, and a reindex/import flow for existing output folders.
 
 ---
 

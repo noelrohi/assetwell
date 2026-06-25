@@ -2,7 +2,7 @@
  * Supported output sizes. Keep this renderer copy in sync with
  * docs/creative-sizes.md.
  *
- * Higgsfield generation currently accepts aspect-ratio params, not exact output
+ * Most Higgsfield image generation accepts aspect-ratio params, not exact output
  * dimensions, so the Electron Host post-processes image artifacts to these
  * exact target pixel sizes before saving them locally.
  */
@@ -18,6 +18,14 @@ export const imagePlacements = [
   "480x400",
 ] as const
 
+export const unavailableImagePlacements = ["728x90", "320x50"] as const
+export const availableImagePlacements = imagePlacements.filter(
+  (placement) =>
+    !unavailableImagePlacements.includes(
+      placement as UnavailableImagePlacement,
+    ),
+)
+
 export const videoPlacements = [
   "1280x720",
   "720x1280",
@@ -26,6 +34,8 @@ export const videoPlacements = [
 ] as const
 
 export type ImagePlacement = (typeof imagePlacements)[number]
+export type UnavailableImagePlacement =
+  (typeof unavailableImagePlacements)[number]
 export type VideoPlacement = (typeof videoPlacements)[number]
 export type Placement = ImagePlacement | VideoPlacement
 
@@ -113,6 +123,14 @@ export function getPlacementAspectRatio(placement: Placement) {
   return placementSpecs[placement].aspectRatio
 }
 
+export function isUnavailableImagePlacement(
+  placement: ImagePlacement,
+): placement is UnavailableImagePlacement {
+  return unavailableImagePlacements.includes(
+    placement as UnavailableImagePlacement,
+  )
+}
+
 /** Aspect-ratio choices offered for the *base* creative in the composer. */
 export const baseRatios = [
   { id: "1:1", label: "Square", width: 1024, height: 1024 },
@@ -129,12 +147,69 @@ export const baseRatios = [
   { id: "1.91:1", label: "Social landscape", width: 1200, height: 628 },
 ] as const
 
-export type BaseRatioId = (typeof baseRatios)[number]["id"]
+export type BaseRatio = (typeof baseRatios)[number]
+export type BaseRatioId = BaseRatio["id"]
+
+export function supportedBaseRatios(supportedRatioIds: readonly string[]) {
+  const supportedValues = supportedRatioIds.flatMap((id) => {
+    const value = ratioIdNumber(id)
+    return value ? [value] : []
+  })
+  const supported = new Set(
+    supportedRatioIds.filter((id) => id.trim().length > 0 && id !== "auto"),
+  )
+  const matches = baseRatios.filter((ratio) => {
+    if (supported.has(ratio.id)) return true
+    const value = ratioNumber(ratio.width, ratio.height)
+    return supportedValues.some(
+      (supportedValue) => Math.abs(Math.log(value / supportedValue)) < 0.005,
+    )
+  })
+
+  return matches.length ? matches : [...baseRatios]
+}
+
+export function nearestBaseRatio(
+  target: BaseRatio,
+  options: readonly BaseRatio[] = baseRatios,
+) {
+  if (options.length === 0) return baseRatios[0]
+
+  const targetValue = ratioNumber(target.width, target.height)
+  return options.reduce((best, next) => {
+    const bestDistance = Math.abs(
+      Math.log(targetValue / ratioNumber(best.width, best.height)),
+    )
+    const nextDistance = Math.abs(
+      Math.log(targetValue / ratioNumber(next.width, next.height)),
+    )
+
+    return nextDistance < bestDistance ? next : best
+  })
+}
 
 export function aspectOf(width: number, height: number) {
   return `${width} / ${height}`
 }
 
 export function ratioNumber(width: number, height: number) {
+  return width / height
+}
+
+function ratioIdNumber(id: string) {
+  const match = id.match(/^(\d+(?:\.\d+)?):(\d+(?:\.\d+)?)$/)
+  if (!match) return null
+
+  const width = Number(match[1])
+  const height = Number(match[2])
+  if (
+    !Number.isFinite(width) ||
+    !Number.isFinite(height) ||
+    width <= 0 ||
+    height <= 0
+  ) {
+    return null
+  }
+
   return width / height
 }

@@ -216,7 +216,7 @@ export function startSignInCommand(emit: CommandOutputEmitter) {
       action: "sign-in",
       title: "Sign in",
       startMessage:
-        "Opening Higgsfield sign in. Complete the browser prompt, then return to Kreeyts.",
+        "Opening Higgsfield sign in. Complete the browser prompt, then return to Assetwell.",
       args: ["auth", "login"],
     },
     emit,
@@ -380,7 +380,7 @@ function startHiggsfieldCommand(
       emit,
       queued.run.runId,
       "system",
-      "Queued locally. Kreeyts will start this when a generation slot is free.\n",
+      "Queued locally. Assetwell will start this when a generation slot is free.\n",
     )
     drainHiggsfieldQueue()
   } else {
@@ -432,7 +432,7 @@ function startQueuedHiggsfieldCommand(queued: QueuedHiggsfieldCommand) {
 
   child.on("error", (error: NodeJS.ErrnoException) => {
     const text = isMissingExecutable(error)
-      ? "Higgsfield is not available. Reinstall Kreeyts, or use the global Higgsfield CLI as a temporary fallback.\n"
+      ? "Higgsfield is not available. Reinstall Assetwell, or use the global Higgsfield CLI as a temporary fallback.\n"
       : `${error.message}\n`
     emitCommandOutput(emit, run.runId, "system", text)
   })
@@ -814,7 +814,7 @@ function missingCliStatus(
     workspaceStatus: "unknown",
     detail:
       bundledDetail ??
-      "Higgsfield is not available. Reinstall Kreeyts or contact support.",
+      "Higgsfield is not available. Reinstall Assetwell or contact support.",
     checkedAt: new Date().toISOString(),
   }
 }
@@ -876,7 +876,7 @@ function mediaFlagForKind(mediaKind: HiggsfieldMediaKind) {
 function ensureCommandSucceeded(result: CollectedCommand, title: string) {
   if (isMissingExecutable(result.error)) {
     throw new Error(
-      "Higgsfield is not available. Reinstall Kreeyts, or sign in through the Higgsfield CLI.",
+      "Higgsfield is not available. Reinstall Assetwell, or sign in through the Higgsfield CLI.",
     )
   }
 

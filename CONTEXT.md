@@ -13,8 +13,8 @@
 - **Higgsfield Product Action**: a user-facing operation such as Sign in, Check credits, Choose model, Upload asset, Generate, or Open output. Product actions are exposed through the Desktop Bridge instead of raw CLI command arguments.
 - **Higgsfield Command Run**: a spawned `higgsfield` process owned by the Electron Host, with stdout, stderr, and exit events streamed to the Renderer.
 - **App Data Root**: Electron `app.getPath("userData")`, where Kreeyts stores its local JSON snapshot, settings, and other app-owned state.
-- **Kreeyts Output Root**: the user-owned folder where generated creative files are written. It defaults to `~/Kreeyts` on macOS, Windows, and Linux and is user-configurable from the account menu.
-- **Local Library Snapshot**: the persisted JSON index of recent creatives, videos, references, prompt presets, and local file paths. It is a convenience index; generated files remain plain files under the Kreeyts Output Root.
+- **Kreeyts Output Root**: the user-owned folder where generated creative files and Brand Memory reference images are written. It defaults to `~/Kreeyts` on macOS, Windows, and Linux and is user-configurable from the account menu.
+- **Local Library Snapshot**: the persisted JSON index of recent creatives, videos, prompt presets, and local file paths. It is a convenience index; generated files and Brand Memory files remain plain files under the Kreeyts Output Root.
 
 ## Current Product Shape
 

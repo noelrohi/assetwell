@@ -1,6 +1,11 @@
 import * as React from "react"
 import { Link, useRouterState } from "@tanstack/react-router"
-import { IconMovie, IconWand } from "@tabler/icons-react"
+import {
+  IconLibraryPhoto,
+  IconMovie,
+  IconTemplate,
+  IconWand,
+} from "@tabler/icons-react"
 
 import { NavUser } from "@/components/blocks/layout/nav-user"
 import {
@@ -18,6 +23,18 @@ import {
 const NAV = [
   { to: "/", label: "Create", icon: IconWand, exact: true },
   { to: "/videos", label: "Videos", icon: IconMovie, exact: false },
+  {
+    to: "/brand-memory",
+    label: "Brand memory",
+    icon: IconLibraryPhoto,
+    exact: false,
+  },
+  {
+    to: "/prompt-templates",
+    label: "Prompt templates",
+    icon: IconTemplate,
+    exact: false,
+  },
 ] as const
 
 export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {

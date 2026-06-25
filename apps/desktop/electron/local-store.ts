@@ -1,47 +1,56 @@
 import { mkdirSync, readFileSync, statSync } from "node:fs"
-import { mkdir, readFile, rename, writeFile } from "node:fs/promises"
+import {
+  copyFile,
+  mkdir,
+  readFile,
+  readdir,
+  rename,
+  unlink,
+  writeFile,
+} from "node:fs/promises"
 import os from "node:os"
 import path from "node:path"
-
-import { app, dialog, shell, type BrowserWindow } from "electron"
+import {
+  app,
+  dialog,
+  shell,
+  type BrowserWindow,
+  type OpenDialogOptions,
+} from "electron"
 import { zipSync } from "fflate"
 import type {
   KreeytsChooseOutputRootResult,
+  KreeytsDeleteReferenceAssetRequest,
   KreeytsExportCreativeZipRequest,
   KreeytsExportCreativeZipResult,
-  KreeytsJobStatus,
-  KreeytsLibrarySnapshot,
-  KreeytsPersistedCreative,
-  KreeytsPersistedPlacement,
-  KreeytsPersistedReferenceAsset,
-  KreeytsPersistedTake,
-  KreeytsPersistedVideo,
+  KreeytsReferenceAsset,
   KreeytsSettings,
 } from "@kreeyts/desktop-bridge"
 
-const SNAPSHOT_SCHEMA_VERSION = 1
-const INTERRUPTED_MESSAGE =
-  "Generation was interrupted before Kreeyts received an output. Regenerate when ready."
+export {
+  loadLibrarySnapshot,
+  saveLibrarySnapshot,
+} from "./library-snapshot-store"
 
+const REFERENCE_ASSETS_FOLDER = "Brand Memory"
+export const LOCAL_ASSET_PROTOCOL = "kreeyts-local"
+const LOCAL_ASSET_HOST = "asset"
+const REFERENCE_IMAGE_EXTENSIONS = new Set([
+  ".avif",
+  ".gif",
+  ".jpeg",
+  ".jpg",
+  ".png",
+  ".webp",
+])
+const LOCAL_ASSET_PREVIEW_EXTENSIONS = new Set([
+  ...REFERENCE_IMAGE_EXTENSIONS,
+  ".mov",
+  ".mp4",
+  ".webm",
+])
 interface SettingsFile {
   outputRoot?: unknown
-}
-
-export async function loadLibrarySnapshot(): Promise<KreeytsLibrarySnapshot | null> {
-  const raw = await readJsonFile<unknown>(snapshotPath())
-  if (!raw || typeof raw !== "object") return null
-
-  const snapshot = raw as Partial<KreeytsLibrarySnapshot>
-  if (snapshot.schemaVersion !== SNAPSHOT_SCHEMA_VERSION) return null
-
-  return normalizeSnapshot(snapshot)
-}
-
-export async function saveLibrarySnapshot(
-  snapshot: KreeytsLibrarySnapshot,
-): Promise<boolean> {
-  await writeJsonFile(snapshotPath(), normalizeSnapshot(snapshot))
-  return true
 }
 
 export async function getKreeytsSettings(): Promise<KreeytsSettings> {
@@ -62,12 +71,12 @@ export async function chooseKreeytsOutputRoot(
   const current = readSettingsSync()
   const result = owner
     ? await dialog.showOpenDialog(owner, {
-        title: "Choose Kreeyts library folder",
+        title: "Choose Assetwell library folder",
         defaultPath: current.outputRoot,
         properties: ["openDirectory", "createDirectory"],
       })
     : await dialog.showOpenDialog({
-        title: "Choose Kreeyts library folder",
+        title: "Choose Assetwell library folder",
         defaultPath: current.outputRoot,
         properties: ["openDirectory", "createDirectory"],
       })
@@ -85,6 +94,90 @@ export async function revealKreeytsOutputRoot() {
   const { outputRoot } = await getKreeytsSettings()
   const error = await shell.openPath(outputRoot)
   return error.length === 0
+}
+
+export async function listReferenceAssets(): Promise<KreeytsReferenceAsset[]> {
+  const assetsRoot = await referenceAssetsDirectory()
+  const entries = await readdir(assetsRoot, { withFileTypes: true }).catch(
+    () => [],
+  )
+
+  return entries
+    .flatMap((entry) => {
+      if (!entry.isFile() || !isReferenceImage(entry.name)) return []
+
+      const filePath = path.join(assetsRoot, entry.name)
+      const stats = statSync(filePath, { throwIfNoEntry: false })
+      if (!stats?.isFile()) return []
+
+      return [
+        {
+          id: referenceAssetId(entry.name),
+          name: entry.name,
+          url: localAssetUrl(filePath),
+          filePath,
+          sizeBytes: stats.size,
+          modifiedAt: stats.mtime.toISOString(),
+        },
+      ]
+    })
+    .sort(
+      (a, b) =>
+        Date.parse(b.modifiedAt ?? "") - Date.parse(a.modifiedAt ?? "") ||
+        a.name.localeCompare(b.name),
+    )
+}
+
+export async function importReferenceAssets(
+  owner?: BrowserWindow | null,
+): Promise<KreeytsReferenceAsset[]> {
+  const assetsRoot = await referenceAssetsDirectory()
+  const options: OpenDialogOptions = {
+    title: "Add files to Brand Memory",
+    defaultPath: assetsRoot,
+    properties: ["openFile", "multiSelections"],
+    filters: [
+      {
+        name: "Images",
+        extensions: ["png", "jpg", "jpeg", "webp", "gif", "avif"],
+      },
+    ],
+  }
+  const result = owner
+    ? await dialog.showOpenDialog(owner, options)
+    : await dialog.showOpenDialog(options)
+
+  if (result.canceled) return listReferenceAssets()
+
+  for (const sourcePath of result.filePaths) {
+    const safeName = safeReferenceAssetFileName(path.basename(sourcePath))
+    if (!safeName) continue
+
+    const firstTarget = path.join(assetsRoot, safeName)
+    if (path.resolve(sourcePath) === path.resolve(firstTarget)) continue
+
+    await copyFile(sourcePath, dedupeReferenceAssetPath(assetsRoot, safeName))
+  }
+
+  return listReferenceAssets()
+}
+
+export async function revealReferenceAssets() {
+  const assetsRoot = await referenceAssetsDirectory()
+  const error = await shell.openPath(assetsRoot)
+  return error.length === 0
+}
+
+export async function deleteReferenceAsset(
+  request: KreeytsDeleteReferenceAssetRequest,
+) {
+  const asset = (await listReferenceAssets()).find(
+    (item) => item.id === request.id,
+  )
+  if (!asset) return false
+
+  await unlink(asset.filePath)
+  return true
 }
 
 export async function exportCreativeZip(
@@ -150,14 +243,6 @@ function readSettingsSync(): KreeytsSettings {
   return { outputRoot }
 }
 
-async function readJsonFile<T>(filePath: string): Promise<T | null> {
-  try {
-    return JSON.parse(await readFile(filePath, "utf8")) as T
-  } catch {
-    return null
-  }
-}
-
 function readJsonFileSync<T>(filePath: string): T | null {
   try {
     return JSON.parse(readFileSync(filePath, "utf8")) as T
@@ -173,112 +258,103 @@ async function writeJsonFile(filePath: string, value: unknown) {
   await rename(tempPath, filePath)
 }
 
-function normalizeSnapshot(
-  snapshot: Partial<KreeytsLibrarySnapshot>,
-): KreeytsLibrarySnapshot {
-  return {
-    schemaVersion: SNAPSHOT_SCHEMA_VERSION,
-    creatives: Array.isArray(snapshot.creatives)
-      ? snapshot.creatives.flatMap(normalizeCreative)
-      : [],
-    videos: Array.isArray(snapshot.videos)
-      ? snapshot.videos.flatMap(normalizeVideo)
-      : [],
-    referenceLibrary: Array.isArray(snapshot.referenceLibrary)
-      ? snapshot.referenceLibrary.flatMap(normalizeReference)
-      : [],
-    customPrompts: Array.isArray(snapshot.customPrompts)
-      ? snapshot.customPrompts
-      : [],
-    savedAt:
-      typeof snapshot.savedAt === "string"
-        ? snapshot.savedAt
-        : new Date().toISOString(),
-  }
-}
-
-function normalizeCreative(value: KreeytsPersistedCreative) {
-  if (!value?.id || !value.prompt) return []
-
-  const takes = Array.isArray(value.takes) ? value.takes.map(normalizeTake) : []
-  const placements = Array.isArray(value.placements)
-    ? value.placements.map(normalizePlacement)
-    : []
-  const stillPending = takes.some((take) => take.status === "pending")
-  const hasReady = takes.some((take) => take.status === "ready")
-  const status: KreeytsJobStatus = stillPending
-    ? "pending"
-    : hasReady
-      ? "ready"
-      : "failed"
-
-  return [
-    {
-      ...value,
-      status,
-      takes,
-      placements,
-    },
-  ]
-}
-
-function normalizeTake(take: KreeytsPersistedTake): KreeytsPersistedTake {
-  return take.status === "pending"
-    ? {
-        ...take,
-        status: "failed",
-        runId: undefined,
-        error: INTERRUPTED_MESSAGE,
-      }
-    : take
-}
-
-function normalizePlacement(
-  placement: KreeytsPersistedPlacement,
-): KreeytsPersistedPlacement {
-  return placement.status === "pending"
-    ? {
-        ...placement,
-        status: "failed",
-        runId: undefined,
-        error: INTERRUPTED_MESSAGE,
-      }
-    : placement
-}
-
-function normalizeVideo(video: KreeytsPersistedVideo) {
-  if (!video?.id || !video.prompt) return []
-  return [
-    video.status === "pending"
-      ? {
-          ...video,
-          status: "failed" as const,
-          runId: undefined,
-          error: INTERRUPTED_MESSAGE,
-        }
-      : video,
-  ]
-}
-
-function normalizeReference(reference: KreeytsPersistedReferenceAsset) {
-  if (!reference?.id || !reference.name || !reference.url) return []
-  return [reference]
-}
-
 function defaultOutputRoot() {
-  return path.join(os.homedir(), "Kreeyts")
+  return path.join(os.homedir(), "Assetwell")
 }
 
 function stateDirectory() {
   return path.join(app.getPath("userData"), "state")
 }
 
-function snapshotPath() {
-  return path.join(stateDirectory(), "library.v1.json")
-}
-
 function settingsPath() {
   return path.join(stateDirectory(), "settings.json")
+}
+
+async function referenceAssetsDirectory() {
+  const { outputRoot } = await getKreeytsSettings()
+  const assetsRoot = path.join(outputRoot, REFERENCE_ASSETS_FOLDER)
+  await mkdir(assetsRoot, { recursive: true })
+  return assetsRoot
+}
+
+export function isReferenceImage(filePath: string) {
+  return REFERENCE_IMAGE_EXTENSIONS.has(path.extname(filePath).toLowerCase())
+}
+
+export function isPreviewableLocalAsset(filePath: string) {
+  return LOCAL_ASSET_PREVIEW_EXTENSIONS.has(
+    path.extname(filePath).toLowerCase(),
+  )
+}
+
+function referenceAssetId(fileName: string) {
+  return `reference:${encodeURIComponent(fileName)}`
+}
+
+function safeReferenceAssetFileName(fileName: string) {
+  const parsed = path.parse(fileName)
+  const ext = parsed.ext.toLowerCase()
+  if (!REFERENCE_IMAGE_EXTENSIONS.has(ext)) return null
+
+  return `${safePathPart(parsed.name || "reference")}${ext}`
+}
+
+function dedupeReferenceAssetPath(directory: string, fileName: string) {
+  const parsed = path.parse(fileName)
+  let index = 1
+  let candidate = fileName
+
+  while (statSync(path.join(directory, candidate), { throwIfNoEntry: false })) {
+    index += 1
+    candidate = `${parsed.name}-${index}${parsed.ext}`
+  }
+
+  return path.join(directory, candidate)
+}
+
+export function localAssetUrl(filePath: string) {
+  return `${LOCAL_ASSET_PROTOCOL}://${LOCAL_ASSET_HOST}/${encodeURIComponent(
+    path.resolve(filePath),
+  )}`
+}
+
+export function resolveLocalAssetUrl(assetUrl: string) {
+  try {
+    const url = new URL(assetUrl)
+    if (url.protocol !== `${LOCAL_ASSET_PROTOCOL}:`) return null
+    if (url.hostname !== LOCAL_ASSET_HOST) return null
+
+    const filePath = decodeURIComponent(url.pathname.slice(1))
+    if (!filePath || !path.isAbsolute(filePath)) return null
+
+    return filePath
+  } catch {
+    return null
+  }
+}
+
+export function localAssetContentType(filePath: string) {
+  switch (path.extname(filePath).toLowerCase()) {
+    case ".avif":
+      return "image/avif"
+    case ".gif":
+      return "image/gif"
+    case ".jpeg":
+    case ".jpg":
+      return "image/jpeg"
+    case ".mov":
+      return "video/quicktime"
+    case ".mp4":
+      return "video/mp4"
+    case ".png":
+      return "image/png"
+    case ".webm":
+      return "video/webm"
+    case ".webp":
+      return "image/webp"
+    default:
+      return "application/octet-stream"
+  }
 }
 
 function safePathPart(value: string) {

@@ -2,7 +2,7 @@
   "name": "@kreeyts/desktop",
   "private": true,
   "version": "1.0.0",
-  "description": "Kreeyts desktop app.",
+  "description": "Assetwell desktop app.",
   "author": "Rohi <noelrohi59@gmail.com>",
   "type": "module",
   "main": "dist-electron/main.cjs",
@@ -19,8 +19,9 @@
     "preview": "vite preview"
   },
   "build": {
-    "appId": "com.rohi.kreeyts",
-    "productName": "Kreeyts",
+    "appId": "com.rohi.assetwell",
+    "productName": "Assetwell",
+    "copyright": "Copyright © 2026 Rohi",
     "directories": {
       "output": "release/electron"
     },
@@ -52,7 +53,14 @@
       "target": [
         "AppImage"
       ]
-    }
+    },
+    "publish": [
+      {
+        "provider": "github",
+        "owner": "noelrohi",
+        "repo": "kreeyts"
+      }
+    ]
   },
   "dependencies": {
     "@fontsource-variable/fraunces": "^5.2.9",
@@ -67,13 +75,16 @@
     "class-variance-authority": "^0.7.1",
     "clsx": "catalog:",
     "cmdk": "^1.1.1",
+    "electron-updater": "^6.8.3",
     "fflate": "^0.8.3",
     "ffmpeg-static": "^5.3.0",
     "lucide-react": "^1.21.0",
     "next-themes": "^0.4.6",
+    "nuqs": "^2.8.9",
     "radix-ui": "^1.6.0",
     "react": "^19.1.0",
     "react-dom": "^19.1.0",
+    "react-grab": "^0.1.47",
     "sonner": "^2.0.7",
     "tailwind-merge": "catalog:",
     "tailwindcss": "^4.1.18"

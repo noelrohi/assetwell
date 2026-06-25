@@ -27,6 +27,7 @@ export type {
   HiggsfieldWorkspaceStatus,
   HostAppInfo,
   KreeytsChooseOutputRootResult,
+  KreeytsDeleteReferenceAssetRequest,
   KreeytsExportCreativeZipRequest,
   KreeytsExportCreativeZipResult,
   KreeytsExportZipFile,
@@ -39,5 +40,6 @@ export type {
   KreeytsPersistedVideo,
   KreeytsPromptKind,
   KreeytsPromptPreset,
+  KreeytsReferenceAsset,
   KreeytsSettings,
 } from "./types"

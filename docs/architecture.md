@@ -9,6 +9,7 @@ Higgsfield owns authentication, accounts, workspaces, models, generation, upload
 - `apps/desktop/src`: renderer UI. Routes should stay thin and compose product blocks.
 - `apps/desktop/src/components/blocks`: product-specific renderer blocks grouped by surface (`layout`, `create`, `creative`, `videos`, `composer`). Keep page-local UI here before promoting anything to shared primitives.
 - `apps/desktop/electron`: Electron Host code. Native capabilities, IPC channel names, and Electron APIs stay here.
+- `apps/desktop/electron/updater.ts`: packaged-app auto-update bootstrap backed by GitHub release metadata.
 - `packages/desktop-bridge`: the Desktop Bridge type contract shared by the renderer and Electron Host.
 - `packages/ui`: reusable UI primitives only. Product-specific blocks stay in the desktop app.
 
@@ -28,6 +29,12 @@ The current contract is:
 - `higgsfield.chooseAsset(mediaKind)`: opens a native file picker for image, video, or audio assets.
 - `higgsfield.uploadAsset({ filePath })`: uploads a selected local asset.
 - `higgsfield.generate({ model, prompt, mediaKind, assetPath, assetPaths, aspectRatio, outputSize, waitForResult })`: creates a Higgsfield generation job, streams progress, and saves local artifacts. Outputs with `outputSize` are center-cropped/resized to the exact target dimensions before saving locally.
+- `library.loadSnapshot()`: loads the local library from SQLite, falling back to the legacy JSON snapshot and migrating it forward.
+- `library.saveSnapshot(snapshot)`: saves the local library to SQLite and keeps a JSON snapshot as a fallback.
+- `library.listReferenceAssets()`: scans the Brand Memory folder under the configured output root.
+- `library.importReferenceAssets()`: opens a native image picker and copies selected files into Brand Memory.
+- `library.revealReferenceAssets()`: opens the Brand Memory folder.
+- `library.deleteReferenceAsset({ id })`: removes a scanned Brand Memory file by stable folder-derived id.
 - `higgsfield.openOutput({ target })`: opens a generated URL or local output path.
 - `higgsfield.cancelCommand(runId)`: stops a running CLI process owned by the Electron Host.
 - `higgsfield.onCommandOutput(listener)`: subscribes to product-level command output events.
@@ -42,7 +49,7 @@ The current IPC domains are:
 
 - `app-info`: owns Electron metadata exposed through `DesktopBridge.app.getInfo()`.
 - `higgsfield`: owns CLI process invocation, bundled/global executable resolution, install/auth/workspace detection, sign-in, model/account/generation/upload actions, cancellation, file picking, output opening, exact image post-processing, and streamed command output.
-- `library`: owns the local library snapshot, settings, output-root picker/reveal, and ZIP export.
+- `library`: owns the local library store, JSON snapshot fallback, settings, output-root picker/reveal, and ZIP export.
 
 Add another IPC domain only when there is real behavior behind it. A folder of pass-through modules would make the interface larger without improving locality.
 
@@ -67,10 +74,10 @@ The adapter:
 
 Kreeyts has two storage locations:
 
-- **App Data Root:** Electron `app.getPath("userData")`; app-owned JSON state lives under `state/` (`library.v1.json` and `settings.json`).
-- **Kreeyts Output Root:** defaults to `~/Kreeyts` and can be changed by the user; generated images/videos are written as plain files in folder-per-creative directories.
+- **App Data Root:** Electron `app.getPath("userData")`; app-owned state lives under `state/` (`library.v1.sqlite` as the primary local library store, `library.v1.json` as a fallback snapshot, and `settings.json`).
+- **Kreeyts Output Root:** defaults to `~/Kreeyts` and can be changed by the user; generated images/videos are written as plain files in folder-per-creative directories. The `Brand Memory/` child folder stores reusable reference images that the renderer scans through the library bridge.
 
-The local library snapshot is a convenience index and can be rebuilt from future import/reindex flows. Generated artifacts are user-owned files. If Kreeyts closes while a CLI command is pending, the next launch marks that local item as failed/interrupted rather than pretending Higgsfield job state is recoverable.
+The local library store remains a convenience index and can be rebuilt from future import/reindex flows. On launch Kreeyts reads SQLite first, then falls back to the JSON snapshot and migrates it forward. Generated artifacts and Brand Memory files are user-owned files. If Kreeyts closes while a CLI command is pending, the next launch marks that local item as failed/interrupted rather than pretending Higgsfield job state is recoverable.
 
 ## Deferred Seams
 
@@ -79,5 +86,5 @@ These are deliberate non-goals until Kreeyts has matching product behavior:
 - project and session models,
 - generated artifact policy,
 - runtime bootstrap and event stream,
-- native menu, zoom, theme, and updater modules,
-- release and packaged-app smoke tests.
+- native menu, zoom, and theme modules,
+- packaged-app smoke tests.

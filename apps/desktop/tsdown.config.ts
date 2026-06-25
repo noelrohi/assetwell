@@ -6,7 +6,7 @@ const base = {
   platform: "node" as const,
   target: "node20",
   deps: {
-    alwaysBundle: ["@kreeyts/desktop-bridge", "fflate"],
+    alwaysBundle: ["@kreeyts/desktop-bridge", "electron-updater", "fflate"],
     neverBundle: ["electron", "ffmpeg-static"],
   },
   sourcemap: true,

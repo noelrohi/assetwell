@@ -58,6 +58,14 @@ const bridge: DesktopBridge = {
       ipcRenderer.invoke(IPC_CHANNELS.library.chooseOutputRoot),
     revealOutputRoot: () =>
       ipcRenderer.invoke(IPC_CHANNELS.library.revealOutputRoot),
+    listReferenceAssets: () =>
+      ipcRenderer.invoke(IPC_CHANNELS.library.listReferenceAssets),
+    importReferenceAssets: () =>
+      ipcRenderer.invoke(IPC_CHANNELS.library.importReferenceAssets),
+    revealReferenceAssets: () =>
+      ipcRenderer.invoke(IPC_CHANNELS.library.revealReferenceAssets),
+    deleteReferenceAsset: (request) =>
+      ipcRenderer.invoke(IPC_CHANNELS.library.deleteReferenceAsset, request),
     exportCreativeZip: (request) =>
       ipcRenderer.invoke(IPC_CHANNELS.library.exportCreativeZip, request),
   },
