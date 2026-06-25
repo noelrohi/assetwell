@@ -1,152 +1,293 @@
 <!doctype html>
 <html lang="en">
-<head>
-<meta charset="utf-8" />
-<meta name="viewport" content="width=device-width, initial-scale=1" />
-<title>Kreeyts · Create</title>
-<link rel="stylesheet" href="studio.css" />
-</head>
-<body>
-<div class="app">
-
-  <!-- RAIL -->
-  <aside class="rail">
-    <div class="brand"><span class="mark">K</span><span class="name">Kreeyts</span></div>
-    <div class="nav-label">Studio</div>
-    <a class="nav-item active" href="create.html">
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M12 5v14M5 12h14" stroke-linecap="round"/></svg>
-      Create
-    </a>
-    <a class="nav-item" href="videos.html">
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="3" y="6" width="13" height="12" rx="2"/><path d="m16 10 5-3v10l-5-3z"/></svg>
-      Videos
-    </a>
-    <div class="nav-spacer"></div>
-    <div class="account">
-      <span class="avatar">M</span>
-      <div>
-        <div class="who">Maya · Studio</div>
-        <div class="credits"><span class="dot"></span> 2,140 credits</div>
-      </div>
-    </div>
-  </aside>
-
-  <!-- MAIN -->
-  <main class="main">
-    <div class="topbar">
-      <div>
-        <h1>Create</h1>
-        <div class="sub">One brief in. A hero plus every ad placement out.</div>
-      </div>
-      <span class="jobs-pill"><span class="spin"></span> 2 jobs running</span>
-    </div>
-
-    <div class="wrap">
-
-      <!-- COMPOSER -->
-      <div class="composer">
-        <div class="field">
-          <textarea placeholder="Describe the creative you need… e.g. “Sun-drenched flat-lay of our matcha tin on linen, soft morning shadows, editorial.”">Sun-drenched flat-lay of our matcha tin on warm linen, soft morning shadows, editorial product photography</textarea>
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Kreeyts · Create</title>
+    <link rel="stylesheet" href="studio.css" />
+  </head>
+  <body>
+    <div class="app">
+      <!-- RAIL -->
+      <aside class="rail">
+        <div class="brand">
+          <span class="mark">K</span><span class="name">Kreeyts</span>
         </div>
-        <div class="toolbar">
-          <div class="ratios">
-            <button class="ratio on"><span class="glyph" style="width:18px;height:18px"></span>1:1</button>
-            <button class="ratio"><span class="glyph" style="width:24px;height:15px"></span>16:9</button>
-            <button class="ratio"><span class="glyph" style="width:15px;height:24px"></span>9:16</button>
-            <button class="ratio"><span class="glyph" style="width:22px;height:16px"></span>4:3</button>
+        <div class="nav-label">Studio</div>
+        <a class="nav-item active" href="create.html">
+          <svg
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            stroke-width="1.8"
+          >
+            <path d="M12 5v14M5 12h14" stroke-linecap="round" />
+          </svg>
+          Create
+        </a>
+        <a class="nav-item" href="videos.html">
+          <svg
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            stroke-width="1.8"
+          >
+            <rect x="3" y="6" width="13" height="12" rx="2" />
+            <path d="m16 10 5-3v10l-5-3z" />
+          </svg>
+          Videos
+        </a>
+        <div class="nav-spacer"></div>
+        <div class="account">
+          <span class="avatar">M</span>
+          <div>
+            <div class="who">Maya · Studio</div>
+            <div class="credits"><span class="dot"></span> 2,140 credits</div>
           </div>
-          <button class="chip attached">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="3" y="3" width="18" height="18" rx="3"/><circle cx="9" cy="9" r="2"/><path d="m21 15-5-5L5 21"/></svg>
-            matcha-tin.png <span style="opacity:.6">✕</span>
-          </button>
-          <button class="chip">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M4 7h16M4 12h16M4 17h10"/></svg>
-            Prompt library
-          </button>
-          <button class="chip">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="12" r="3"/><path d="M12 3v3M12 18v3M3 12h3M18 12h3"/></svg>
-            Style: <span class="v">Nano Banana</span>
-          </button>
-          <div class="grow"></div>
-          <button class="btn btn-primary btn-lg">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M12 3l2.2 5.8L20 11l-5.8 2.2L12 19l-2.2-5.8L4 11l5.8-2.2z"/></svg>
-            Generate 4 takes
-          </button>
         </div>
-      </div>
-      <p class="flow-note">Costs ~4 credits. You'll pick the hero before we make placements — nothing mass-produces until you say so.</p>
+      </aside>
 
-      <!-- HERO PICKER -->
-      <div class="sec-head">
-        <div>
-          <div class="eyebrow">Step 1 · Pick your hero</div>
-          <h2>Four takes on your brief</h2>
+      <!-- MAIN -->
+      <main class="main">
+        <div class="topbar">
+          <div>
+            <h1>Create</h1>
+            <div class="sub">
+              One brief in. A hero plus every ad placement out.
+            </div>
+          </div>
+          <span class="jobs-pill"
+            ><span class="spin"></span> 2 jobs running</span
+          >
         </div>
-        <div class="meta">Matcha tin · 1:1 · just now</div>
-      </div>
-      <div class="takes">
-        <div class="take chosen">
-          <div class="stage ph-b ph-noise"></div>
-          <div class="crown">✓</div>
-          <div class="pick">Hero selected</div>
+
+        <div class="wrap">
+          <!-- COMPOSER -->
+          <div class="composer">
+            <div class="field">
+              <textarea
+                placeholder="Describe the creative you need… e.g. “Sun-drenched flat-lay of our matcha tin on linen, soft morning shadows, editorial.”"
+              >
+Sun-drenched flat-lay of our matcha tin on warm linen, soft morning shadows, editorial product photography</textarea
+              >
+            </div>
+            <div class="toolbar">
+              <div class="ratios">
+                <button class="ratio on">
+                  <span class="glyph" style="width: 18px; height: 18px"></span
+                  >1:1
+                </button>
+                <button class="ratio">
+                  <span class="glyph" style="width: 24px; height: 15px"></span
+                  >16:9
+                </button>
+                <button class="ratio">
+                  <span class="glyph" style="width: 15px; height: 24px"></span
+                  >9:16
+                </button>
+                <button class="ratio">
+                  <span class="glyph" style="width: 22px; height: 16px"></span
+                  >4:3
+                </button>
+              </div>
+              <button class="chip attached">
+                <svg
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  stroke-width="1.8"
+                >
+                  <rect x="3" y="3" width="18" height="18" rx="3" />
+                  <circle cx="9" cy="9" r="2" />
+                  <path d="m21 15-5-5L5 21" />
+                </svg>
+                matcha-tin.png <span style="opacity: 0.6">✕</span>
+              </button>
+              <button class="chip">
+                <svg
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  stroke-width="1.8"
+                >
+                  <path d="M4 7h16M4 12h16M4 17h10" />
+                </svg>
+                Prompt library
+              </button>
+              <button class="chip">
+                <svg
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  stroke-width="1.8"
+                >
+                  <circle cx="12" cy="12" r="3" />
+                  <path d="M12 3v3M12 18v3M3 12h3M18 12h3" />
+                </svg>
+                Style: <span class="v">Nano Banana</span>
+              </button>
+              <div class="grow"></div>
+              <button class="btn btn-primary btn-lg">
+                <svg
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  stroke-width="1.8"
+                >
+                  <path
+                    d="M12 3l2.2 5.8L20 11l-5.8 2.2L12 19l-2.2-5.8L4 11l5.8-2.2z"
+                  />
+                </svg>
+                Generate 4 takes
+              </button>
+            </div>
+          </div>
+          <p class="flow-note">
+            Costs ~4 credits. You'll pick the hero before we make placements —
+            nothing mass-produces until you say so.
+          </p>
+
+          <!-- HERO PICKER -->
+          <div class="sec-head">
+            <div>
+              <div class="eyebrow">Step 1 · Pick your hero</div>
+              <h2>Four takes on your brief</h2>
+            </div>
+            <div class="meta">Matcha tin · 1:1 · just now</div>
+          </div>
+          <div class="takes">
+            <div class="take chosen">
+              <div class="stage ph-b ph-noise"></div>
+              <div class="crown">✓</div>
+              <div class="pick">Hero selected</div>
+            </div>
+            <div class="take">
+              <div class="stage ph-c ph-noise"></div>
+              <div class="pick">Make this the hero</div>
+            </div>
+            <div class="take">
+              <div class="stage ph-f ph-noise"></div>
+              <div class="pick">Make this the hero</div>
+            </div>
+            <div class="take">
+              <div class="stage ph-a ph-noise"></div>
+              <div class="pick">Make this the hero</div>
+            </div>
+          </div>
+
+          <!-- GENERATE ALL -->
+          <div class="notice" style="margin-top: 22px">
+            <div style="flex: 1">
+              <div class="big" style="font-size: 17px">
+                Hero locked in. Ready to size it up?
+              </div>
+              <div style="font-size: 13.5px; margin-top: 2px">
+                We'll generate all 8 image placements on-brand from this hero.
+                Each one is its own tile you can regenerate.
+              </div>
+            </div>
+            <a class="btn btn-dark btn-lg" href="creative.html">
+              <svg
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="1.8"
+              >
+                <rect x="3" y="3" width="7" height="7" rx="1" />
+                <rect x="14" y="3" width="7" height="4" rx="1" />
+                <rect x="14" y="11" width="7" height="10" rx="1" />
+                <rect x="3" y="14" width="7" height="7" rx="1" />
+              </svg>
+              Generate all placements
+            </a>
+          </div>
+
+          <!-- YOUR CREATIVES -->
+          <div class="sec-head">
+            <div><h2>Your creatives</h2></div>
+            <div class="meta">14 creatives · newest first</div>
+          </div>
+          <div class="grid">
+            <a class="card" href="creative.html">
+              <div class="thumb">
+                <div class="ph ph-c ph-noise"></div>
+                <span class="badge">8 sizes</span>
+              </div>
+              <div class="body">
+                <div class="title">Matcha tin — morning linen</div>
+                <div class="row">
+                  <span>2 min ago</span
+                  ><span class="count">▦ 8 placements</span>
+                </div>
+              </div>
+            </a>
+            <a class="card" href="creative.html">
+              <div class="thumb">
+                <div class="ph ph-e ph-noise"></div>
+                <span class="badge video">+ video</span>
+              </div>
+              <div class="body">
+                <div class="title">Summer sale — hero banner</div>
+                <div class="row">
+                  <span>Yesterday</span><span class="count">▦ 8 · ▶ 1</span>
+                </div>
+              </div>
+            </a>
+            <a class="card" href="creative.html">
+              <div class="thumb">
+                <div class="ph ph-d ph-noise"></div>
+                <span class="badge">8 sizes</span>
+              </div>
+              <div class="body">
+                <div class="title">Sneaker drop — concrete</div>
+                <div class="row">
+                  <span>2 days ago</span
+                  ><span class="count">▦ 8 placements</span>
+                </div>
+              </div>
+            </a>
+            <a class="card" href="creative.html">
+              <div class="thumb">
+                <div class="ph ph-a ph-noise"></div>
+                <span class="badge">6 of 8</span>
+              </div>
+              <div class="body">
+                <div class="title">Skincare serum — pastel</div>
+                <div class="row">
+                  <span>3 days ago</span
+                  ><span class="count">▦ 6 placements</span>
+                </div>
+              </div>
+            </a>
+            <a class="card" href="creative.html">
+              <div class="thumb">
+                <div class="ph ph-b ph-noise"></div>
+                <span class="badge">8 sizes</span>
+              </div>
+              <div class="body">
+                <div class="title">Cold brew — green studio</div>
+                <div class="row">
+                  <span>Last week</span
+                  ><span class="count">▦ 8 placements</span>
+                </div>
+              </div>
+            </a>
+            <a class="card" href="creative.html">
+              <div class="thumb">
+                <div class="ph ph-f ph-noise"></div>
+                <span class="badge">8 sizes</span>
+              </div>
+              <div class="body">
+                <div class="title">Headphones — editorial grey</div>
+                <div class="row">
+                  <span>Last week</span
+                  ><span class="count">▦ 8 placements</span>
+                </div>
+              </div>
+            </a>
+          </div>
         </div>
-        <div class="take"><div class="stage ph-c ph-noise"></div><div class="pick">Make this the hero</div></div>
-        <div class="take"><div class="stage ph-f ph-noise"></div><div class="pick">Make this the hero</div></div>
-        <div class="take"><div class="stage ph-a ph-noise"></div><div class="pick">Make this the hero</div></div>
-      </div>
-
-      <!-- GENERATE ALL -->
-      <div class="notice" style="margin-top:22px">
-        <div style="flex:1">
-          <div class="big" style="font-size:17px">Hero locked in. Ready to size it up?</div>
-          <div style="font-size:13.5px;margin-top:2px">We'll generate all 8 image placements on-brand from this hero. Each one is its own tile you can regenerate.</div>
-        </div>
-        <a class="btn btn-dark btn-lg" href="creative.html">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="4" rx="1"/><rect x="14" y="11" width="7" height="10" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/></svg>
-          Generate all placements
-        </a>
-      </div>
-
-      <!-- YOUR CREATIVES -->
-      <div class="sec-head">
-        <div><h2>Your creatives</h2></div>
-        <div class="meta">14 creatives · newest first</div>
-      </div>
-      <div class="grid">
-        <a class="card" href="creative.html">
-          <div class="thumb"><div class="ph ph-c ph-noise"></div><span class="badge">8 sizes</span></div>
-          <div class="body"><div class="title">Matcha tin — morning linen</div>
-            <div class="row"><span>2 min ago</span><span class="count">▦ 8 placements</span></div></div>
-        </a>
-        <a class="card" href="creative.html">
-          <div class="thumb"><div class="ph ph-e ph-noise"></div><span class="badge video">+ video</span></div>
-          <div class="body"><div class="title">Summer sale — hero banner</div>
-            <div class="row"><span>Yesterday</span><span class="count">▦ 8 · ▶ 1</span></div></div>
-        </a>
-        <a class="card" href="creative.html">
-          <div class="thumb"><div class="ph ph-d ph-noise"></div><span class="badge">8 sizes</span></div>
-          <div class="body"><div class="title">Sneaker drop — concrete</div>
-            <div class="row"><span>2 days ago</span><span class="count">▦ 8 placements</span></div></div>
-        </a>
-        <a class="card" href="creative.html">
-          <div class="thumb"><div class="ph ph-a ph-noise"></div><span class="badge">6 of 8</span></div>
-          <div class="body"><div class="title">Skincare serum — pastel</div>
-            <div class="row"><span>3 days ago</span><span class="count">▦ 6 placements</span></div></div>
-        </a>
-        <a class="card" href="creative.html">
-          <div class="thumb"><div class="ph ph-b ph-noise"></div><span class="badge">8 sizes</span></div>
-          <div class="body"><div class="title">Cold brew — green studio</div>
-            <div class="row"><span>Last week</span><span class="count">▦ 8 placements</span></div></div>
-        </a>
-        <a class="card" href="creative.html">
-          <div class="thumb"><div class="ph ph-f ph-noise"></div><span class="badge">8 sizes</span></div>
-          <div class="body"><div class="title">Headphones — editorial grey</div>
-            <div class="row"><span>Last week</span><span class="count">▦ 8 placements</span></div></div>
-        </a>
-      </div>
-
+      </main>
     </div>
-  </main>
-</div>
-</body>
+  </body>
 </html>

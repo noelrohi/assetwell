@@ -1,107 +1,224 @@
 <!doctype html>
 <html lang="en">
-<head>
-<meta charset="utf-8" />
-<meta name="viewport" content="width=device-width, initial-scale=1" />
-<title>Kreeyts · Videos</title>
-<link rel="stylesheet" href="studio.css" />
-</head>
-<body>
-<div class="app">
-
-  <aside class="rail">
-    <div class="brand"><span class="mark">K</span><span class="name">Kreeyts</span></div>
-    <div class="nav-label">Studio</div>
-    <a class="nav-item" href="create.html">
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M12 5v14M5 12h14" stroke-linecap="round"/></svg>
-      Create
-    </a>
-    <a class="nav-item active" href="videos.html">
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="3" y="6" width="13" height="12" rx="2"/><path d="m16 10 5-3v10l-5-3z"/></svg>
-      Videos
-    </a>
-    <div class="nav-spacer"></div>
-    <div class="account">
-      <span class="avatar">M</span>
-      <div><div class="who">Maya · Studio</div><div class="credits"><span class="dot"></span> 2,140 credits</div></div>
-    </div>
-  </aside>
-
-  <main class="main">
-    <div class="topbar">
-      <div>
-        <h1>Videos</h1>
-        <div class="sub">Bring a still to life. Slower and pricier — so it's always your call, one at a time.</div>
-      </div>
-      <span class="jobs-pill"><span class="spin"></span> 1 video rendering</span>
-    </div>
-
-    <div class="wrap">
-
-      <!-- VIDEO COMPOSER with pre-attached image (came from "Animate") -->
-      <div class="composer">
-        <div style="display:flex; gap:18px; padding:20px 24px; align-items:stretch">
-          <div style="width:120px;flex:none;border-radius:10px;overflow:hidden;position:relative" class="ph-b ph-noise">
-            <span class="badge" style="top:8px;left:8px">From hero</span>
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Kreeyts · Videos</title>
+    <link rel="stylesheet" href="studio.css" />
+  </head>
+  <body>
+    <div class="app">
+      <aside class="rail">
+        <div class="brand">
+          <span class="mark">K</span><span class="name">Kreeyts</span>
+        </div>
+        <div class="nav-label">Studio</div>
+        <a class="nav-item" href="create.html">
+          <svg
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            stroke-width="1.8"
+          >
+            <path d="M12 5v14M5 12h14" stroke-linecap="round" />
+          </svg>
+          Create
+        </a>
+        <a class="nav-item active" href="videos.html">
+          <svg
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            stroke-width="1.8"
+          >
+            <rect x="3" y="6" width="13" height="12" rx="2" />
+            <path d="m16 10 5-3v10l-5-3z" />
+          </svg>
+          Videos
+        </a>
+        <div class="nav-spacer"></div>
+        <div class="account">
+          <span class="avatar">M</span>
+          <div>
+            <div class="who">Maya · Studio</div>
+            <div class="credits"><span class="dot"></span> 2,140 credits</div>
           </div>
-          <textarea style="min-height:96px" placeholder="Describe the motion… e.g. “slow push-in, steam curling from the tin, gentle light flicker.”">Slow push-in on the matcha tin, soft steam curling upward, warm morning light flickering across the linen</textarea>
         </div>
-        <div class="toolbar">
-          <div class="ratios">
-            <button class="ratio on"><span class="glyph" style="width:24px;height:14px"></span>16:9</button>
-            <button class="ratio"><span class="glyph" style="width:14px;height:24px"></span>9:16</button>
-            <button class="ratio"><span class="glyph" style="width:18px;height:18px"></span>1:1</button>
-            <button class="ratio"><span class="glyph" style="width:22px;height:18px"></span>300×250</button>
+      </aside>
+
+      <main class="main">
+        <div class="topbar">
+          <div>
+            <h1>Videos</h1>
+            <div class="sub">
+              Bring a still to life. Slower and pricier — so it's always your
+              call, one at a time.
+            </div>
           </div>
-          <button class="chip">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M4 7h16M4 12h16M4 17h10"/></svg>
-            Video prompts
-          </button>
-          <button class="chip">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="12" r="3"/><path d="M12 3v3M12 18v3M3 12h3M18 12h3"/></svg>
-            Model: <span class="v">Higgsfield Motion</span>
-          </button>
-          <div class="grow"></div>
-          <span class="muted" style="font-size:12.5px;margin-right:6px">~40 credits · ~2 min</span>
-          <button class="btn btn-primary btn-lg">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="12" r="9"/><path d="m10 9 5 3-5 3z"/></svg>
-            Generate video
-          </button>
+          <span class="jobs-pill"
+            ><span class="spin"></span> 1 video rendering</span
+          >
         </div>
-      </div>
 
-      <!-- GALLERY -->
-      <div class="sec-head">
-        <div><h2>Your videos</h2></div>
-        <div class="meta">Linked to a creative, or freeform — nothing gets lost</div>
-      </div>
-      <div class="grid">
-        <div class="card">
-          <div class="thumb"><div class="ph ph-e ph-noise"></div>
-            <span class="badge video">▶ 0:06</span>
-            <span class="badge" style="left:auto;right:10px;background:rgba(22,26,34,.72)">16:9</span></div>
-          <div class="body"><div class="title">Summer sale — hero loop</div>
-            <div class="row"><span>from “Summer sale”</span><span>rendering…</span></div></div>
-        </div>
-        <div class="card">
-          <div class="thumb"><div class="ph ph-c ph-noise"></div><span class="badge video">▶ 0:05</span></div>
-          <div class="body"><div class="title">Matcha tin — steam push-in</div>
-            <div class="row"><span>from “Matcha tin”</span><span>5 min ago</span></div></div>
-        </div>
-        <div class="card">
-          <div class="thumb"><div class="ph ph-d ph-noise"></div><span class="badge video">▶ 0:08</span></div>
-          <div class="body"><div class="title">Sneaker drop — freeform</div>
-            <div class="row"><span>freeform</span><span>Yesterday</span></div></div>
-        </div>
-        <div class="card">
-          <div class="thumb"><div class="ph ph-a ph-noise"></div><span class="badge video">▶ 0:06</span></div>
-          <div class="body"><div class="title">Serum — pastel drift</div>
-            <div class="row"><span>from “Skincare serum”</span><span>2 days ago</span></div></div>
-        </div>
-      </div>
+        <div class="wrap">
+          <!-- VIDEO COMPOSER with pre-attached image (came from "Animate") -->
+          <div class="composer">
+            <div
+              style="
+                display: flex;
+                gap: 18px;
+                padding: 20px 24px;
+                align-items: stretch;
+              "
+            >
+              <div
+                style="
+                  width: 120px;
+                  flex: none;
+                  border-radius: 10px;
+                  overflow: hidden;
+                  position: relative;
+                "
+                class="ph-b ph-noise"
+              >
+                <span class="badge" style="top: 8px; left: 8px">From hero</span>
+              </div>
+              <textarea
+                style="min-height: 96px"
+                placeholder="Describe the motion… e.g. “slow push-in, steam curling from the tin, gentle light flicker.”"
+              >
+Slow push-in on the matcha tin, soft steam curling upward, warm morning light flickering across the linen</textarea
+              >
+            </div>
+            <div class="toolbar">
+              <div class="ratios">
+                <button class="ratio on">
+                  <span class="glyph" style="width: 24px; height: 14px"></span
+                  >16:9
+                </button>
+                <button class="ratio">
+                  <span class="glyph" style="width: 14px; height: 24px"></span
+                  >9:16
+                </button>
+                <button class="ratio">
+                  <span class="glyph" style="width: 18px; height: 18px"></span
+                  >1:1
+                </button>
+                <button class="ratio">
+                  <span class="glyph" style="width: 22px; height: 18px"></span
+                  >300×250
+                </button>
+              </div>
+              <button class="chip">
+                <svg
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  stroke-width="1.8"
+                >
+                  <path d="M4 7h16M4 12h16M4 17h10" />
+                </svg>
+                Video prompts
+              </button>
+              <button class="chip">
+                <svg
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  stroke-width="1.8"
+                >
+                  <circle cx="12" cy="12" r="3" />
+                  <path d="M12 3v3M12 18v3M3 12h3M18 12h3" />
+                </svg>
+                Model: <span class="v">Higgsfield Motion</span>
+              </button>
+              <div class="grow"></div>
+              <span class="muted" style="font-size: 12.5px; margin-right: 6px"
+                >~40 credits · ~2 min</span
+              >
+              <button class="btn btn-primary btn-lg">
+                <svg
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  stroke-width="1.8"
+                >
+                  <circle cx="12" cy="12" r="9" />
+                  <path d="m10 9 5 3-5 3z" />
+                </svg>
+                Generate video
+              </button>
+            </div>
+          </div>
 
+          <!-- GALLERY -->
+          <div class="sec-head">
+            <div><h2>Your videos</h2></div>
+            <div class="meta">
+              Linked to a creative, or freeform — nothing gets lost
+            </div>
+          </div>
+          <div class="grid">
+            <div class="card">
+              <div class="thumb">
+                <div class="ph ph-e ph-noise"></div>
+                <span class="badge video">▶ 0:06</span>
+                <span
+                  class="badge"
+                  style="
+                    left: auto;
+                    right: 10px;
+                    background: rgba(22, 26, 34, 0.72);
+                  "
+                  >16:9</span
+                >
+              </div>
+              <div class="body">
+                <div class="title">Summer sale — hero loop</div>
+                <div class="row">
+                  <span>from “Summer sale”</span><span>rendering…</span>
+                </div>
+              </div>
+            </div>
+            <div class="card">
+              <div class="thumb">
+                <div class="ph ph-c ph-noise"></div>
+                <span class="badge video">▶ 0:05</span>
+              </div>
+              <div class="body">
+                <div class="title">Matcha tin — steam push-in</div>
+                <div class="row">
+                  <span>from “Matcha tin”</span><span>5 min ago</span>
+                </div>
+              </div>
+            </div>
+            <div class="card">
+              <div class="thumb">
+                <div class="ph ph-d ph-noise"></div>
+                <span class="badge video">▶ 0:08</span>
+              </div>
+              <div class="body">
+                <div class="title">Sneaker drop — freeform</div>
+                <div class="row">
+                  <span>freeform</span><span>Yesterday</span>
+                </div>
+              </div>
+            </div>
+            <div class="card">
+              <div class="thumb">
+                <div class="ph ph-a ph-noise"></div>
+                <span class="badge video">▶ 0:06</span>
+              </div>
+              <div class="body">
+                <div class="title">Serum — pastel drift</div>
+                <div class="row">
+                  <span>from “Skincare serum”</span><span>2 days ago</span>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </main>
     </div>
-  </main>
-</div>
-</body>
+  </body>
 </html>
