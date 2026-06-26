@@ -7,6 +7,12 @@ and this project uses semantic version tags for desktop releases.
 
 ## [Unreleased]
 
+## [0.0.2] - 2026-06-26
+
+### Changed
+
+- Published a patch release to validate signed auto-update delivery.
+
 ## [0.0.1] - 2026-06-26
 
 ### Added
