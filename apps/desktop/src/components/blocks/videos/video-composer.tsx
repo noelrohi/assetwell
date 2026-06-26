@@ -10,6 +10,7 @@ import { toast } from "sonner"
 
 import {
   ModelPicker,
+  pickDefaultModelId,
   type ModelRecommendation,
 } from "@/components/blocks/composer/model-picker"
 import {
@@ -23,16 +24,19 @@ import { videoPlacements, type VideoPlacement } from "@/lib/placements"
 import { videoPlacementSelectionParser } from "@/lib/query-state"
 import { cn } from "@/lib/utils"
 
+const defaultVideoModelMatch = [
+  "seedance 2.0",
+  "seedance2.0",
+  "seedance2_0",
+  "seedance20",
+]
+
 const recommendedVideoModels: ModelRecommendation[] = [
-  { key: "seedance-latest", match: "seedance" },
   {
-    key: "veo-3-1-fast",
-    match: ["veo 3.1 fast", "veo3.1 fast", "veo3_1_fast", "veo31fast"],
+    key: "kling-3-0",
+    match: ["kling 3.0", "kling3.0", "kling3_0", "klingv3", "kling30"],
   },
-  {
-    key: "veo-3-1-pro",
-    match: ["veo 3.1 pro", "veo3.1 pro", "veo3_1_pro", "veo31pro"],
-  },
+  { key: "seedance-2-0", match: defaultVideoModelMatch },
 ]
 
 export function VideoComposer() {
@@ -46,7 +50,11 @@ export function VideoComposer() {
     makeVideos,
   } = useHiggsfieldApp()
   const [prompt, setPrompt] = React.useState("")
-  const [model, setModel] = React.useState(videoModels[0]?.id ?? "")
+  const defaultModelId = React.useMemo(
+    () => pickDefaultModelId(videoModels, defaultVideoModelMatch),
+    [videoModels],
+  )
+  const [model, setModel] = React.useState(defaultModelId)
   const [sizes, setSizes] = useQueryState(
     "sizes",
     videoPlacementSelectionParser,
@@ -59,11 +67,10 @@ export function VideoComposer() {
     model.length > 0
 
   React.useEffect(() => {
-    if (!model && videoModels[0]) setModel(videoModels[0].id)
-    if (model && !videoModels.some((item) => item.id === model)) {
-      setModel(videoModels[0]?.id ?? "")
+    if (!model || !videoModels.some((item) => item.id === model)) {
+      setModel(defaultModelId)
     }
-  }, [model, videoModels])
+  }, [defaultModelId, model, videoModels])
 
   function toggleSize(size: VideoPlacement) {
     void setSizes((current) =>

@@ -13,6 +13,7 @@ import { toast } from "sonner"
 
 import {
   ModelPicker,
+  pickDefaultModelId,
   type ModelRecommendation,
 } from "@/components/blocks/composer/model-picker"
 import {
@@ -30,8 +31,10 @@ import {
 } from "@/lib/placements"
 import { cn } from "@/lib/utils"
 
+const defaultImageModelMatch = ["gpt image 2", "gpt_image_2"]
+
 const recommendedImageModels: ModelRecommendation[] = [
-  { key: "gpt-image-2", match: ["gpt image 2", "gpt_image_2"] },
+  { key: "gpt-image-2", match: defaultImageModelMatch },
   { key: "nano-banana-2", match: ["nano banana 2", "nano_banana_2"] },
   { key: "nano-banana-pro", match: ["nano banana pro", "nano_banana_pro"] },
 ]
@@ -50,7 +53,11 @@ export function ImageComposer() {
   } = useHiggsfieldApp()
   const [prompt, setPrompt] = React.useState("")
   const [ratioId, setRatioId] = React.useState<string>(baseRatios[0].id)
-  const [model, setModel] = React.useState(imageModels[0]?.id ?? "")
+  const defaultModelId = React.useMemo(
+    () => pickDefaultModelId(imageModels, defaultImageModelMatch),
+    [imageModels],
+  )
+  const [model, setModel] = React.useState(defaultModelId)
   const [refs, setRefs] = React.useState<string[]>([])
   const [ratioPickerOpen, setRatioPickerOpen] = React.useState(false)
   const fallbackRatioIds = React.useMemo(
@@ -77,11 +84,10 @@ export function ImageComposer() {
   const canMake = prompt.trim().length > 0 && model.length > 0
 
   React.useEffect(() => {
-    if (!model && imageModels[0]) setModel(imageModels[0].id)
-    if (model && !imageModels.some((item) => item.id === model)) {
-      setModel(imageModels[0]?.id ?? "")
+    if (!model || !imageModels.some((item) => item.id === model)) {
+      setModel(defaultModelId)
     }
-  }, [imageModels, model])
+  }, [defaultModelId, imageModels, model])
 
   React.useEffect(() => {
     if (!model) {

@@ -44,6 +44,14 @@ function matchesRecommendation(model: ModelOption, match: string | string[]) {
   )
 }
 
+export function pickDefaultModelId(
+  models: ModelOption[],
+  preferred: string | string[],
+): string {
+  const match = models.find((model) => matchesRecommendation(model, preferred))
+  return match?.id ?? models[0]?.id ?? ""
+}
+
 function readFavouriteModelIds() {
   if (typeof window === "undefined") return []
   try {
