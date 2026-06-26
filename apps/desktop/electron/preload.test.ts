@@ -49,6 +49,10 @@ const bridgeInvocationCases = {
     call: (bridge) => bridge.app.getInfo(),
     expected: [IPC_CHANNELS.app.getInfo],
   },
+  "app.getCurrentReleaseNotes": {
+    call: (bridge) => bridge.app.getCurrentReleaseNotes(),
+    expected: [IPC_CHANNELS.app.getCurrentReleaseNotes],
+  },
   "higgsfield.getStatus": {
     call: (bridge) => bridge.higgsfield.getStatus(),
     expected: [IPC_CHANNELS.higgsfield.getStatus],

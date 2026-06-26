@@ -43,6 +43,7 @@ export type {
   AssetwellPromptKind,
   AssetwellPromptPreset,
   AssetwellReferenceAsset,
+  AssetwellReleaseNotes,
   AssetwellSettings,
   AssetwellUpdateInfo,
 } from "./types"

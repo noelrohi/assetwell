@@ -10,6 +10,8 @@ import { IPC_CHANNELS } from "./shared/channels"
 const bridge: DesktopBridge = {
   app: {
     getInfo: () => ipcRenderer.invoke(IPC_CHANNELS.app.getInfo),
+    getCurrentReleaseNotes: () =>
+      ipcRenderer.invoke(IPC_CHANNELS.app.getCurrentReleaseNotes),
   },
   higgsfield: {
     getStatus: () => ipcRenderer.invoke(IPC_CHANNELS.higgsfield.getStatus),

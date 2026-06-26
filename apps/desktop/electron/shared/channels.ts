@@ -1,6 +1,7 @@
 export const IPC_CHANNELS = {
   app: {
     getInfo: "assetwell:app:get-info",
+    getCurrentReleaseNotes: "assetwell:app:get-current-release-notes",
   },
   higgsfield: {
     getStatus: "assetwell:higgsfield:get-status",

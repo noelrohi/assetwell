@@ -5,6 +5,15 @@ export interface HostAppInfo {
   isPackaged: boolean
 }
 
+export interface AssetwellReleaseNotes {
+  /** The app version these notes describe, e.g. "0.0.5". */
+  version: string
+  /** Release title from GitHub (may be empty). */
+  title: string
+  /** Raw markdown body of the GitHub Release. */
+  body: string
+}
+
 export const HIGGSFIELD_COMMAND_AREAS = [
   "auth",
   "account",
@@ -307,6 +316,14 @@ export interface AssetwellUpdateInfo {
 export interface DesktopBridge {
   app: {
     getInfo(): Promise<HostAppInfo>
+    /**
+     * Fetches the GitHub Release notes for the currently running app version
+     * (host-owned `app.getVersion()`, tag `v<version>`). Returns null when there
+     * is no matching release, when the notes are empty, or when the network/API
+     * is unavailable — callers must treat null as "nothing to show", never as an
+     * error to surface. The renderer does not supply the version.
+     */
+    getCurrentReleaseNotes(): Promise<AssetwellReleaseNotes | null>
   }
   higgsfield: {
     getStatus(): Promise<HiggsfieldCliStatus>
