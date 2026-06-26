@@ -6,6 +6,11 @@
       "dependsOn": ["^build"],
       "outputs": ["dist/**", "dist-electron/**"]
     },
+    "test": {
+      "dependsOn": ["^test"],
+      "outputs": [],
+      "cache": false
+    },
     "typecheck": {
       "dependsOn": ["^typecheck"],
       "outputs": [],

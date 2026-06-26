@@ -13,6 +13,7 @@
     "prepare:higgsfield-cli": "bun scripts/ensure-higgsfield-cli.mjs",
     "build": "bun run prepare:higgsfield-cli && tsc && vite build && tsdown",
     "build:electron": "bun run prepare:higgsfield-cli && tsdown",
+    "test": "bun test",
     "typecheck": "tsc --noEmit",
     "lint": "tsc --noEmit",
     "dist": "bun run build && electron-builder",
@@ -90,6 +91,7 @@
     "tailwindcss": "^4.1.18"
   },
   "devDependencies": {
+    "@types/bun": "^1.3.14",
     "@types/node": "^25.0.2",
     "@types/react": "^19.1.8",
     "@types/react-dom": "^19.1.6",

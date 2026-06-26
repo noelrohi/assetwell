@@ -23,6 +23,7 @@
     "electron:dist": "bun run --cwd apps/desktop dist",
     "build": "turbo build",
     "build:desktop": "turbo build --filter=@assetwell/desktop",
+    "test": "turbo test",
     "typecheck": "turbo typecheck",
     "lint": "turbo lint",
     "fmt": "prettier --write .",

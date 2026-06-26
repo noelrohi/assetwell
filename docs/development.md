@@ -17,6 +17,7 @@ Use Bun commands; do not add npm lockfiles.
 - `bun run dev:desktop`: run the desktop app development task.
 - `bun run electron:dev`: run the Electron development workflow directly.
 - `bun run --cwd apps/desktop prepare:higgsfield-cli`: ensure the pinned Higgsfield native binary exists locally.
+- `bun run test`: run workspace tests through Turbo.
 - `bun run typecheck`: typecheck workspace packages.
 - `bun run lint`: run the workspace lint task.
 - `bun run fmt:check`: check formatting.
@@ -36,8 +37,9 @@ For documentation-only changes:
 For TypeScript or Electron bridge changes:
 
 1. `bun run fmt:check`
-2. `bun run typecheck`
-3. `bun run lint`
-4. `bun run build`
+2. `bun run test`
+3. `bun run typecheck`
+4. `bun run lint`
+5. `bun run build`
 
 If packaging behavior changes, also run `bun run electron:dist`.

@@ -12,16 +12,16 @@
 
 - Install: `bun install`.
 - Desktop dev: `bun run dev:desktop` or direct `bun run electron:dev`; both route through scripts that prepare the Higgsfield CLI.
-- Root checks: `bun run fmt:check`, `bun run typecheck`, `bun run lint`, `bun run build`.
+- Root checks: `bun run fmt:check`, `bun run test`, `bun run typecheck`, `bun run lint`, `bun run build`.
 - Focus desktop typecheck: `bun --filter @assetwell/desktop typecheck`.
-- Focus current Bun test files directly, for example `bun test apps/desktop/electron/higgsfield-output.test.ts`; there is no package `test` script yet.
+- Focus desktop tests: `bun --filter @assetwell/desktop test`; run a single file with `bun test apps/desktop/electron/higgsfield-output.test.ts`.
 - Packaging: `bun run electron:dist`; run this when Electron Builder files, bundled assets, or packaging behavior changes.
 - Releases: follow `docs/ci.md`; keep `apps/desktop/package.json` and the `vX.Y.Z` tag in sync.
 
 ## Verification Order
 
 - Docs-only changes: run `bun run fmt:check`.
-- TypeScript, Electron bridge, or app behavior changes: run `bun run fmt:check`, then `bun run typecheck`, then `bun run lint`, then `bun run build`.
+- TypeScript, Electron bridge, or app behavior changes: run `bun run fmt:check`, then `bun run test`, then `bun run typecheck`, then `bun run lint`, then `bun run build`.
 - `turbo lint` depends on upstream `build`; do not assume lint is cheap or independent.
 
 ## Higgsfield CLI
