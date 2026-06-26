@@ -330,6 +330,7 @@ export function HiggsfieldProvider({
     regeneratePlacement,
     openOutput,
     exportCreativeZip,
+    exportVideo,
     makeVideos,
   } = useHiggsfieldGenerationActions({
     bridge,
@@ -337,6 +338,7 @@ export function HiggsfieldProvider({
     account,
     cliStatus,
     creatives,
+    videos,
     referenceLibrary,
     setCreatives,
     setVideos,
@@ -508,6 +510,7 @@ export function HiggsfieldProvider({
       regeneratePlacement,
       openOutput,
       exportCreativeZip,
+      exportVideo,
       makeVideos,
       creativeById: (id) => creatives.find((creative) => creative.id === id),
     }),
@@ -543,6 +546,7 @@ export function HiggsfieldProvider({
       regeneratePlacement,
       openOutput,
       exportCreativeZip,
+      exportVideo,
       makeVideos,
     ],
   )

@@ -67,6 +67,7 @@ interface UseHiggsfieldGenerationActionsRequest {
   account: HiggsfieldAccountStatus | null
   cliStatus: HiggsfieldCliStatus | null
   creatives: Creative[]
+  videos: VideoResult[]
   referenceLibrary: ReferenceAsset[]
   setCreatives: React.Dispatch<React.SetStateAction<Creative[]>>
   setVideos: React.Dispatch<React.SetStateAction<VideoResult[]>>
@@ -86,6 +87,7 @@ export function useHiggsfieldGenerationActions({
   account,
   cliStatus,
   creatives,
+  videos,
   referenceLibrary,
   setCreatives,
   setVideos,
@@ -459,6 +461,33 @@ export function useHiggsfieldGenerationActions({
     [creatives, libraryBridge],
   )
 
+  const exportVideo = React.useCallback(
+    async (videoId: string) => {
+      if (!libraryBridge) {
+        toast("Open the desktop app to download videos")
+        return
+      }
+
+      const video = videos.find((item) => item.id === videoId)
+      if (!video) return
+
+      if (video.status !== "ready" || !video.filePath) {
+        toast("No local video is ready to download yet")
+        return
+      }
+
+      const result = await libraryBridge.exportVideo({
+        path: video.filePath,
+        title: `${titleFromPrompt(video.prompt)}-${video.size}`,
+      })
+
+      if (result) {
+        toast("Video downloaded", { description: result.filePath })
+      }
+    },
+    [libraryBridge, videos],
+  )
+
   const makeVideos = React.useCallback(
     async (request: MakeVideosRequest) => {
       if (!(await canGenerate()) || !bridge) return
@@ -542,10 +571,12 @@ export function useHiggsfieldGenerationActions({
       regeneratePlacement,
       openOutput,
       exportCreativeZip,
+      exportVideo,
       makeVideos,
     }),
     [
       exportCreativeZip,
+      exportVideo,
       generateAllPlacements,
       makeCreative,
       makeVideos,

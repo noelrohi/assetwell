@@ -288,6 +288,15 @@ export interface AssetwellExportCreativeZipResult {
   filePath: string
 }
 
+export interface AssetwellExportVideoRequest {
+  path: string
+  title: string
+}
+
+export interface AssetwellExportVideoResult {
+  filePath: string
+}
+
 export interface DesktopBridge {
   app: {
     getInfo(): Promise<HostAppInfo>
@@ -329,5 +338,8 @@ export interface DesktopBridge {
     exportCreativeZip(
       request: AssetwellExportCreativeZipRequest,
     ): Promise<AssetwellExportCreativeZipResult | null>
+    exportVideo(
+      request: AssetwellExportVideoRequest,
+    ): Promise<AssetwellExportVideoResult | null>
   }
 }

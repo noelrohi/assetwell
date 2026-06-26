@@ -27,5 +27,6 @@ export const IPC_CHANNELS = {
     revealReferenceAssets: "assetwell:library:reveal-reference-assets",
     deleteReferenceAsset: "assetwell:library:delete-reference-asset",
     exportCreativeZip: "assetwell:library:export-creative-zip",
+    exportVideo: "assetwell:library:export-video",
   },
 } as const

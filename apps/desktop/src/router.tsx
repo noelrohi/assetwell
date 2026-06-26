@@ -10,6 +10,7 @@ import { BrandMemoryPage } from "@/pages/brand-memory"
 import { CreatePage } from "@/pages/create"
 import { CreativePage } from "@/pages/creative"
 import { PromptTemplatesPage } from "@/pages/prompt-templates"
+import { VideoPage } from "@/pages/video"
 import { VideosPage } from "@/pages/videos"
 
 const rootRoute = createRootRoute({ component: AppShell })
@@ -44,12 +45,19 @@ const creativeRoute = createRoute({
   component: CreativePage,
 })
 
+const videoRoute = createRoute({
+  getParentRoute: () => rootRoute,
+  path: "/video/$videoId",
+  component: VideoPage,
+})
+
 const routeTree = rootRoute.addChildren([
   indexRoute,
   videosRoute,
   brandMemoryRoute,
   promptTemplatesRoute,
   creativeRoute,
+  videoRoute,
 ])
 
 export const router = createRouter({

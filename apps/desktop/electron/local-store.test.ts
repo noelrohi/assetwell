@@ -6,6 +6,7 @@ import type { AssetwellLibrarySnapshot } from "@assetwell/desktop-bridge"
 
 import {
   openDialogCalls,
+  saveDialogCalls,
   resetElectronMock,
   setElectronUserDataRoot,
   setNextOpenDialogResult,
@@ -58,6 +59,32 @@ describe("local store", () => {
     expect(localStore.isPreviewableLocalAsset("notes.txt")).toBe(false)
   })
 
+  test("parses byte ranges for video streaming and rejects bad ones", () => {
+    expect(localStore.parseByteRange("bytes=0-499", 1000)).toEqual({
+      start: 0,
+      end: 499,
+    })
+    // Open-ended range clamps to the last byte.
+    expect(localStore.parseByteRange("bytes=500-", 1000)).toEqual({
+      start: 500,
+      end: 999,
+    })
+    // End beyond EOF is clamped.
+    expect(localStore.parseByteRange("bytes=900-5000", 1000)).toEqual({
+      start: 900,
+      end: 999,
+    })
+    // Suffix range: the final N bytes.
+    expect(localStore.parseByteRange("bytes=-200", 1000)).toEqual({
+      start: 800,
+      end: 999,
+    })
+    // Unsatisfiable / malformed → null (caller answers 416).
+    expect(localStore.parseByteRange("bytes=1000-1200", 1000)).toBe(null)
+    expect(localStore.parseByteRange("bytes=-", 1000)).toBe(null)
+    expect(localStore.parseByteRange("items=0-10", 1000)).toBe(null)
+  })
+
   test("stores an explicit Assetwell output root", async () => {
     const outputRoot = path.join(userDataRoot, "Library")
     setNextOpenDialogResult({ canceled: false, filePaths: [outputRoot] })
@@ -71,6 +98,30 @@ describe("local store", () => {
     expect(openDialogCalls[0]?.[0]).toMatchObject({
       title: "Choose Assetwell library folder",
       properties: ["openDirectory", "createDirectory"],
+    })
+  })
+
+  test("exports a local video through the save dialog", async () => {
+    const outputRoot = path.join(userDataRoot, "Library")
+    setNextOpenDialogResult({ canceled: false, filePaths: [outputRoot] })
+    await localStore.chooseAssetwellOutputRoot()
+
+    const sourceRoot = path.join(userDataRoot, "sources")
+    await mkdir(sourceRoot, { recursive: true })
+    const sourcePath = path.join(sourceRoot, "clip.mp4")
+    await writeFile(sourcePath, "video-bytes")
+
+    const targetPath = path.join(userDataRoot, "Downloads", "clip-copy.mp4")
+    setNextSaveDialogResult({ canceled: false, filePath: targetPath })
+
+    await expect(
+      localStore.exportVideo({ path: sourcePath, title: "Launch Clip" }),
+    ).resolves.toEqual({ filePath: targetPath })
+
+    expect(await readFile(targetPath, "utf8")).toBe("video-bytes")
+    expect(saveDialogCalls[0]?.[0]).toMatchObject({
+      title: "Download video",
+      defaultPath: path.join(outputRoot, "launch-clip.mp4"),
     })
   })
 

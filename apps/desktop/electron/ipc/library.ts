@@ -2,6 +2,7 @@ import { BrowserWindow, ipcMain, type IpcMainInvokeEvent } from "electron"
 import type {
   AssetwellDeleteReferenceAssetRequest,
   AssetwellExportCreativeZipRequest,
+  AssetwellExportVideoRequest,
   AssetwellLibrarySnapshot,
 } from "@assetwell/desktop-bridge"
 
@@ -9,6 +10,7 @@ import {
   chooseAssetwellOutputRoot,
   deleteReferenceAsset,
   exportCreativeZip,
+  exportVideo,
   getAssetwellSettings,
   importReferenceAssets,
   listReferenceAssets,
@@ -66,6 +68,13 @@ export function registerLibraryIpc() {
     IPC_CHANNELS.library.exportCreativeZip,
     (event, request: AssetwellExportCreativeZipRequest) => {
       return exportCreativeZip(request, ownerWindow(event))
+    },
+  )
+
+  ipcMain.handle(
+    IPC_CHANNELS.library.exportVideo,
+    (event, request: AssetwellExportVideoRequest) => {
+      return exportVideo(request, ownerWindow(event))
     },
   )
 }

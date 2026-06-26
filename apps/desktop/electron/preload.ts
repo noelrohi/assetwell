@@ -68,6 +68,8 @@ const bridge: DesktopBridge = {
       ipcRenderer.invoke(IPC_CHANNELS.library.deleteReferenceAsset, request),
     exportCreativeZip: (request) =>
       ipcRenderer.invoke(IPC_CHANNELS.library.exportCreativeZip, request),
+    exportVideo: (request) =>
+      ipcRenderer.invoke(IPC_CHANNELS.library.exportVideo, request),
   },
 }
 

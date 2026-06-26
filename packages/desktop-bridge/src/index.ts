@@ -30,6 +30,8 @@ export type {
   AssetwellDeleteReferenceAssetRequest,
   AssetwellExportCreativeZipRequest,
   AssetwellExportCreativeZipResult,
+  AssetwellExportVideoRequest,
+  AssetwellExportVideoResult,
   AssetwellExportZipFile,
   AssetwellJobStatus,
   AssetwellLibrarySnapshot,

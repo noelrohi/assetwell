@@ -159,6 +159,14 @@ const bridgeInvocationCases = {
       { title: "Creative", files: [] },
     ],
   },
+  "library.exportVideo": {
+    call: (bridge) =>
+      bridge.library.exportVideo({ path: "/tmp/video.mp4", title: "Video" }),
+    expected: [
+      IPC_CHANNELS.library.exportVideo,
+      { path: "/tmp/video.mp4", title: "Video" },
+    ],
+  },
 } satisfies Record<BridgeInvokePath, BridgeInvokeCase>
 
 describe("preload desktop bridge", () => {

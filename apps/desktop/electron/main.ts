@@ -1,5 +1,7 @@
 import { app, BrowserWindow, nativeImage, protocol } from "electron"
-import { readFile } from "node:fs/promises"
+import { createReadStream } from "node:fs"
+import { stat } from "node:fs/promises"
+import { Readable } from "node:stream"
 import path from "node:path"
 
 import { registerAppInfoIpc } from "./ipc/app-info"
@@ -9,6 +11,7 @@ import {
   isPreviewableLocalAsset,
   LOCAL_ASSET_PROTOCOL,
   localAssetContentType,
+  parseByteRange,
   resolveLocalAssetUrl,
 } from "./local-store"
 import { startAutoUpdates } from "./updater"
@@ -43,17 +46,48 @@ function registerLocalAssetProtocol() {
       return new Response(null, { status: 404 })
     }
 
+    let fileSize: number
     try {
-      const bytes = await readFile(filePath)
-      return new Response(new Uint8Array(bytes), {
-        headers: {
-          "Cache-Control": "no-store",
-          "Content-Type": localAssetContentType(filePath),
-        },
-      })
+      const stats = await stat(filePath)
+      if (!stats.isFile()) return new Response(null, { status: 404 })
+      fileSize = stats.size
     } catch {
       return new Response(null, { status: 404 })
     }
+
+    const contentType = localAssetContentType(filePath)
+    // Video playback streams via Range requests; honor them so <video> can
+    // start and seek. Images request the whole file and fall through to 200.
+    const rangeHeader = request.headers.get("range")
+    const range = rangeHeader ? parseByteRange(rangeHeader, fileSize) : null
+
+    if (rangeHeader && !range) {
+      return new Response(null, {
+        status: 416,
+        headers: {
+          "Accept-Ranges": "bytes",
+          "Content-Range": `bytes */${fileSize}`,
+        },
+      })
+    }
+
+    const start = range ? range.start : 0
+    const end = range ? range.end : Math.max(fileSize - 1, 0)
+    const stream = createReadStream(filePath, { start, end })
+    const body = Readable.toWeb(stream) as unknown as ReadableStream<Uint8Array>
+
+    return new Response(body, {
+      status: range ? 206 : 200,
+      headers: {
+        "Cache-Control": "no-store",
+        "Content-Type": contentType,
+        "Accept-Ranges": "bytes",
+        "Content-Length": String(fileSize === 0 ? 0 : end - start + 1),
+        ...(range
+          ? { "Content-Range": `bytes ${start}-${end}/${fileSize}` }
+          : {}),
+      },
+    })
   })
 }
 

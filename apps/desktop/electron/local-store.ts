@@ -23,6 +23,8 @@ import type {
   AssetwellDeleteReferenceAssetRequest,
   AssetwellExportCreativeZipRequest,
   AssetwellExportCreativeZipResult,
+  AssetwellExportVideoRequest,
+  AssetwellExportVideoResult,
   AssetwellReferenceAsset,
   AssetwellSettings,
 } from "@assetwell/desktop-bridge"
@@ -43,6 +45,7 @@ const REFERENCE_IMAGE_EXTENSIONS = new Set([
   ".png",
   ".webp",
 ])
+const VIDEO_EXPORT_EXTENSIONS = new Set([".m4v", ".mov", ".mp4", ".webm"])
 const LOCAL_ASSET_PREVIEW_EXTENSIONS = new Set([
   ...REFERENCE_IMAGE_EXTENSIONS,
   ".mov",
@@ -235,6 +238,65 @@ function saveZipDialogOptions(
   }
 }
 
+export async function exportVideo(
+  request: AssetwellExportVideoRequest,
+  owner?: BrowserWindow | null,
+): Promise<AssetwellExportVideoResult | null> {
+  const sourcePath = request.path.trim()
+  const sourceExt = path.extname(sourcePath).toLowerCase()
+  const stats = statSync(sourcePath, { throwIfNoEntry: false })
+  if (
+    !sourcePath ||
+    !stats?.isFile() ||
+    !VIDEO_EXPORT_EXTENSIONS.has(sourceExt)
+  ) {
+    return null
+  }
+
+  const { outputRoot } = await getAssetwellSettings()
+  await mkdir(outputRoot, { recursive: true })
+
+  const result = owner
+    ? await dialog.showSaveDialog(
+        owner,
+        saveVideoDialogOptions(request, outputRoot, sourceExt),
+      )
+    : await dialog.showSaveDialog(
+        saveVideoDialogOptions(request, outputRoot, sourceExt),
+      )
+
+  if (result.canceled || !result.filePath) return null
+
+  await mkdir(path.dirname(result.filePath), { recursive: true })
+  if (path.resolve(sourcePath) !== path.resolve(result.filePath)) {
+    await copyFile(sourcePath, result.filePath)
+  }
+
+  return { filePath: result.filePath }
+}
+
+function saveVideoDialogOptions(
+  request: AssetwellExportVideoRequest,
+  defaultDir: string,
+  sourceExt: string,
+) {
+  return {
+    title: "Download video",
+    defaultPath: path.join(
+      defaultDir,
+      `${safePathPart(request.title || "video")}${sourceExt}`,
+    ),
+    filters: [
+      {
+        name: "Video",
+        extensions: Array.from(VIDEO_EXPORT_EXTENSIONS).map((ext) =>
+          ext.slice(1),
+        ),
+      },
+    ],
+  }
+}
+
 function readSettingsSync(): AssetwellSettings {
   const raw = readJsonFileSync<SettingsFile>(settingsPath())
   const outputRoot =
@@ -333,6 +395,47 @@ export function resolveLocalAssetUrl(assetUrl: string) {
   } catch {
     return null
   }
+}
+
+export interface ByteRange {
+  start: number
+  end: number
+}
+
+/**
+ * Parses a single-range HTTP `Range` header against a known file size.
+ *
+ * Chromium's `<video>` element streams media with range requests, so the local
+ * asset protocol must honor them; images never need this. Returns `null` for
+ * unsupported or unsatisfiable ranges (the caller answers those with 416).
+ */
+export function parseByteRange(
+  rangeHeader: string,
+  fileSize: number,
+): ByteRange | null {
+  const match = /^bytes=(\d*)-(\d*)$/.exec(rangeHeader.trim())
+  if (!match) return null
+
+  const [, startRaw, endRaw] = match
+  if (startRaw === "" && endRaw === "") return null
+
+  let start: number
+  let end: number
+  if (startRaw === "") {
+    // Suffix range: the final N bytes of the file.
+    const suffixLength = Number(endRaw)
+    if (!Number.isFinite(suffixLength) || suffixLength <= 0) return null
+    start = Math.max(fileSize - suffixLength, 0)
+    end = fileSize - 1
+  } else {
+    start = Number(startRaw)
+    end = endRaw === "" ? fileSize - 1 : Number(endRaw)
+  }
+
+  if (!Number.isFinite(start) || !Number.isFinite(end)) return null
+  if (start > end || start >= fileSize) return null
+
+  return { start, end: Math.min(end, fileSize - 1) }
 }
 
 export function localAssetContentType(filePath: string) {

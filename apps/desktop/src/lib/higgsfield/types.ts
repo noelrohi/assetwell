@@ -139,6 +139,7 @@ export interface HiggsfieldAppValue {
   ) => Promise<void>
   openOutput: (target?: string | null) => Promise<void>
   exportCreativeZip: (creativeId: string) => Promise<void>
+  exportVideo: (videoId: string) => Promise<void>
   makeVideos: (request: MakeVideosRequest) => Promise<void>
   creativeById: (id: string) => Creative | undefined
 }
