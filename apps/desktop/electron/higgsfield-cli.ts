@@ -298,6 +298,10 @@ export function startGenerateCommand(
     args.push("--aspect_ratio", normalizeAspectRatio(request.aspectRatio))
   }
 
+  if (mediaKind === "video" && request.durationSeconds !== undefined) {
+    args.push("--duration", normalizeDurationSeconds(request.durationSeconds))
+  }
+
   const assetPaths = [
     ...(request.assetPaths ?? []),
     ...(request.assetPath ? [request.assetPath] : []),
@@ -851,6 +855,19 @@ function normalizeAspectRatio(value: string) {
   }
 
   return aspectRatio
+}
+
+function normalizeDurationSeconds(value: unknown) {
+  if (
+    typeof value !== "number" ||
+    !Number.isInteger(value) ||
+    value < 1 ||
+    value > 60
+  ) {
+    throw new Error("Use a whole-second video duration between 1 and 60.")
+  }
+
+  return `${value}`
 }
 
 function normalizeFilePath(value: string) {

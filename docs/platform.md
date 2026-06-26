@@ -50,7 +50,7 @@ Canonical target sizes and aspect ratios live in [`creative-sizes.md`](./creativ
 
 ## 5. Video
 
-- A **first-class standalone screen** — a freeform video composer: attached image + video prompt + video-size picker + video models.
+- A **first-class standalone screen** — a freeform video composer: attached image + video prompt + duration input + video-size picker + video models.
 - From a creative's detail page, an **"Animate"** button sends the currently-selected image (base or a placement) into the composer, pre-attached.
 - **Opt-in per size** — video is slow and credit-expensive, so no auto-all.
 - Generated videos are **linked back to their source creative when there is one, AND appear in a flat Videos gallery** (freeform videos are never orphaned).

@@ -134,6 +134,7 @@ export interface HiggsfieldGenerateRequest {
   assetPaths?: string[]
   assetMediaKind?: Exclude<HiggsfieldMediaKind, "text">
   aspectRatio?: string
+  durationSeconds?: number
   outputDirectoryName?: string
   outputFileName?: string
   outputSize?: HiggsfieldOutputSize
@@ -219,6 +220,7 @@ export interface AssetwellPersistedVideo {
   sourceCreativeId?: string
   sourceTitle?: string
   createdAt: string
+  durationSeconds?: number
   url?: string
   filePath?: string
   runId?: string

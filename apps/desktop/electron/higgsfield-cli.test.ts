@@ -48,6 +48,7 @@ describe("Higgsfield CLI commands", () => {
         assetPath: secondAsset,
         assetMediaKind: "image",
         aspectRatio: " 9:16 ",
+        durationSeconds: 8,
       },
       (event) => events.push(event),
     )
@@ -63,6 +64,8 @@ describe("Higgsfield CLI commands", () => {
       "Animate the product",
       "--aspect_ratio",
       "9:16",
+      "--duration",
+      "8",
       "--image",
       firstAsset,
       "--image",
@@ -159,6 +162,18 @@ describe("Higgsfield CLI commands", () => {
         () => undefined,
       ),
     ).toThrow("Use an aspect ratio from the picker before generating.")
+
+    expect(() =>
+      cli.startGenerateCommand(
+        {
+          model: "video_model",
+          prompt: "Prompt",
+          mediaKind: "video",
+          durationSeconds: 0,
+        },
+        () => undefined,
+      ),
+    ).toThrow("Use a whole-second video duration between 1 and 60.")
 
     expect(() =>
       cli.startUploadAssetCommand(

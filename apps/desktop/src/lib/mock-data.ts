@@ -29,6 +29,7 @@ export interface VideoResult {
   sourceCreativeId?: string
   sourceTitle?: string
   createdAt: string
+  durationSeconds?: number
 }
 
 export interface Creative {
@@ -212,6 +213,7 @@ export const videos: VideoResult[] = [
     sourceCreativeId: "c1",
     sourceTitle: "Citrus spritz — summer set",
     createdAt: "2026-06-23T15:02:00Z",
+    durationSeconds: 8,
   },
   {
     id: "vid3",
@@ -222,6 +224,7 @@ export const videos: VideoResult[] = [
     sourceCreativeId: "c2",
     sourceTitle: "Analog headphones",
     createdAt: "2026-06-24T09:10:00Z",
+    durationSeconds: 8,
   },
 ]
 

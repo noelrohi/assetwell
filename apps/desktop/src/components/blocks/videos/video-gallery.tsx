@@ -80,6 +80,11 @@ export function VideoGallery() {
                 <span className="absolute top-2 left-2 rounded-full bg-background/70 px-2 py-0.5 font-mono text-[0.6rem] text-muted-foreground backdrop-blur">
                   {video.size}
                 </span>
+                {typeof video.durationSeconds === "number" && (
+                  <span className="absolute top-2 right-2 rounded-full bg-background/70 px-2 py-0.5 font-mono text-[0.6rem] text-muted-foreground backdrop-blur">
+                    {video.durationSeconds}s
+                  </span>
+                )}
               </div>
               <div className="px-3.5 py-3">
                 <p className="line-clamp-1 text-sm">{video.prompt}</p>

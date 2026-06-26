@@ -27,6 +27,7 @@ export type ModelOption = { id: string; label: string; hint: string | null }
 export type ModelRecommendation = {
   key: string
   match: string | string[]
+  exclude?: string | string[]
 }
 
 const MODEL_FAVOURITES_STORAGE_KEY = "assetwell.model-favourites.v1"
@@ -35,20 +36,31 @@ function normalizeModelSearchValue(value: string) {
   return value.toLowerCase().replace(/[^a-z0-9]+/g, "")
 }
 
-function matchesRecommendation(model: ModelOption, match: string | string[]) {
-  const modelValue = normalizeModelSearchValue(`${model.id} ${model.label}`)
-  const values = Array.isArray(match) ? match : [match]
-
+function includesAny(modelValue: string, terms: string | string[]) {
+  const values = Array.isArray(terms) ? terms : [terms]
   return values.some((value) =>
     modelValue.includes(normalizeModelSearchValue(value)),
   )
 }
 
+function matchesRecommendation(
+  model: ModelOption,
+  match: string | string[],
+  exclude?: string | string[],
+) {
+  const modelValue = normalizeModelSearchValue(`${model.id} ${model.label}`)
+  if (!includesAny(modelValue, match)) return false
+  return exclude ? !includesAny(modelValue, exclude) : true
+}
+
 export function pickDefaultModelId(
   models: ModelOption[],
   preferred: string | string[],
+  exclude?: string | string[],
 ): string {
-  const match = models.find((model) => matchesRecommendation(model, preferred))
+  const match = models.find((model) =>
+    matchesRecommendation(model, preferred, exclude),
+  )
   return match?.id ?? models[0]?.id ?? ""
 }
 
@@ -93,7 +105,7 @@ export function ModelPicker({
   const favouriteModels = models.filter((model) => favouriteSet.has(model.id))
   const recommendedModels = recommendations.flatMap((recommendation) => {
     const model = models.find((item) =>
-      matchesRecommendation(item, recommendation.match),
+      matchesRecommendation(item, recommendation.match, recommendation.exclude),
     )
     return model ? [model] : []
   })

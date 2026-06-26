@@ -479,6 +479,7 @@ export function useHiggsfieldGenerationActions({
         sourceCreativeId: request.source.creativeId,
         sourceTitle: request.source.label,
         createdAt,
+        durationSeconds: request.durationSeconds,
       }))
       const aspectRatios = await getModelAspectRatios(request.model, "video")
 
@@ -503,6 +504,7 @@ export function useHiggsfieldGenerationActions({
                   spec.height,
                   aspectRatios,
                 ),
+                durationSeconds: request.durationSeconds,
                 outputDirectoryName,
                 outputFileName: `${size}.mp4`,
                 outputSize: { width: spec.width, height: spec.height },

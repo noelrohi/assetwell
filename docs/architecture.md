@@ -28,7 +28,7 @@ The current contract is:
 - `higgsfield.getModelDetails({ model, mediaKind })`: reads model params such as supported aspect ratios so the renderer can show valid controls.
 - `higgsfield.chooseAsset(mediaKind)`: opens a native file picker for image, video, or audio assets.
 - `higgsfield.uploadAsset({ filePath })`: uploads a selected local asset.
-- `higgsfield.generate({ model, prompt, mediaKind, assetPath, assetPaths, aspectRatio, outputSize, waitForResult })`: creates a Higgsfield generation job, streams progress, and saves local artifacts. Outputs with `outputSize` are center-cropped/resized to the exact target dimensions before saving locally.
+- `higgsfield.generate({ model, prompt, mediaKind, assetPath, assetPaths, aspectRatio, durationSeconds, outputSize, waitForResult })`: creates a Higgsfield generation job, streams progress, and saves local artifacts. Outputs with `outputSize` are center-cropped/resized to the exact target dimensions before saving locally.
 - `library.loadSnapshot()`: loads the local library from SQLite, falling back to the legacy JSON snapshot and migrating it forward.
 - `library.saveSnapshot(snapshot)`: saves the local library to SQLite and keeps a JSON snapshot as a fallback.
 - `library.listReferenceAssets()`: scans the Brand Memory folder under the configured output root.

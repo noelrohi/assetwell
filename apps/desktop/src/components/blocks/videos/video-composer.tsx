@@ -2,6 +2,7 @@ import * as React from "react"
 import {
   IconArrowRight,
   IconBook,
+  IconClock,
   IconPhotoPlus,
   IconX,
 } from "@tabler/icons-react"
@@ -34,10 +35,40 @@ const defaultVideoModelMatch = [
 const recommendedVideoModels: ModelRecommendation[] = [
   {
     key: "kling-3-0",
-    match: ["kling 3.0", "kling3.0", "kling3_0", "klingv3", "kling30"],
+    match: ["kling v3.0", "kling v3", "klingv3.0", "kling_v3", "klingv3"],
+    exclude: ["turbo", "motion control", "motion_control", "motioncontrol"],
   },
   { key: "seedance-2-0", match: defaultVideoModelMatch },
 ]
+
+const DEFAULT_VIDEO_DURATION_SECONDS = 8
+const MIN_VIDEO_DURATION_SECONDS = 1
+const MAX_VIDEO_DURATION_SECONDS = 60
+
+function parseVideoDurationSeconds(value: string) {
+  const duration = Number.parseInt(value, 10)
+
+  if (
+    !Number.isFinite(duration) ||
+    duration < MIN_VIDEO_DURATION_SECONDS ||
+    duration > MAX_VIDEO_DURATION_SECONDS
+  ) {
+    return null
+  }
+
+  return duration
+}
+
+function clampedVideoDurationSeconds(value: string) {
+  const duration = Number.parseInt(value, 10)
+
+  if (!Number.isFinite(duration)) return DEFAULT_VIDEO_DURATION_SECONDS
+
+  return Math.min(
+    Math.max(duration, MIN_VIDEO_DURATION_SECONDS),
+    MAX_VIDEO_DURATION_SECONDS,
+  )
+}
 
 export function VideoComposer() {
   const {
@@ -50,11 +81,19 @@ export function VideoComposer() {
     makeVideos,
   } = useHiggsfieldApp()
   const [prompt, setPrompt] = React.useState("")
+  const durationInputId = React.useId()
   const defaultModelId = React.useMemo(
     () => pickDefaultModelId(videoModels, defaultVideoModelMatch),
     [videoModels],
   )
   const [model, setModel] = React.useState(defaultModelId)
+  const [durationInput, setDurationInput] = React.useState(
+    `${DEFAULT_VIDEO_DURATION_SECONDS}`,
+  )
+  const durationSeconds = React.useMemo(
+    () => parseVideoDurationSeconds(durationInput),
+    [durationInput],
+  )
   const [sizes, setSizes] = useQueryState(
     "sizes",
     videoPlacementSelectionParser,
@@ -64,7 +103,8 @@ export function VideoComposer() {
     Boolean(videoDraftSource) &&
     prompt.trim().length > 0 &&
     sizes.length > 0 &&
-    model.length > 0
+    model.length > 0 &&
+    durationSeconds !== null
 
   React.useEffect(() => {
     if (!model || !videoModels.some((item) => item.id === model)) {
@@ -129,6 +169,42 @@ export function VideoComposer() {
               recommendations={recommendedVideoModels}
             />
 
+            <label
+              htmlFor={durationInputId}
+              className={cn(
+                "flex h-8 items-center gap-1.5 rounded-full border border-border/70 bg-background/45 px-2.5 text-xs font-medium transition-colors focus-within:ring-2",
+                durationSeconds === null
+                  ? "border-destructive/60 focus-within:ring-destructive/15"
+                  : "focus-within:border-primary/50 focus-within:ring-primary/15",
+              )}
+              title="Video duration"
+            >
+              <IconClock className="size-3.5 text-muted-foreground" />
+              <span className="text-muted-foreground">Duration</span>
+              <input
+                id={durationInputId}
+                value={durationInput}
+                onChange={(event) =>
+                  setDurationInput(
+                    event.currentTarget.value.replace(/\D/g, "").slice(0, 2),
+                  )
+                }
+                onBlur={() =>
+                  setDurationInput(
+                    `${clampedVideoDurationSeconds(durationInput)}`,
+                  )
+                }
+                inputMode="numeric"
+                pattern="[0-9]*"
+                aria-label="Video duration in seconds"
+                aria-invalid={durationSeconds === null}
+                className="w-7 bg-transparent text-right font-mono text-[0.7rem] tabular-nums outline-none [appearance:textfield] [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"
+              />
+              <span className="font-mono text-[0.65rem] text-muted-foreground">
+                sec
+              </span>
+            </label>
+
             <Popover>
               <PopoverTrigger className="flex h-8 items-center gap-1.5 rounded-full border border-border/70 bg-background/45 px-3 text-xs font-medium transition-colors hover:bg-accent">
                 <IconBook className="size-3.5" />
@@ -186,15 +262,16 @@ export function VideoComposer() {
 
             <button
               onClick={() => {
-                if (!canMake) return
+                if (!canMake || durationSeconds === null) return
                 void makeVideos({
                   prompt,
                   model,
                   sizes,
                   source: videoDraftSource!,
+                  durationSeconds,
                 })
                 toast(
-                  `Queued ${sizes.length} video${sizes.length > 1 ? "s" : ""}`,
+                  `Queued ${sizes.length} ${durationSeconds}s video${sizes.length > 1 ? "s" : ""}`,
                 )
                 setPrompt("")
               }}

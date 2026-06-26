@@ -92,6 +92,7 @@ export interface MakeVideosRequest {
   model: string
   sizes: VideoPlacement[]
   source: VideoSource
+  durationSeconds: number
 }
 
 export interface HiggsfieldAppValue {
