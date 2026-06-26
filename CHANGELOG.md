@@ -7,6 +7,12 @@ and this project uses semantic version tags for desktop releases.
 
 ## [Unreleased]
 
+## [0.0.3] - 2026-06-26
+
+### Added
+
+- Show a titlebar Update button after a packaged app update has downloaded.
+
 ## [0.0.2] - 2026-06-26
 
 ### Changed
