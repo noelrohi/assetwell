@@ -28,3 +28,15 @@ Set `VITE_SITE_URL` in production so canonical and Open Graph URLs are absolute:
 ```bash
 VITE_SITE_URL=https://your-domain.example
 ```
+
+## Vercel
+
+TanStack Start deploys to Vercel through Nitro. This app's Vite config uses the Nitro Vercel preset, which writes the Vercel Build Output API files to `.vercel/output`.
+
+Recommended Vercel setup:
+
+- Root Directory: `apps/www`
+- Install Command: `bun install`
+- Build Command: `bun run build`
+- Output Directory: leave unset
+- Environment Variables: set `VITE_SITE_URL` to the deployed site URL

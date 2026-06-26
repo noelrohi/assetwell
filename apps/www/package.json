@@ -34,6 +34,7 @@
     "@types/react": "^19.2.0",
     "@types/react-dom": "^19.2.0",
     "@vitejs/plugin-react": "catalog:",
+    "nitro": "^3.0.260610-beta",
     "typescript": "catalog:",
     "vite": "catalog:"
   }

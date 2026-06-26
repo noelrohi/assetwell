@@ -85,6 +85,8 @@ The local library store remains a convenience index and can be rebuilt from futu
 
 The website download page and API use `@assetwell/product/downloads` as the single platform registry. macOS is currently available; Windows and Linux are listed as coming soon. `/api/download` only resolves release assets for platforms marked available and falls back to the GitHub release page when no matching macOS asset exists.
 
+The website uses Nitro's Vercel preset so TanStack Start server routes and static assets are emitted as Vercel Build Output API files under `.vercel/output`.
+
 ## Deferred Seams
 
 These are deliberate non-goals until Assetwell has matching product behavior:

@@ -37,6 +37,8 @@ Set `VITE_SITE_URL` for production website builds so canonical and Open Graph UR
 
 Website download platform availability and GitHub release asset selection live in `@assetwell/product/downloads`; keep `/download` and `/api/download` on that registry.
 
+The website deploys to Vercel through Nitro. Use `apps/www` as the Vercel Root Directory.
+
 ## Completion Checks
 
 For documentation-only changes:
