@@ -7,6 +7,17 @@ and this project uses semantic version tags for desktop releases.
 
 ## [Unreleased]
 
+## [0.0.7] - 2026-06-30
+
+### Added
+
+- Added Windows and Linux desktop release publishing alongside macOS.
+- Added public Windows and Linux download availability for the latest GitHub Release.
+
+### Changed
+
+- Updated desktop window chrome to use native Windows and Linux titlebars while keeping the custom macOS titlebar.
+
 ## [0.0.6] - 2026-06-26
 
 ### Added
