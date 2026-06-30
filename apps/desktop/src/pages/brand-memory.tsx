@@ -15,19 +15,16 @@ import { brandMemorySearchParser } from "@/lib/query-state"
 import { cn } from "@/lib/utils"
 
 export function BrandMemoryPage() {
-  const {
-    referenceLibrary,
-    chooseReferenceAsset,
-    refreshReferenceLibrary,
-    revealReferenceLibrary,
-    deleteReferenceAsset,
-  } = useHiggsfieldApp()
+  const { uploads } = useHiggsfieldApp()
   const [search, setSearch] = useQueryState("q", brandMemorySearchParser)
   const [deletingId, setDeletingId] = React.useState<string | null>(null)
+  const referenceLibrary = uploads.references
+  const activeWorkspaceName = uploads.activeWorkspace.name
+  const refreshUploads = uploads.refresh
 
   React.useEffect(() => {
-    void refreshReferenceLibrary()
-  }, [refreshReferenceLibrary])
+    void refreshUploads()
+  }, [refreshUploads])
 
   const filteredReferences = React.useMemo(() => {
     const query = search.trim().toLowerCase()
@@ -39,10 +36,10 @@ export function BrandMemoryPage() {
   }, [referenceLibrary, search])
 
   async function removeReference(id: string, name: string) {
-    if (!window.confirm(`Remove ${name} from Brand Memory?`)) return
+    if (!window.confirm(`Remove ${name} from Uploads?`)) return
 
     setDeletingId(id)
-    await deleteReferenceAsset(id)
+    await uploads.deleteReference(id)
     setDeletingId(null)
   }
 
@@ -51,21 +48,18 @@ export function BrandMemoryPage() {
       <header className="flex flex-wrap items-end justify-between gap-4 pb-8">
         <div className="max-w-xl">
           <h1 className="font-display text-2xl tracking-tight text-balance">
-            Brand memory
+            Uploads
           </h1>
           <p className="mt-1.5 text-sm leading-6 text-muted-foreground text-pretty">
-            Reusable logos, product shots, and references the Create composer
-            pulls from.
+            Local workspace folders for logos, product shots, and references the
+            Create composer pulls from.
           </p>
         </div>
-        <div className="flex gap-2">
-          <Button
-            variant="outline"
-            onClick={() => void revealReferenceLibrary()}
-          >
+        <div className="flex flex-wrap items-center justify-end gap-2">
+          <Button variant="outline" onClick={() => void uploads.reveal()}>
             Open folder
           </Button>
-          <Button onClick={() => void chooseReferenceAsset()}>
+          <Button onClick={() => void uploads.importFiles()}>
             <IconPlus />
             Add files
           </Button>
@@ -75,7 +69,7 @@ export function BrandMemoryPage() {
       <div className="flex items-center justify-between gap-3 border-t border-border/60 pt-6">
         <p className="text-sm text-muted-foreground">
           {referenceLibrary.length} file
-          {referenceLibrary.length === 1 ? "" : "s"}
+          {referenceLibrary.length === 1 ? "" : "s"} in {activeWorkspaceName}
         </p>
         <div className="flex gap-2">
           <div className="relative w-full sm:w-64">
@@ -85,14 +79,14 @@ export function BrandMemoryPage() {
               onChange={(event) => void setSearch(event.target.value)}
               placeholder="Search files"
               className="rounded-full bg-card/50 pl-9"
-              aria-label="Search Brand Memory files"
+              aria-label="Search Uploads files"
             />
           </div>
           <Button
             variant="outline"
             size="icon"
-            onClick={() => void refreshReferenceLibrary()}
-            aria-label="Refresh Brand Memory"
+            onClick={() => void uploads.refresh()}
+            aria-label="Refresh Uploads"
           >
             <IconRefresh />
           </Button>
@@ -106,16 +100,13 @@ export function BrandMemoryPage() {
               <IconLibraryPhoto className="size-6" />
             </div>
             <h2 className="text-base font-medium text-foreground">
-              No references yet
+              No uploads in {activeWorkspaceName} yet
             </h2>
             <p className="mt-2 text-sm leading-6 text-muted-foreground">
-              Add the image files your team reuses. Assetwell copies them in so
-              the composer can attach them in a click.
+              Add the image files your team reuses. Assetwell copies them into
+              this workspace so the composer can attach them in a click.
             </p>
-            <Button
-              className="mt-5"
-              onClick={() => void chooseReferenceAsset()}
-            >
+            <Button className="mt-5" onClick={() => void uploads.importFiles()}>
               <IconPlus />
               Add files
             </Button>

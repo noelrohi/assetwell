@@ -140,9 +140,33 @@ const bridgeInvocationCases = {
     call: (bridge) => bridge.library.revealOutputRoot(),
     expected: [IPC_CHANNELS.library.revealOutputRoot],
   },
-  "library.listReferenceAssets": {
-    call: (bridge) => bridge.library.listReferenceAssets(),
-    expected: [IPC_CHANNELS.library.listReferenceAssets],
+  "library.loadUploadsSnapshot": {
+    call: (bridge) => bridge.library.loadUploadsSnapshot(),
+    expected: [IPC_CHANNELS.library.loadUploadsSnapshot],
+  },
+  "library.setActiveUploadWorkspace": {
+    call: (bridge) =>
+      bridge.library.setActiveUploadWorkspace({ id: "Brand A" }),
+    expected: [
+      IPC_CHANNELS.library.setActiveUploadWorkspace,
+      { id: "Brand A" },
+    ],
+  },
+  "library.createUploadWorkspace": {
+    call: (bridge) => bridge.library.createUploadWorkspace({ name: "Brand A" }),
+    expected: [IPC_CHANNELS.library.createUploadWorkspace, { name: "Brand A" }],
+  },
+  "library.updateUploadWorkspace": {
+    call: (bridge) =>
+      bridge.library.updateUploadWorkspace({ id: "Brand A", name: "Brand B" }),
+    expected: [
+      IPC_CHANNELS.library.updateUploadWorkspace,
+      { id: "Brand A", name: "Brand B" },
+    ],
+  },
+  "library.deleteUploadWorkspace": {
+    call: (bridge) => bridge.library.deleteUploadWorkspace({ id: "Brand A" }),
+    expected: [IPC_CHANNELS.library.deleteUploadWorkspace, { id: "Brand A" }],
   },
   "library.importReferenceAssets": {
     call: (bridge) => bridge.library.importReferenceAssets(),

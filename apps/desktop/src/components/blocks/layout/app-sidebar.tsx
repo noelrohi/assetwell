@@ -7,7 +7,9 @@ import {
   IconWand,
 } from "@tabler/icons-react"
 
+import { CreditsCard } from "@/components/blocks/layout/credits-card"
 import { NavUser } from "@/components/blocks/layout/nav-user"
+import { WorkspaceSwitcher } from "@/components/blocks/layout/workspace-switcher"
 import {
   Sidebar,
   SidebarContent,
@@ -25,7 +27,7 @@ const NAV = [
   { to: "/videos", label: "Videos", icon: IconMovie, exact: false },
   {
     to: "/brand-memory",
-    label: "Brand memory",
+    label: "Uploads",
     icon: IconLibraryPhoto,
     exact: false,
   },
@@ -57,6 +59,11 @@ export function AppSidebar({
       )}
 
       <SidebarContent className="scrollbar-none bg-transparent">
+        <SidebarGroup className="pb-1">
+          <SidebarGroupContent>
+            <WorkspaceSwitcher />
+          </SidebarGroupContent>
+        </SidebarGroup>
         <SidebarGroup>
           <SidebarGroupContent>
             <SidebarMenu className="gap-1">
@@ -88,6 +95,7 @@ export function AppSidebar({
 
       <SidebarFooter className="relative bg-sidebar/70 pb-3 backdrop-blur-xl supports-[backdrop-filter]:bg-sidebar/60">
         <div className="pointer-events-none absolute -top-10 right-0 left-0 h-10 bg-gradient-to-t from-sidebar/70 via-sidebar/35 to-transparent supports-[backdrop-filter]:from-sidebar/60" />
+        <CreditsCard />
         <NavUser />
       </SidebarFooter>
     </Sidebar>

@@ -8,6 +8,8 @@ import type {
   AssetwellLibrarySnapshot,
   AssetwellPromptKind,
   AssetwellSettings,
+  AssetwellUploadsSnapshot,
+  AssetwellUploadWorkspace,
 } from "@assetwell/desktop-bridge"
 
 import {
@@ -65,6 +67,12 @@ const HiggsfieldAppContext = React.createContext<HiggsfieldAppValue | null>(
   null,
 )
 
+const defaultUploadWorkspace: AssetwellUploadWorkspace = {
+  id: "Default",
+  name: "Default",
+  isDefault: true,
+}
+
 export function HiggsfieldProvider({
   children,
 }: {
@@ -86,15 +94,22 @@ export function HiggsfieldProvider({
   )
   const [workspace, setWorkspace] =
     React.useState<HiggsfieldWorkspaceContext | null>(null)
-  const [imageModels, setImageModels] =
-    React.useState<ModelOption[]>(fallbackImageModels)
-  const [videoModels, setVideoModels] =
-    React.useState<ModelOption[]>(fallbackVideoModels)
+  const [imageModels, setImageModels] = React.useState<ModelOption[]>(() =>
+    bridge ? [] : fallbackImageModels,
+  )
+  const [videoModels, setVideoModels] = React.useState<ModelOption[]>(() =>
+    bridge ? [] : fallbackVideoModels,
+  )
   const [creatives, setCreatives] = React.useState<Creative[]>([])
   const [videos, setVideos] = React.useState<VideoResult[]>([])
   const [referenceLibrary, setReferenceLibrary] = React.useState<
     ReferenceAsset[]
   >(libraryBridge ? [] : seededReferences)
+  const [uploadWorkspaces, setUploadWorkspaces] = React.useState<
+    AssetwellUploadWorkspace[]
+  >([defaultUploadWorkspace])
+  const [activeUploadWorkspaceId, setActiveUploadWorkspaceIdState] =
+    React.useState(defaultUploadWorkspace.id)
   const [customPrompts, setCustomPrompts] = React.useState<PromptPreset[]>([])
   const [settings, setSettings] = React.useState<AssetwellSettings | null>(null)
   const [localStateReady, setLocalStateReady] = React.useState(!libraryBridge)
@@ -135,19 +150,31 @@ export function HiggsfieldProvider({
     }
   }, [bridge])
 
+  const applyUploadsSnapshot = React.useCallback(
+    (snapshot: AssetwellUploadsSnapshot) => {
+      const workspaces = snapshot.workspaceState.workspaces.length
+        ? snapshot.workspaceState.workspaces
+        : [defaultUploadWorkspace]
+      setUploadWorkspaces(workspaces)
+      setActiveUploadWorkspaceIdState(
+        snapshot.workspaceState.activeWorkspaceId || defaultUploadWorkspace.id,
+      )
+      setReferenceLibrary(snapshot.references as ReferenceAsset[])
+    },
+    [],
+  )
+
   const refreshReferenceLibrary = React.useCallback(async () => {
     if (!libraryBridge) return
 
     try {
-      setReferenceLibrary(
-        (await libraryBridge.listReferenceAssets()) as ReferenceAsset[],
-      )
+      applyUploadsSnapshot(await libraryBridge.loadUploadsSnapshot())
     } catch (error) {
-      toast("Could not refresh Brand Memory", {
+      toast("Could not refresh Uploads", {
         description: friendlyError(error),
       })
     }
-  }, [libraryBridge])
+  }, [applyUploadsSnapshot, libraryBridge])
 
   const restoreSnapshot = React.useCallback(
     (snapshot: AssetwellLibrarySnapshot) => {
@@ -211,29 +238,29 @@ export function HiggsfieldProvider({
 
   const chooseReferenceAsset = React.useCallback(async () => {
     if (!libraryBridge) {
-      toast("Open the desktop app to add Brand Memory files")
+      toast("Open the desktop app to add Uploads files")
       return
     }
 
     try {
       const before = referenceLibrary.length
-      const imported = await libraryBridge.importReferenceAssets()
-      setReferenceLibrary(imported as ReferenceAsset[])
-      const added = Math.max(0, imported.length - before)
+      const snapshot = await libraryBridge.importReferenceAssets()
+      applyUploadsSnapshot(snapshot)
+      const added = Math.max(0, snapshot.references.length - before)
       if (added > 0) {
-        toast(`Added ${added} Brand Memory file${added === 1 ? "" : "s"}`)
+        toast(`Added ${added} Uploads file${added === 1 ? "" : "s"}`)
       }
     } catch (error) {
-      toast("Could not add Brand Memory files", {
+      toast("Could not add files to Uploads", {
         description: friendlyError(error),
       })
     }
-  }, [libraryBridge, referenceLibrary.length])
+  }, [applyUploadsSnapshot, libraryBridge, referenceLibrary.length])
 
   const revealReferenceLibrary = React.useCallback(async () => {
     if (!libraryBridge) return
     const opened = await libraryBridge.revealReferenceAssets()
-    if (!opened) toast("Could not open Brand Memory")
+    if (!opened) toast("Could not open Uploads folder")
   }, [libraryBridge])
 
   const deleteReferenceAsset = React.useCallback(
@@ -241,20 +268,111 @@ export function HiggsfieldProvider({
       if (!libraryBridge) return
 
       try {
-        const deleted = await libraryBridge.deleteReferenceAsset({ id })
-        if (!deleted) {
-          toast("Could not find that Brand Memory file")
-          return
-        }
-        await refreshReferenceLibrary()
-        toast("Removed Brand Memory file")
+        applyUploadsSnapshot(await libraryBridge.deleteReferenceAsset({ id }))
+        toast("Removed Uploads file")
       } catch (error) {
-        toast("Could not remove Brand Memory file", {
+        toast("Could not remove Uploads file", {
           description: friendlyError(error),
         })
       }
     },
-    [libraryBridge, refreshReferenceLibrary],
+    [applyUploadsSnapshot, libraryBridge],
+  )
+
+  const setActiveUploadWorkspace = React.useCallback(
+    async (id: string) => {
+      if (!libraryBridge) return false
+
+      try {
+        applyUploadsSnapshot(
+          await libraryBridge.setActiveUploadWorkspace({
+            id,
+          }),
+        )
+        return true
+      } catch (error) {
+        toast("Could not switch Uploads workspace", {
+          description: friendlyError(error),
+        })
+        return false
+      }
+    },
+    [applyUploadsSnapshot, libraryBridge],
+  )
+
+  const createUploadWorkspace = React.useCallback(
+    async (name: string) => {
+      if (!libraryBridge) {
+        toast("Open the desktop app to create Uploads workspaces")
+        return false
+      }
+
+      try {
+        const snapshot = await libraryBridge.createUploadWorkspace({
+          name,
+        })
+        applyUploadsSnapshot(snapshot)
+        const activeWorkspace = snapshot.workspaceState.workspaces.find(
+          (workspace) =>
+            workspace.id === snapshot.workspaceState.activeWorkspaceId,
+        )
+        toast(`Switched to ${activeWorkspace?.name ?? name}`)
+        return true
+      } catch (error) {
+        toast("Could not create Uploads workspace", {
+          description: friendlyError(error),
+        })
+        return false
+      }
+    },
+    [applyUploadsSnapshot, libraryBridge],
+  )
+
+  const updateUploadWorkspace = React.useCallback(
+    async (id: string, name: string) => {
+      if (!libraryBridge) {
+        toast("Open the desktop app to rename Uploads workspaces")
+        return false
+      }
+
+      try {
+        const snapshot = await libraryBridge.updateUploadWorkspace({ id, name })
+        applyUploadsSnapshot(snapshot)
+        toast("Workspace renamed")
+        return true
+      } catch (error) {
+        toast("Could not rename Uploads workspace", {
+          description: friendlyError(error),
+        })
+        return false
+      }
+    },
+    [applyUploadsSnapshot, libraryBridge],
+  )
+
+  const deleteUploadWorkspace = React.useCallback(
+    async (id: string) => {
+      if (!libraryBridge) {
+        toast("Open the desktop app to delete Uploads workspaces")
+        return false
+      }
+
+      const workspaceName =
+        uploadWorkspaces.find((workspace) => workspace.id === id)?.name ??
+        "workspace"
+
+      try {
+        applyUploadsSnapshot(await libraryBridge.deleteUploadWorkspace({ id }))
+        toast(`Deleted ${workspaceName}`)
+        return true
+      } catch (error) {
+        toast("Could not delete Uploads workspace", {
+          description: friendlyError(error),
+        })
+        return false
+      }
+    },
+    [applyUploadsSnapshot, libraryBridge, uploadWorkspaces],
   )
 
   const chooseVideoSource = React.useCallback(async () => {
@@ -357,11 +475,11 @@ export function HiggsfieldProvider({
 
     async function load() {
       if (library) {
-        const [snapshot, storedSettings, storedReferences] =
+        const [snapshot, storedSettings, uploadsSnapshot] =
           await Promise.allSettled([
             library.loadSnapshot(),
             library.getSettings(),
-            library.listReferenceAssets(),
+            library.loadUploadsSnapshot(),
           ])
 
         if (snapshot.status === "fulfilled" && snapshot.value) {
@@ -370,8 +488,8 @@ export function HiggsfieldProvider({
         if (storedSettings.status === "fulfilled") {
           setSettings(storedSettings.value)
         }
-        if (storedReferences.status === "fulfilled") {
-          setReferenceLibrary(storedReferences.value as ReferenceAsset[])
+        if (uploadsSnapshot.status === "fulfilled") {
+          applyUploadsSnapshot(uploadsSnapshot.value)
         }
         setLocalStateReady(true)
       }
@@ -406,7 +524,7 @@ export function HiggsfieldProvider({
     }
 
     void load()
-  }, [bridge, libraryBridge, restoreSnapshot])
+  }, [applyUploadsSnapshot, bridge, libraryBridge, restoreSnapshot])
 
   React.useEffect(() => {
     if (!bridge) return
@@ -469,6 +587,47 @@ export function HiggsfieldProvider({
     customPrompts,
   ])
 
+  const activeUploadWorkspace = React.useMemo(
+    () =>
+      uploadWorkspaces.find(
+        (workspace) => workspace.id === activeUploadWorkspaceId,
+      ) ??
+      uploadWorkspaces[0] ??
+      defaultUploadWorkspace,
+    [activeUploadWorkspaceId, uploadWorkspaces],
+  )
+
+  const uploads = React.useMemo(
+    () => ({
+      workspaces: uploadWorkspaces,
+      activeWorkspace: activeUploadWorkspace,
+      activeWorkspaceId: activeUploadWorkspaceId,
+      references: referenceLibrary,
+      refresh: refreshReferenceLibrary,
+      reveal: revealReferenceLibrary,
+      importFiles: chooseReferenceAsset,
+      deleteReference: deleteReferenceAsset,
+      switchWorkspace: setActiveUploadWorkspace,
+      createWorkspace: createUploadWorkspace,
+      updateWorkspace: updateUploadWorkspace,
+      deleteWorkspace: deleteUploadWorkspace,
+    }),
+    [
+      activeUploadWorkspace,
+      activeUploadWorkspaceId,
+      chooseReferenceAsset,
+      createUploadWorkspace,
+      deleteReferenceAsset,
+      deleteUploadWorkspace,
+      referenceLibrary,
+      refreshReferenceLibrary,
+      revealReferenceLibrary,
+      setActiveUploadWorkspace,
+      updateUploadWorkspace,
+      uploadWorkspaces,
+    ],
+  )
+
   const value = React.useMemo<HiggsfieldAppValue>(
     () => ({
       account,
@@ -478,7 +637,7 @@ export function HiggsfieldProvider({
       videoModels,
       creatives,
       videos,
-      referenceLibrary,
+      uploads,
       imagePrompts: [
         ...customPrompts.filter((prompt) => prompt.kind === "image"),
         ...shippedImagePrompts,
@@ -492,10 +651,6 @@ export function HiggsfieldProvider({
       videoDraftSource,
       refreshAccount,
       signIn,
-      chooseReferenceAsset,
-      refreshReferenceLibrary,
-      revealReferenceLibrary,
-      deleteReferenceAsset,
       chooseVideoSource,
       chooseOutputRoot,
       revealOutputRoot,
@@ -522,17 +677,13 @@ export function HiggsfieldProvider({
       videoModels,
       creatives,
       videos,
-      referenceLibrary,
+      uploads,
       customPrompts,
       settings,
       runningJobs,
       videoDraftSource,
       refreshAccount,
       signIn,
-      chooseReferenceAsset,
-      refreshReferenceLibrary,
-      revealReferenceLibrary,
-      deleteReferenceAsset,
       chooseVideoSource,
       chooseOutputRoot,
       revealOutputRoot,

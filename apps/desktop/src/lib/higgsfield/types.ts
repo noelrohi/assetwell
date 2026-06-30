@@ -7,6 +7,7 @@ import type {
   AssetwellPromptKind,
   AssetwellPromptPreset,
   AssetwellSettings,
+  AssetwellUploadWorkspace,
 } from "@assetwell/desktop-bridge"
 
 import type { ImagePlacement, VideoPlacement } from "@/lib/placements"
@@ -56,6 +57,7 @@ export interface ReferenceAsset extends SeedReferenceAsset {
 }
 
 export type PromptPreset = AssetwellPromptPreset
+export type UploadWorkspace = AssetwellUploadWorkspace
 
 export interface ModelOption {
   id: string
@@ -95,6 +97,21 @@ export interface MakeVideosRequest {
   durationSeconds: number
 }
 
+export interface UploadsDomain {
+  workspaces: UploadWorkspace[]
+  activeWorkspace: UploadWorkspace
+  activeWorkspaceId: string
+  references: ReferenceAsset[]
+  refresh: () => Promise<void>
+  reveal: () => Promise<void>
+  importFiles: () => Promise<void>
+  deleteReference: (id: string) => Promise<void>
+  switchWorkspace: (id: string) => Promise<boolean>
+  createWorkspace: (name: string) => Promise<boolean>
+  updateWorkspace: (id: string, name: string) => Promise<boolean>
+  deleteWorkspace: (id: string) => Promise<boolean>
+}
+
 export interface HiggsfieldAppValue {
   account: HiggsfieldAccountStatus | null
   cliStatus: HiggsfieldCliStatus | null
@@ -103,7 +120,7 @@ export interface HiggsfieldAppValue {
   videoModels: ModelOption[]
   creatives: Creative[]
   videos: VideoResult[]
-  referenceLibrary: ReferenceAsset[]
+  uploads: UploadsDomain
   imagePrompts: PromptPreset[]
   videoPrompts: PromptPreset[]
   settings: AssetwellSettings | null
@@ -111,10 +128,6 @@ export interface HiggsfieldAppValue {
   videoDraftSource: VideoSource | null
   refreshAccount: () => Promise<void>
   signIn: () => Promise<void>
-  chooseReferenceAsset: () => Promise<void>
-  refreshReferenceLibrary: () => Promise<void>
-  revealReferenceLibrary: () => Promise<void>
-  deleteReferenceAsset: (id: string) => Promise<void>
   chooseVideoSource: () => Promise<VideoSource | null>
   chooseOutputRoot: () => Promise<void>
   revealOutputRoot: () => Promise<void>

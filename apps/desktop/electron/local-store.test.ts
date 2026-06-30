@@ -6,6 +6,7 @@ import type { AssetwellLibrarySnapshot } from "@assetwell/desktop-bridge"
 
 import {
   openDialogCalls,
+  openedPaths,
   saveDialogCalls,
   resetElectronMock,
   setElectronUserDataRoot,
@@ -125,10 +126,16 @@ describe("local store", () => {
     })
   })
 
-  test("imports, sanitizes, dedupes, lists, and deletes Brand Memory images", async () => {
+  test("imports, sanitizes, dedupes, lists, and deletes Uploads images per workspace", async () => {
     const outputRoot = path.join(userDataRoot, "Library")
     setNextOpenDialogResult({ canceled: false, filePaths: [outputRoot] })
     await localStore.chooseAssetwellOutputRoot()
+
+    await expect(localStore.getUploadWorkspaceState()).resolves.toMatchObject({
+      activeWorkspaceId: "Default",
+      workspaces: [{ id: "Default", name: "Default", isDefault: true }],
+    })
+    await localStore.createUploadWorkspace({ name: "Brand A" })
 
     const sourceRoot = path.join(userDataRoot, "sources")
     await mkdir(sourceRoot, { recursive: true })
@@ -143,8 +150,13 @@ describe("local store", () => {
       canceled: false,
       filePaths: [firstSource, secondSource, ignoredSource],
     })
-    const imported = await localStore.importReferenceAssets()
+    const importedSnapshot = await localStore.importReferenceAssets()
+    const imported = importedSnapshot.references
 
+    expect(openDialogCalls.at(-1)?.[0]).toMatchObject({
+      title: "Add files to Uploads",
+      defaultPath: path.join(outputRoot, "Uploads", "Brand A"),
+    })
     expect(imported.map((asset) => asset.name)).toEqual([
       "logo-final-2.png",
       "logo-final.png",
@@ -152,16 +164,130 @@ describe("local store", () => {
     expect(
       imported.every((asset) => asset.url.startsWith("assetwell-local://")),
     ).toBe(true)
+    expect(imported[0].filePath).toContain(path.join("Uploads", "Brand A"))
     expect(await readFile(imported[0].filePath, "utf8")).toBe("two")
     expect(await readFile(imported[1].filePath, "utf8")).toBe("one")
 
-    expect(await localStore.deleteReferenceAsset({ id: imported[0].id })).toBe(
-      true,
-    )
-    expect(await localStore.deleteReferenceAsset({ id: "missing" })).toBe(false)
+    await localStore.setActiveUploadWorkspace({ id: "Default" })
+    expect(await localStore.listReferenceAssets()).toEqual([])
+
+    await localStore.setActiveUploadWorkspace({ id: "Brand A" })
+    await expect(localStore.revealReferenceAssets()).resolves.toBe(true)
+    expect(openedPaths.at(-1)).toBe(path.join(outputRoot, "Uploads", "Brand A"))
+
+    const afterDelete = await localStore.deleteReferenceAsset({
+      id: imported[0].id,
+    })
+    expect(afterDelete.references.map((asset) => asset.name)).toEqual([
+      "logo-final.png",
+    ])
+
+    const missingDelete = await localStore.deleteReferenceAsset({
+      id: "missing",
+    })
+    expect(missingDelete.references.map((asset) => asset.name)).toEqual([
+      "logo-final.png",
+    ])
     expect(
       (await localStore.listReferenceAssets()).map((asset) => asset.name),
     ).toEqual(["logo-final.png"])
+  })
+
+  test("stores Uploads workspace display names separately from folder ids", async () => {
+    const outputRoot = path.join(userDataRoot, "Library")
+    setNextOpenDialogResult({ canceled: false, filePaths: [outputRoot] })
+    await localStore.chooseAssetwellOutputRoot()
+
+    const snapshot = await localStore.createUploadWorkspace({
+      name: "Brand/A?",
+    })
+
+    expect(snapshot.workspaceState.activeWorkspaceId).toBe("Brand-A")
+    expect(
+      snapshot.workspaceState.workspaces.find(
+        (workspace) => workspace.id === "Brand-A",
+      ),
+    ).toEqual({ id: "Brand-A", name: "Brand/A?", isDefault: false })
+
+    const settings = JSON.parse(
+      await readFile(path.join(userDataRoot, "state", "settings.json"), "utf8"),
+    ) as { uploadWorkspaces?: unknown[] }
+    expect(settings.uploadWorkspaces).toContainEqual({
+      id: "Brand-A",
+      name: "Brand/A?",
+    })
+  })
+
+  test("renames and deletes Uploads workspaces", async () => {
+    const outputRoot = path.join(userDataRoot, "Library")
+    setNextOpenDialogResult({ canceled: false, filePaths: [outputRoot] })
+    await localStore.chooseAssetwellOutputRoot()
+
+    await localStore.createUploadWorkspace({ name: "Brand A" })
+    await localStore.createUploadWorkspace({ name: "Brand B" })
+
+    const renamed = await localStore.updateUploadWorkspace({
+      id: "Brand A",
+      name: "Brand Alpha",
+    })
+    expect(renamed.workspaceState.workspaces).toContainEqual({
+      id: "Brand A",
+      name: "Brand Alpha",
+      isDefault: false,
+    })
+
+    await writeFile(
+      path.join(outputRoot, "Uploads", "Brand A", "keep.png"),
+      "brand-a",
+    )
+    const afterInactiveDelete = await localStore.deleteUploadWorkspace({
+      id: "Brand A",
+    })
+    expect(afterInactiveDelete.workspaceState.activeWorkspaceId).toBe("Brand B")
+    expect(
+      afterInactiveDelete.workspaceState.workspaces.some(
+        (workspace) => workspace.id === "Brand A",
+      ),
+    ).toBe(false)
+    await expect(
+      readFile(path.join(outputRoot, "Uploads", "Brand A", "keep.png")),
+    ).rejects.toThrow()
+
+    const afterActiveDelete = await localStore.deleteUploadWorkspace({
+      id: "Brand B",
+    })
+    expect(afterActiveDelete.workspaceState.activeWorkspaceId).toBe("Default")
+    expect(afterActiveDelete.workspaceState.workspaces).toEqual([
+      { id: "Default", name: "Default", isDefault: true },
+    ])
+
+    await expect(
+      localStore.updateUploadWorkspace({ id: "Default", name: "Inbox" }),
+    ).rejects.toThrow("default Uploads workspace cannot be renamed")
+    await expect(
+      localStore.deleteUploadWorkspace({ id: "Default" }),
+    ).rejects.toThrow("default Uploads workspace cannot be deleted")
+  })
+
+  test("shows existing Brand Memory files in the Default Uploads workspace", async () => {
+    const outputRoot = path.join(userDataRoot, "Library")
+    setNextOpenDialogResult({ canceled: false, filePaths: [outputRoot] })
+    await localStore.chooseAssetwellOutputRoot()
+
+    const legacyRoot = path.join(outputRoot, "Brand Memory")
+    await mkdir(legacyRoot, { recursive: true })
+    await writeFile(path.join(legacyRoot, "Legacy Logo.png"), "legacy")
+
+    await expect(localStore.getUploadWorkspaceState()).resolves.toMatchObject({
+      activeWorkspaceId: "Default",
+    })
+
+    const references = await localStore.listReferenceAssets()
+    expect(references.map((asset) => asset.name)).toEqual(["Legacy Logo.png"])
+    expect(references[0]?.filePath).toBe(
+      path.join(outputRoot, "Uploads", "Default", "Legacy Logo.png"),
+    )
+    expect(await readFile(references[0]?.filePath ?? "", "utf8")).toBe("legacy")
   })
 
   test("saves and reloads normalized library snapshots", async () => {

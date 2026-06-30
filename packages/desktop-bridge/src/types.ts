@@ -251,6 +251,41 @@ export interface AssetwellReferenceAsset extends AssetwellPersistedReferenceAsse
   modifiedAt: string | null
 }
 
+export interface AssetwellUploadWorkspace {
+  /** Sanitized folder key under the local Uploads directory. */
+  id: string
+  /** User-facing label; may differ from the folder key. */
+  name: string
+  isDefault: boolean
+}
+
+export interface AssetwellUploadWorkspaceState {
+  workspaces: AssetwellUploadWorkspace[]
+  activeWorkspaceId: string
+}
+
+export interface AssetwellUploadsSnapshot {
+  workspaceState: AssetwellUploadWorkspaceState
+  references: AssetwellReferenceAsset[]
+}
+
+export interface AssetwellSetActiveUploadWorkspaceRequest {
+  id: string
+}
+
+export interface AssetwellCreateUploadWorkspaceRequest {
+  name: string
+}
+
+export interface AssetwellUpdateUploadWorkspaceRequest {
+  id: string
+  name: string
+}
+
+export interface AssetwellDeleteUploadWorkspaceRequest {
+  id: string
+}
+
 export interface AssetwellDeleteReferenceAssetRequest {
   id: string
 }
@@ -353,12 +388,24 @@ export interface DesktopBridge {
     getSettings(): Promise<AssetwellSettings>
     chooseOutputRoot(): Promise<AssetwellChooseOutputRootResult | null>
     revealOutputRoot(): Promise<boolean>
-    listReferenceAssets(): Promise<AssetwellReferenceAsset[]>
-    importReferenceAssets(): Promise<AssetwellReferenceAsset[]>
+    loadUploadsSnapshot(): Promise<AssetwellUploadsSnapshot>
+    setActiveUploadWorkspace(
+      request: AssetwellSetActiveUploadWorkspaceRequest,
+    ): Promise<AssetwellUploadsSnapshot>
+    createUploadWorkspace(
+      request: AssetwellCreateUploadWorkspaceRequest,
+    ): Promise<AssetwellUploadsSnapshot>
+    updateUploadWorkspace(
+      request: AssetwellUpdateUploadWorkspaceRequest,
+    ): Promise<AssetwellUploadsSnapshot>
+    deleteUploadWorkspace(
+      request: AssetwellDeleteUploadWorkspaceRequest,
+    ): Promise<AssetwellUploadsSnapshot>
+    importReferenceAssets(): Promise<AssetwellUploadsSnapshot>
     revealReferenceAssets(): Promise<boolean>
     deleteReferenceAsset(
       request: AssetwellDeleteReferenceAssetRequest,
-    ): Promise<boolean>
+    ): Promise<AssetwellUploadsSnapshot>
     exportCreativeZip(
       request: AssetwellExportCreativeZipRequest,
     ): Promise<AssetwellExportCreativeZipResult | null>

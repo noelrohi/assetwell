@@ -1,9 +1,4 @@
-import {
-  IconFolderCog,
-  IconLogin2,
-  IconLogout,
-  IconSparkles,
-} from "@tabler/icons-react"
+import { IconFolderCog, IconLogin2, IconLogout } from "@tabler/icons-react"
 
 import {
   DropdownMenu,
@@ -38,8 +33,6 @@ export function NavUser() {
   const name = account?.email?.split("@")[0] ?? "Assetwell"
   const email = account?.email ?? "Not signed in"
   const initial = name.charAt(0).toUpperCase()
-  const credits =
-    account?.credits == null ? "…" : Number(account.credits.toFixed(1))
 
   return (
     <SidebarMenu>
@@ -51,16 +44,12 @@ export function NavUser() {
               className="no-drag data-[state=open]:bg-sidebar-accent data-[state=open]:text-sidebar-accent-foreground"
             >
               <AccountAvatar initial={initial} />
-              <div className="grid flex-1 text-left text-sm leading-tight">
-                <span className="truncate font-medium">{name}</span>
-                <span className="truncate text-xs text-muted-foreground">
+              <div className="grid flex-1 text-left leading-tight">
+                <span className="truncate text-xs font-medium">{name}</span>
+                <span className="truncate text-[11px] text-muted-foreground">
                   {email}
                 </span>
               </div>
-              <span className="flex items-center gap-1 font-mono text-xs text-muted-foreground">
-                <IconSparkles className="size-3.5 text-ember" />
-                {credits}
-              </span>
             </SidebarMenuButton>
           </DropdownMenuTrigger>
           <DropdownMenuContent

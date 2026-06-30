@@ -2,11 +2,10 @@ import * as React from "react"
 import { useNavigate } from "@tanstack/react-router"
 import {
   IconArrowRight,
-  IconBook,
   IconCheck,
-  IconChevronDown,
   IconPaperclip,
   IconPlus,
+  IconSelector,
   IconX,
 } from "@tabler/icons-react"
 import { toast } from "sonner"
@@ -43,10 +42,8 @@ export function ImageComposer() {
   const navigate = useNavigate()
   const {
     imageModels,
-    referenceLibrary,
+    uploads,
     imagePrompts,
-    chooseReferenceAsset,
-    refreshReferenceLibrary,
     savePromptPreset,
     getModelAspectRatios,
     makeCreative,
@@ -67,6 +64,7 @@ export function ImageComposer() {
   const [modelRatios, setModelRatios] =
     React.useState<string[]>(fallbackRatioIds)
 
+  const referenceLibrary = uploads.references
   const selectedModel = imageModels.find((item) => item.id === model)
   const selectedRatio =
     baseRatios.find((item) => item.id === ratioId) ?? baseRatios[0]
@@ -81,6 +79,7 @@ export function ImageComposer() {
     ratioOptions.length < baseRatios.length
       ? `${ratioOptions.length} size${ratioOptions.length === 1 ? "" : "s"} for ${selectedModel?.label ?? "this model"}`
       : "Common Higgsfield sizes"
+  const activeUploadWorkspaceName = uploads.activeWorkspace.name
   const canMake = prompt.trim().length > 0 && model.length > 0
 
   React.useEffect(() => {
@@ -117,6 +116,11 @@ export function ImageComposer() {
     }
   }, [ratioId, ratioOptions, selectedRatio])
 
+  React.useEffect(() => {
+    const referenceIds = new Set(referenceLibrary.map((asset) => asset.id))
+    setRefs((current) => current.filter((id) => referenceIds.has(id)))
+  }, [referenceLibrary])
+
   async function make() {
     if (!canMake) return
     const creativeId = await makeCreative({
@@ -138,7 +142,7 @@ export function ImageComposer() {
   }
 
   return (
-    <div className="overflow-hidden rounded-2xl border border-sidebar-border/90 bg-sidebar/95 text-sidebar-foreground shadow-2xl shadow-black/10 backdrop-blur-xl transition-colors duration-200 focus-within:border-primary/50">
+    <div className="overflow-hidden rounded-3xl bg-secondary text-secondary-foreground shadow-2xl shadow-black/10 backdrop-blur-xl transition duration-200 focus-within:ring-1 focus-within:ring-ring/40">
       <Textarea
         value={prompt}
         onChange={(e) => setPrompt(e.target.value)}
@@ -182,15 +186,14 @@ export function ImageComposer() {
         <div className="flex min-w-0 flex-1 flex-wrap items-center gap-2">
           <Popover open={ratioPickerOpen} onOpenChange={setRatioPickerOpen}>
             <PopoverTrigger
-              className="flex h-8 min-w-[132px] items-center gap-1.5 rounded-full border border-border/70 bg-background/45 px-3 text-xs font-medium transition-colors hover:bg-accent data-[state=open]:bg-accent"
+              className="flex h-8 min-w-[104px] items-center gap-1.5 rounded-full px-3 text-xs font-medium transition-colors hover:bg-accent data-[state=open]:bg-accent"
               aria-label="Choose base size"
             >
-              <RatioSwatch ratio={ratio} />
               <span className="font-mono leading-none">{ratio.id}</span>
               <span className="min-w-0 max-w-24 truncate text-muted-foreground">
                 {ratio.label}
               </span>
-              <IconChevronDown className="ml-auto size-3.5 shrink-0 text-muted-foreground" />
+              <IconSelector className="ml-auto size-3.5 shrink-0 text-muted-foreground" />
             </PopoverTrigger>
             <PopoverContent align="start" sideOffset={6} className="w-72 p-2">
               <div className="px-2 pt-1 pb-2">
@@ -246,32 +249,32 @@ export function ImageComposer() {
 
           <Popover
             onOpenChange={(open) => {
-              if (open) void refreshReferenceLibrary()
+              if (open) void uploads.refresh()
             }}
           >
             <PopoverTrigger
+              aria-label="Reference images"
               className={cn(
-                "flex h-8 items-center gap-1.5 rounded-full border border-border/70 bg-background/45 px-3 text-xs font-medium transition-colors hover:bg-accent",
-                refs.length > 0 && "border-ember/40 text-ember",
+                "order-first flex h-8 items-center gap-1.5 rounded-full px-3 text-xs font-medium transition-colors hover:bg-accent",
+                refs.length > 0 && "bg-ember/10 text-ember hover:bg-ember/15",
               )}
             >
               <IconPaperclip className="size-3.5" />
-              {refs.length > 0
-                ? `${refs.length} ref${refs.length > 1 ? "s" : ""}`
-                : "Reference"}
+              {refs.length > 0 &&
+                `${refs.length} ref${refs.length > 1 ? "s" : ""}`}
             </PopoverTrigger>
             <PopoverContent align="start" className="w-80 p-3">
               <div className="mb-3 flex items-start justify-between gap-3 px-1">
                 <div>
                   <p className="text-xs font-medium text-muted-foreground">
-                    Brand Memory references
+                    Uploads references
                   </p>
                   <p className="mt-0.5 text-[0.68rem] leading-4 text-muted-foreground/70">
-                    Files are read from the Brand Memory folder.
+                    Files are read from {activeUploadWorkspaceName}.
                   </p>
                 </div>
                 <button
-                  onClick={() => void chooseReferenceAsset()}
+                  onClick={() => void uploads.importFiles()}
                   className="inline-flex h-7 shrink-0 items-center gap-1 rounded-full border border-border/70 px-2 text-[0.65rem] font-medium text-muted-foreground transition-colors hover:bg-accent hover:text-foreground"
                 >
                   <IconPlus className="size-3" />
@@ -281,14 +284,14 @@ export function ImageComposer() {
               {referenceLibrary.length === 0 ? (
                 <div className="rounded-xl border border-dashed border-border/80 bg-muted/25 px-4 py-6 text-center">
                   <p className="text-sm font-medium text-foreground">
-                    No Brand Memory files yet
+                    No Uploads files yet
                   </p>
                   <p className="mt-1 text-xs leading-5 text-muted-foreground">
                     Add logos, product shots, or mood references once, then pick
                     them here for any creative.
                   </p>
                   <button
-                    onClick={() => void chooseReferenceAsset()}
+                    onClick={() => void uploads.importFiles()}
                     className="mt-3 inline-flex h-8 items-center justify-center rounded-full bg-ember px-3 text-xs font-medium text-ember-foreground ember-glow"
                   >
                     Add files
@@ -332,9 +335,9 @@ export function ImageComposer() {
           </Popover>
 
           <Popover>
-            <PopoverTrigger className="flex h-8 items-center gap-1.5 rounded-full border border-border/70 bg-background/45 px-3 text-xs font-medium transition-colors hover:bg-accent">
-              <IconBook className="size-3.5" />
+            <PopoverTrigger className="flex h-8 items-center gap-1.5 rounded-full px-3 text-xs font-medium transition-colors hover:bg-accent">
               Templates
+              <IconSelector className="size-3.5 shrink-0 text-muted-foreground" />
             </PopoverTrigger>
             <PopoverContent align="start" className="w-80 p-1.5">
               <p className="px-2 py-1.5 text-xs font-medium text-muted-foreground">
