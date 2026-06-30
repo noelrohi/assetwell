@@ -8,7 +8,6 @@ export const DOWNLOAD_URL = "/download"
 
 /**
  * The server endpoint that resolves the latest release asset for an available
- * platform and redirects to it. macOS is available today; Windows and Linux are
- * listed from the shared download registry but do not resolve assets yet.
+ * platform and redirects to it.
  */
 export const DOWNLOAD_START_URL = "/api/download"

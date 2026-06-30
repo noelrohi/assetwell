@@ -37,7 +37,12 @@ const NAV = [
   },
 ] as const
 
-export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
+export function AppSidebar({
+  titlebarSpacerClassName,
+  ...props
+}: React.ComponentProps<typeof Sidebar> & {
+  titlebarSpacerClassName?: string | null
+}) {
   const pathname = useRouterState({ select: (s) => s.location.pathname })
 
   return (
@@ -47,7 +52,9 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
       className="group/sidebar-resizable bg-sidebar/80 backdrop-blur-xl supports-[backdrop-filter]:bg-sidebar/70"
       {...props}
     >
-      <SidebarHeader className="drag h-[44px] flex-row items-center px-3 py-0" />
+      {titlebarSpacerClassName && (
+        <SidebarHeader className={titlebarSpacerClassName} />
+      )}
 
       <SidebarContent className="scrollbar-none bg-transparent">
         <SidebarGroup>

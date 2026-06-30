@@ -195,7 +195,7 @@ export function PlacementTile({
               }}
               disabled={!canReveal}
               className="grid size-7 place-items-center rounded-md text-muted-foreground hover:bg-muted/60 hover:text-foreground"
-              title="Reveal in Finder"
+              title="Reveal in folder"
             >
               <IconFolderOpen className="size-3.5" />
             </button>

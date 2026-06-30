@@ -18,7 +18,7 @@ bun run build
 
 ## Desktop releases
 
-`.github/workflows/release.yml` publishes signed macOS desktop releases from semver tags.
+`.github/workflows/release.yml` publishes desktop releases from semver tags for macOS, Windows, and Linux.
 
 Release flow for humans or agents:
 
@@ -29,11 +29,15 @@ Release flow for humans or agents:
 5. Create and push `vX.Y.Z`.
 6. Watch the GitHub Actions release workflow.
 
-The workflow verifies that `apps/desktop/package.json` matches the tag, creates or updates the GitHub Release, then runs `electron-builder` on `macos-14`:
+The workflow verifies that `apps/desktop/package.json` matches the tag, creates or updates the GitHub Release, then runs `electron-builder` on a platform matrix:
 
 ```bash
 bun run --cwd apps/desktop dist -- --mac dmg zip --arm64 --publish always -c.publish.releaseType=release
+bun run --cwd apps/desktop dist -- --win nsis --x64 --publish always -c.publish.releaseType=release
+bun run --cwd apps/desktop dist -- --linux AppImage --x64 --publish always -c.publish.releaseType=release
 ```
+
+Manual workflow runs accept a specific release tag or `latest` to republish assets to the current latest GitHub Release. After all platform jobs finish, the workflow verifies that the latest release contains a macOS `.dmg`, a Windows `.exe`, and a Linux `.AppImage`.
 
 ## Signing secrets
 
@@ -45,16 +49,15 @@ Add these repository secrets before the first signed release:
 - `APPLE_PASSWORD`: app-specific Apple ID password.
 - `APPLE_TEAM_ID`: Apple Developer Team ID.
 
-`GITHUB_TOKEN` is provided by GitHub Actions and is used to create releases and upload artifacts.
+`GITHUB_TOKEN` is provided by GitHub Actions and is used to create releases and upload artifacts. Windows and Linux artifacts are currently published unsigned; add platform signing secrets before requiring trusted installer signatures on those platforms.
 
 ## Auto-updates
 
 Assetwell uses `electron-updater` with the GitHub provider configured in `apps/desktop/package.json`. Packaged apps check for updates shortly after launch, expose **Check for Updates…** in the app menu, download updates in the background, notify the user when an update is ready, show a titlebar Update button once the download is ready, and install on app quit or when the user restarts from the button.
 
-The macOS updater needs both `zip` output and `latest-mac.yml`; the release workflow publishes `dmg` and `zip` so GitHub Releases can serve manual downloads and update metadata. Set `ASSETWELL_DISABLE_AUTO_UPDATES=1` to disable checks while debugging a packaged app.
+The macOS updater needs both `zip` output and `latest-mac.yml`; Windows uses NSIS metadata, and Linux uses AppImage metadata. The release workflow publishes a macOS `dmg` and `zip`, a Windows NSIS installer, and a Linux AppImage so GitHub Releases can serve manual downloads and update metadata. Set `ASSETWELL_DISABLE_AUTO_UPDATES=1` to disable checks while debugging a packaged app.
 
 ## Still missing
 
-- Windows/Linux release jobs and signing.
+- Windows/Linux code signing.
 - A packaged-app smoke test after signing/notarization.
-- Public download page or stable download URL.

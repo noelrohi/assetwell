@@ -69,7 +69,7 @@ Canonical target sizes, display labels, availability, and unavailable placement 
 ## 8. Local-first output (the "why desktop" differentiator)
 
 - Every generation **auto-saves to a local folder-per-creative** (`~/Assetwell` default, user-configurable), named by date + prompt slug, with files named by size (`1200x628.png`, `1280x720.mp4`).
-- **The folder is the deliverable.** Primary action is **Reveal in Finder**; **Export as ZIP** is secondary (for off-machine sharing).
+- **The folder is the deliverable.** Primary action is **Reveal in folder**; **Export as ZIP** is secondary (for off-machine sharing).
 - The app keeps a small local index for the grids; the image/video files themselves are plain, user-owned files.
 
 ## 9. Credits & failure states

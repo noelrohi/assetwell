@@ -45,29 +45,16 @@ export const downloadPlatforms = [
   {
     id: "windows",
     name: "Windows",
-    note: "On the way",
-    availability: "coming-soon",
-    unavailableReason: "Windows downloads are coming soon.",
-    unavailableLabel: DOWNLOAD_COMING_SOON_LABEL,
-    assetMatchers: [
-      hasExtension(".exe"),
-      hasExtension(".msi"),
-      hasTokenAndExtension("win", ".zip"),
-    ],
+    note: "Windows 10 and later",
+    availability: "available",
+    assetMatchers: [hasExtension(".exe")],
   },
   {
     id: "linux",
     name: "Linux",
-    note: "On the way",
-    availability: "coming-soon",
-    unavailableReason: "Linux downloads are coming soon.",
-    unavailableLabel: DOWNLOAD_COMING_SOON_LABEL,
-    assetMatchers: [
-      hasExtension(".appimage"),
-      hasExtension(".deb"),
-      hasExtension(".rpm"),
-      hasTokenAndExtension("linux", ".zip"),
-    ],
+    note: "AppImage for x64 Linux",
+    availability: "available",
+    assetMatchers: [hasExtension(".appimage")],
   },
 ] as const satisfies readonly DownloadPlatformSpec[]
 

@@ -17,7 +17,7 @@ Open `http://localhost:3000`.
 
 The public CTA links to `/download`, where visitors pick a platform. Platform availability and release-asset matching live in `@assetwell/product/downloads`.
 
-`/api/download?platform=macos` redirects to the latest matching macOS release asset. Windows and Linux are marked coming soon, so the API does not resolve assets for them yet.
+`/api/download?platform=macos`, `/api/download?platform=windows`, and `/api/download?platform=linux` redirect to the latest matching release asset for each platform.
 
 ## Social previews
 

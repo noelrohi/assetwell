@@ -27,6 +27,7 @@
       "output": "release/electron"
     },
     "files": [
+      "build/icon.png",
       "dist/**/*",
       "dist-electron/**/*",
       "node_modules/@higgsfield/cli/**/*",
@@ -46,11 +47,20 @@
       ]
     },
     "win": {
+      "icon": "build/icon.ico",
       "target": [
         "nsis"
       ]
     },
+    "nsis": {
+      "oneClick": false,
+      "perMachine": false,
+      "allowToChangeInstallationDirectory": true,
+      "deleteAppDataOnUninstall": false
+    },
     "linux": {
+      "icon": "build/icon.png",
+      "category": "Graphics",
       "target": [
         "AppImage"
       ]

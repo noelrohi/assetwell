@@ -1,4 +1,10 @@
-import { app, BrowserWindow, nativeImage, protocol } from "electron"
+import {
+  app,
+  BrowserWindow,
+  nativeImage,
+  protocol,
+  type BrowserWindowConstructorOptions,
+} from "electron"
 import { createReadStream } from "node:fs"
 import { stat } from "node:fs/promises"
 import { Readable } from "node:stream"
@@ -93,6 +99,16 @@ function registerLocalAssetProtocol() {
 }
 
 function createWindow() {
+  const platformWindowOptions: BrowserWindowConstructorOptions =
+    process.platform === "darwin"
+      ? {
+          titleBarStyle: "hiddenInset",
+          trafficLightPosition: { x: 16, y: 15 },
+        }
+      : {
+          icon: appIconPath,
+        }
+
   const mainWindow = new BrowserWindow({
     width: 1180,
     height: 800,
@@ -100,8 +116,7 @@ function createWindow() {
     minHeight: 600,
     title: APP_NAME,
     backgroundColor: "#191816",
-    titleBarStyle: "hiddenInset",
-    trafficLightPosition: { x: 16, y: 15 },
+    ...platformWindowOptions,
     webPreferences: {
       preload: path.join(__dirname, "preload.cjs"),
       contextIsolation: true,

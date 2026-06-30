@@ -33,19 +33,29 @@ describe("download release asset selection", () => {
     expect(picked).toBeNull()
   })
 
-  test("does not select release assets for coming-soon platforms", () => {
+  test("picks Windows and Linux installers", () => {
     expect(
       pickDownloadReleaseAsset(
-        [asset("Assetwell-0.0.4.exe"), asset("Assetwell-0.0.4.dmg")],
+        [
+          asset("latest.yml"),
+          asset("Assetwell-0.0.4.exe.blockmap"),
+          asset("Assetwell-0.0.4.exe"),
+          asset("Assetwell-0.0.4.dmg"),
+        ],
         "windows",
-      ),
-    ).toBeNull()
+      )?.name,
+    ).toBe("Assetwell-0.0.4.exe")
     expect(
       pickDownloadReleaseAsset(
-        [asset("Assetwell-0.0.4.AppImage"), asset("Assetwell-0.0.4.dmg")],
+        [
+          asset("latest-linux.yml"),
+          asset("Assetwell-0.0.4.AppImage.blockmap"),
+          asset("Assetwell-0.0.4.AppImage"),
+          asset("Assetwell-0.0.4.dmg"),
+        ],
         "linux",
-      ),
-    ).toBeNull()
+      )?.name,
+    ).toBe("Assetwell-0.0.4.AppImage")
   })
 
   test("resolves request aliases and user-agent fallback through the registry", () => {

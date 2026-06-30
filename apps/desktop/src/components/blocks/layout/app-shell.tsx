@@ -1,7 +1,8 @@
-import { Fragment, type CSSProperties, type ReactNode } from "react"
+import * as React from "react"
 import { Link, Outlet, useRouterState } from "@tanstack/react-router"
 import { IconDownload, IconLoader2 } from "@tabler/icons-react"
 import { NuqsAdapter } from "nuqs/adapters/tanstack-router"
+import type { HostAppInfo } from "@assetwell/desktop-bridge"
 
 import { PAGE_HEADER_ACTIONS_SLOT } from "@/components/blocks/layout/page-header-actions"
 import { AppSidebar } from "@/components/blocks/layout/app-sidebar"
@@ -56,7 +57,7 @@ function PageBreadcrumb() {
         {trail.map((item, index) => {
           const isLast = index === trail.length - 1
           return (
-            <Fragment key={`${item.label}-${index}`}>
+            <React.Fragment key={`${item.label}-${index}`}>
               <BreadcrumbItem className="min-w-0">
                 {item.to && !isLast ? (
                   <BreadcrumbLink asChild>
@@ -69,7 +70,7 @@ function PageBreadcrumb() {
                 )}
               </BreadcrumbItem>
               {!isLast && <BreadcrumbSeparator />}
-            </Fragment>
+            </React.Fragment>
           )
         })}
       </BreadcrumbList>
@@ -164,18 +165,19 @@ function CollapsedTitlebarControls() {
   )
 }
 
-function InsetHeader() {
+function InsetHeader({ chrome }: { chrome: WindowChrome }) {
   const { state } = useSidebar()
   const isCollapsed = state === "collapsed"
 
   return (
     <header
       className={cn(
-        "drag flex h-[44px] shrink-0 items-center gap-2 px-5 transition-[padding] duration-150 ease-out",
-        isCollapsed && "pl-[var(--titlebar-control-left)]",
+        "flex h-[44px] shrink-0 items-center gap-2 px-5 transition-[padding] duration-150 ease-out",
+        chrome.headerDragClassName,
+        isCollapsed && chrome.collapsedHeaderPaddingClassName,
       )}
     >
-      {isCollapsed && <CollapsedTitlebarControls />}
+      {isCollapsed && chrome.collapsedTitlebarControls}
       <div className="no-drag flex min-w-0 flex-1 items-center">
         <PageBreadcrumb />
       </div>
@@ -190,7 +192,7 @@ function InsetHeader() {
   )
 }
 
-function OnboardingGate({ children }: { children: ReactNode }) {
+function OnboardingGate({ children }: { children: React.ReactNode }) {
   const { cliStatus, signIn } = useHiggsfieldApp()
 
   if (
@@ -227,7 +229,80 @@ function OnboardingGate({ children }: { children: ReactNode }) {
   return children
 }
 
+function getDesktopBridge() {
+  return typeof window === "undefined" ? undefined : window.assetwell
+}
+
+function useHostAppInfo() {
+  const [appInfo, setAppInfo] = React.useState<HostAppInfo | null>(null)
+
+  React.useEffect(() => {
+    let mounted = true
+    const bridge = getDesktopBridge()
+
+    if (!bridge) {
+      setAppInfo(null)
+      return () => {
+        mounted = false
+      }
+    }
+
+    void bridge.app
+      .getInfo()
+      .then((info) => {
+        if (mounted) setAppInfo(info)
+      })
+      .catch(() => {
+        if (mounted) setAppInfo(null)
+      })
+
+    return () => {
+      mounted = false
+    }
+  }, [])
+
+  return appInfo
+}
+
+type WindowChrome = {
+  mode: "standard" | "macos-custom-titlebar"
+  hasCustomTitlebar: boolean
+  sidebarTitlebarSpacerClassName: string | null
+  headerDragClassName: string | null
+  collapsedHeaderPaddingClassName: string | null
+  collapsedTitlebarControls: React.ReactNode | null
+}
+
+function useWindowChrome(): WindowChrome {
+  const appInfo = useHostAppInfo()
+
+  return React.useMemo(() => {
+    if (appInfo?.platform !== "darwin") {
+      return {
+        mode: "standard",
+        hasCustomTitlebar: false,
+        sidebarTitlebarSpacerClassName: null,
+        headerDragClassName: null,
+        collapsedHeaderPaddingClassName: null,
+        collapsedTitlebarControls: null,
+      }
+    }
+
+    return {
+      mode: "macos-custom-titlebar",
+      hasCustomTitlebar: true,
+      sidebarTitlebarSpacerClassName:
+        "drag h-[44px] flex-row items-center px-3 py-0",
+      headerDragClassName: "drag",
+      collapsedHeaderPaddingClassName: "pl-[var(--titlebar-control-left)]",
+      collapsedTitlebarControls: <CollapsedTitlebarControls />,
+    }
+  }, [appInfo?.platform])
+}
+
 export function AppShell() {
+  const chrome = useWindowChrome()
+
   return (
     <NuqsAdapter>
       <SidebarProvider
@@ -248,13 +323,15 @@ export function AppShell() {
               "calc(var(--traffic-light-top) + (var(--traffic-light-size) / 2) + var(--titlebar-control-offset-y))",
             "--titlebar-control-step":
               "calc(var(--titlebar-control-size) + 4px)",
-          } as CSSProperties
+          } as React.CSSProperties
         }
       >
-        <AppSidebar />
-        <PersistentSidebarControls />
+        <AppSidebar
+          titlebarSpacerClassName={chrome.sidebarTitlebarSpacerClassName}
+        />
+        {chrome.hasCustomTitlebar && <PersistentSidebarControls />}
         <SidebarInset className="min-h-0 overflow-hidden border-l border-border bg-background">
-          <InsetHeader />
+          <InsetHeader chrome={chrome} />
           <div className="min-h-0 flex-1 overflow-y-auto">
             <OnboardingGate>
               <Outlet />

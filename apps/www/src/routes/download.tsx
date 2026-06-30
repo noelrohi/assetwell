@@ -33,13 +33,12 @@ const platforms: Array<PlatformCard> = downloadPlatforms.map((platform) => ({
   ...platform,
   glyph: platformGlyphs[platform.id],
 }))
-const comingSoonPlatformList = downloadPlatforms
-  .filter((platform) => platform.availability === "coming-soon")
-  .map((platform) => platform.name)
-  .join(" and ")
-const availablePlatformName =
-  downloadPlatforms.find((platform) => platform.availability === "available")
-    ?.name ?? "Mac"
+
+const availablePlatformNames = formatPlatformList(
+  downloadPlatforms
+    .filter((platform) => platform.availability === "available")
+    .map((platform) => platform.name),
+)
 
 function DownloadPage() {
   const recommended = useDetectedPlatform()
@@ -75,13 +74,9 @@ function DownloadPage() {
             ))}
           </div>
 
-          {comingSoonPlatformList && (
-            <p className="mt-8 text-center text-sm text-muted-foreground">
-              {comingSoonPlatformList} are on the way. Grab the{" "}
-              {availablePlatformName} app today, and the rest will land here
-              soon.
-            </p>
-          )}
+          <p className="mt-8 text-center text-sm text-muted-foreground">
+            Available for {availablePlatformNames} from the latest release.
+          </p>
         </div>
       </main>
 
@@ -151,6 +146,13 @@ function useDetectedPlatform(): DownloadPlatformId | null {
 
 function cn(...classes: Array<string | false | null | undefined>): string {
   return classes.filter(Boolean).join(" ")
+}
+
+function formatPlatformList(names: readonly string[]): string {
+  if (names.length <= 1) return names.join("")
+  if (names.length === 2) return names.join(" and ")
+
+  return `${names.slice(0, -1).join(", ")}, and ${names.at(-1)}`
 }
 
 function AppleGlyph() {
