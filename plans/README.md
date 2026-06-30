@@ -6,15 +6,20 @@ honor its STOP conditions, and update your row when done.
 
 ## Execution order & status
 
-| Plan | Title                               | Priority | Effort | Depends on | Status |
-| ---- | ----------------------------------- | -------- | ------ | ---------- | ------ |
-| 001  | In-app "What's New" after an update | P2       | M      | —          | DONE   |
+| Plan | Title                                             | Priority | Effort | Depends on | Status |
+| ---- | ------------------------------------------------- | -------- | ------ | ---------- | ------ |
+| 001  | In-app "What's New" after an update               | P2       | M      | —          | DONE   |
+| 002  | Support 728×90 / 320×50 via AI "strip" path       | P1       | M      | —          | TODO   |
+| 003  | Pad / edge-extend fallback for ultra-wide banners | P2       | M      | 002        | TODO   |
 
 Status values: TODO | IN PROGRESS | DONE | BLOCKED (with one-line reason) | REJECTED (with one-line rationale)
 
 ## Dependency notes
 
 - None. 001 is self-contained.
+- **003 requires 002**: 002 introduces the `adaptation: "strip"` placements and the
+  strip-generation path that 003's pad fallback operates on. Land 002 first; 003 is
+  optional polish that only matters if 002's center-crop clips content in practice.
 
 ## Context for this batch
 
@@ -28,7 +33,42 @@ single source of the friendly copy (no second file to maintain, no extra release
 step) and works for the version the user is _currently running_ — which is the
 moment the maintainer wants the notes shown (first launch after an update).
 
+## Context for plans 002–003 (ultra-wide ad sizes)
+
+Requested directly by the maintainer: support the gated `728x90` (8.09:1) and
+`320x50` (6.40:1) banner placements. This was explored end-to-end with **live tests
+against the Higgsfield CLI** and a panel of four domain experts (ad-tech, generative
+pipeline, computer-vision, product design).
+
+The load-bearing finding: **no Higgsfield image model renders wider than 21:9.**
+`gpt_image_2` caps at 16:9; `nano_banana_2` at 21:9; the `outpaint` model snaps any
+wider request back to 21:9; edit models don't preserve an arbitrary-wide input
+canvas. So a native 8:1/6.4:1 frame is impossible — the last leg from 21:9 to the
+banner ratio must be crop or pad. Chosen approach (002): regenerate the base creative
+as a **strip-composed 21:9** with `nano_banana_2` (keep headline/subject/logo in a
+center band), then center-crop — content survives because it was composed into the
+band. 003 adds a mirror-extend **pad** fallback for when the crop still clips.
+
 ## Findings considered and rejected
+
+- **AI-generate a native 8:1/6.4:1 frame** (any model, incl. `outpaint`, edit models):
+  not possible — every model is hard-capped at 21:9 (verified live). Revisit only if
+  Higgsfield ships a wider model or a true generative-expand endpoint.
+- **Iterative / tiled "panorama" outpaint to exceed 21:9**: rejected — the `outpaint`
+  model centers its input and extends symmetrically with no directional control, so
+  tiles can't be chained coherently (would need a masked-inpaint API Higgsfield doesn't
+  expose).
+- **Seam carving / content-aware expander** (caire, js-image-carver, etc.): rejected —
+  mangles on-image text and streaks at ~3.5× widening.
+- **Hand-built compositor** (cutout + gradient bg + re-typed headline via ImageMagick):
+  rejected on quality — looked amateur vs. the model's native render. `nano_banana_2`
+  redesigning the ad matches the original quality; hand-compositing does not.
+- **External generative-expand engine** (Adobe Firefly / Stable Diffusion / Replicate):
+  technically works but breaks the "app only wraps the Higgsfield CLI" architecture
+  (new dep/auth/cost). Deferred, not chosen for now.
+- **DTC Ads Engine / `product-photoshoot` for native wide output**: rejected — DTC
+  burns in marketing copy (breaks the pure-visual contract) and `product-photoshoot`
+  rejects free-form aspect ratios (500s on anything past its enum; defaults to 16:9).
 
 - **Bundle a `whatsnew.json` in the app** (nuclear-style): rejected as the primary
   approach because it adds a per-release maintenance step and a packaged asset;
