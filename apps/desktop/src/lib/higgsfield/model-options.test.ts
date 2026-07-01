@@ -33,6 +33,92 @@ describe("model options", () => {
     ])
   })
 
+  test("marks hardcoded launch models as new", () => {
+    expect(
+      toModelOptions(
+        [
+          {
+            id: "nano_banana_2_lite",
+            label: "Nano Banana 2 Lite",
+            mediaKind: "image",
+            hint: null,
+          },
+          {
+            id: "gemini_omni",
+            label: "Gemini Omni Flash",
+            mediaKind: "video",
+            hint: null,
+          },
+        ],
+        "image",
+      ),
+    ).toEqual([
+      {
+        id: "nano_banana_2_lite",
+        label: "Nano Banana 2 Lite",
+        hint: null,
+        badges: ["new"],
+      },
+    ])
+
+    expect(
+      toModelOptions(
+        [
+          {
+            id: "nano_banana_2_lite",
+            label: "Nano Banana 2 Lite",
+            mediaKind: "image",
+            hint: null,
+          },
+          {
+            id: "gemini_omni",
+            label: "Gemini Omni Flash",
+            mediaKind: "video",
+            hint: null,
+          },
+        ],
+        "video",
+      ),
+    ).toEqual([
+      {
+        id: "gemini_omni",
+        label: "Gemini Omni Flash",
+        hint: null,
+        badges: ["new"],
+      },
+    ])
+  })
+
+  test("puts new models first when the CLI marks them", () => {
+    expect(
+      toModelOptions(
+        [
+          {
+            id: "stable-model",
+            label: "Stable Model",
+            mediaKind: "image",
+            hint: null,
+          },
+          {
+            id: "new-model",
+            label: "New Model",
+            mediaKind: "image",
+            hint: null,
+            badges: ["new"],
+          },
+          {
+            id: "beta-model",
+            label: "Beta Model",
+            mediaKind: "image",
+            hint: null,
+            badges: ["beta"],
+          },
+        ],
+        "image",
+      ).map((model) => model.id),
+    ).toEqual(["new-model", "stable-model", "beta-model"])
+  })
+
   test("falls back to every returned model when the CLI does not tag rows", () => {
     expect(
       toModelOptions(

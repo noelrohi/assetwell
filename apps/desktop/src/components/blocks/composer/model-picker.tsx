@@ -94,6 +94,10 @@ function ModelBadge({ children }: { children: React.ReactNode }) {
   )
 }
 
+function hasNewBadge(model: ModelOption) {
+  return model.badges?.some((badge) => badge.toLowerCase() === "new") ?? false
+}
+
 export function ModelPicker({
   models,
   value,
@@ -114,7 +118,14 @@ export function ModelPicker({
     () => new Set(favouriteIds),
     [favouriteIds],
   )
-  const favouriteModels = models.filter((model) => favouriteSet.has(model.id))
+  const newModels = React.useMemo(() => models.filter(hasNewBadge), [models])
+  const newSet = React.useMemo(
+    () => new Set(newModels.map((model) => model.id)),
+    [newModels],
+  )
+  const favouriteModels = models.filter(
+    (model) => favouriteSet.has(model.id) && !newSet.has(model.id),
+  )
   const recommendedModels = recommendations.flatMap((recommendation) => {
     const model = models.find((item) =>
       matchesRecommendation(item, recommendation.match, recommendation.exclude),
@@ -128,10 +139,14 @@ export function ModelPicker({
   const visibleRecommendedModels = recommendedModels.filter(
     (model, index, array) =>
       !favouriteSet.has(model.id) &&
+      !newSet.has(model.id) &&
       array.findIndex((item) => item.id === model.id) === index,
   )
   const otherModels = models.filter(
-    (model) => !favouriteSet.has(model.id) && !recommendedSet.has(model.id),
+    (model) =>
+      !newSet.has(model.id) &&
+      !favouriteSet.has(model.id) &&
+      !recommendedSet.has(model.id),
   )
   const selectedIsFavourite = selected ? favouriteSet.has(selected.id) : false
 
@@ -214,6 +229,11 @@ export function ModelPicker({
           <CommandInput placeholder="Search models…" />
           <CommandList>
             <CommandEmpty>No models found.</CommandEmpty>
+            {newModels.length > 0 && (
+              <CommandGroup heading="New">
+                {newModels.map(renderModelItem)}
+              </CommandGroup>
+            )}
             {favouriteModels.length > 0 && (
               <CommandGroup heading="Favourites">
                 {favouriteModels.map(renderModelItem)}
@@ -227,6 +247,7 @@ export function ModelPicker({
             {otherModels.length > 0 && (
               <CommandGroup
                 heading={
+                  newModels.length > 0 ||
                   favouriteModels.length > 0 ||
                   visibleRecommendedModels.length > 0
                     ? "All models"
