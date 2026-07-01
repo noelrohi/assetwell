@@ -45,12 +45,14 @@ describe("higgsfield output parsing", () => {
       {
         "display_name": "Nano Banana Pro",
         "job_set_type": "nano_banana_2",
-        "type": "image"
+        "type": "image",
+        "is_new": true
       },
       {
         "display_name": "Higgsfield Soul V2",
-        "job_set_type": "text2image_soul_v2",
-        "type": "image"
+        "job_type": "text2image_soul_v2",
+        "type": "image",
+        "badges": ["beta"]
       }
     ]`,
       "image",
@@ -61,13 +63,15 @@ describe("higgsfield output parsing", () => {
         id: "nano_banana_2",
         label: "Nano Banana Pro",
         mediaKind: "image",
-        hint: "image model",
+        hint: null,
+        badges: ["new"],
       },
       {
         id: "text2image_soul_v2",
         label: "Higgsfield Soul V2",
         mediaKind: "image",
-        hint: "image model",
+        hint: null,
+        badges: ["beta"],
       },
     ])
   })
@@ -76,7 +80,7 @@ describe("higgsfield output parsing", () => {
     const details = parseModelDetails(
       `{
         "display_name": "Higgsfield Soul V2",
-        "job_set_type": "text2image_soul_v2",
+        "job_type": "text2image_soul_v2",
         "type": "image",
         "params": [
           {
@@ -93,6 +97,7 @@ describe("higgsfield output parsing", () => {
       "image",
     )
 
+    expect(details.id).toBe("text2image_soul_v2")
     expect(details.aspectRatios).toEqual(["1:1", "16:9", "9:16"])
     expect(
       details.params.find((param) => param.name === "prompt")?.required,

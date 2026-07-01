@@ -34,6 +34,7 @@ import {
   normalizeVideoUrls,
 } from "./higgsfield/local-state"
 import { useModelAspectRatios } from "./higgsfield/model-aspect-ratios"
+import { isHiggsfieldSessionReady } from "./higgsfield/session-readiness"
 import { isInUploadWorkspace, useUploadsLibrary } from "./uploads-library"
 import { toModelOptions } from "./higgsfield/model-options"
 import { friendlyError, friendlyExit, titleFromPrompt } from "./higgsfield/text"
@@ -75,6 +76,7 @@ export function HiggsfieldProvider({
   const pendingRuns = React.useRef(new Map<string, PendingRun>())
   const completedRuns = React.useRef(new Set<string>())
   const signInRun = React.useRef<string | null>(null)
+  const signOutRun = React.useRef<string | null>(null)
   const booted = React.useRef(false)
 
   const [account, setAccount] = React.useState<HiggsfieldAccountStatus | null>(
@@ -125,8 +127,24 @@ export function HiggsfieldProvider({
 
   const getModelAspectRatios = useModelAspectRatios(bridge)
 
+  const markSignedOut = React.useCallback(() => {
+    setAccount(null)
+    setWorkspace(null)
+    setCliStatus((current) =>
+      current
+        ? {
+            ...current,
+            authStatus: "unauthenticated",
+            workspaceStatus: "unknown",
+            detail: "Sign in to connect your Higgsfield account.",
+            checkedAt: new Date().toISOString(),
+          }
+        : current,
+    )
+  }, [])
+
   const refreshAccount = React.useCallback(async () => {
-    if (!bridge) return
+    if (!bridge || !isHiggsfieldSessionReady(cliStatus)) return
     try {
       setAccount(await bridge.checkCredits())
     } catch (error) {
@@ -134,21 +152,37 @@ export function HiggsfieldProvider({
         description: friendlyError(error),
       })
     }
-  }, [bridge])
+  }, [bridge, cliStatus])
 
   const refreshSession = React.useCallback(async () => {
     if (!bridge) return
 
-    const [status, credits, workspaceContext] = await Promise.allSettled([
-      bridge.getStatus(),
-      bridge.checkCredits(),
-      bridge.checkWorkspace(),
-    ])
+    const status = await bridge.getStatus()
+    setCliStatus(status)
 
-    if (status.status === "fulfilled") setCliStatus(status.value)
+    if (!isHiggsfieldSessionReady(status)) {
+      setAccount(null)
+      setWorkspace(null)
+      return
+    }
+
+    const [credits, workspaceContext, imageModelRows, videoModelRows] =
+      await Promise.allSettled([
+        bridge.checkCredits(),
+        bridge.checkWorkspace(),
+        bridge.listModels({ mediaKind: "image" }),
+        bridge.listModels({ mediaKind: "video" }),
+      ])
+
     if (credits.status === "fulfilled") setAccount(credits.value)
     if (workspaceContext.status === "fulfilled") {
       setWorkspace(workspaceContext.value)
+    }
+    if (imageModelRows.status === "fulfilled") {
+      setImageModels(toModelOptions(imageModelRows.value, "image"))
+    }
+    if (videoModelRows.status === "fulfilled") {
+      setVideoModels(toModelOptions(videoModelRows.value, "video"))
     }
   }, [bridge])
 
@@ -203,6 +237,20 @@ export function HiggsfieldProvider({
       })
     }
   }, [bridge])
+
+  const signOut = React.useCallback(async () => {
+    if (!bridge) return
+    try {
+      const run = await bridge.signOut()
+      signOutRun.current = run.runId
+      markSignedOut()
+      toast("Signed out of Higgsfield")
+    } catch (error) {
+      toast("Could not sign out of Higgsfield", {
+        description: friendlyError(error),
+      })
+    }
+  }, [bridge, markSignedOut])
 
   const chooseVideoSource = React.useCallback(async () => {
     if (!bridge) {
@@ -326,21 +374,23 @@ export function HiggsfieldProvider({
 
       if (!higgsfield) return
 
-      const [
-        status,
-        credits,
-        workspaceContext,
-        imageModelRows,
-        videoModelRows,
-      ] = await Promise.allSettled([
-        higgsfield.getStatus(),
-        higgsfield.checkCredits(),
-        higgsfield.checkWorkspace(),
-        higgsfield.listModels({ mediaKind: "image" }),
-        higgsfield.listModels({ mediaKind: "video" }),
-      ])
+      const status = await higgsfield.getStatus()
+      setCliStatus(status)
 
-      if (status.status === "fulfilled") setCliStatus(status.value)
+      if (!isHiggsfieldSessionReady(status)) {
+        setAccount(null)
+        setWorkspace(null)
+        return
+      }
+
+      const [credits, workspaceContext, imageModelRows, videoModelRows] =
+        await Promise.allSettled([
+          higgsfield.checkCredits(),
+          higgsfield.checkWorkspace(),
+          higgsfield.listModels({ mediaKind: "image" }),
+          higgsfield.listModels({ mediaKind: "video" }),
+        ])
+
       if (credits.status === "fulfilled") setAccount(credits.value)
       if (workspaceContext.status === "fulfilled") {
         setWorkspace(workspaceContext.value)
@@ -367,6 +417,14 @@ export function HiggsfieldProvider({
         }
       }
 
+      if (event.runId === signOutRun.current && event.kind === "exit") {
+        signOutRun.current = null
+        if (event.exitCode === 0) {
+          markSignedOut()
+        }
+        void refreshSession()
+      }
+
       const pending = pendingRuns.current.get(event.runId)
       if (!pending) return
 
@@ -389,6 +447,7 @@ export function HiggsfieldProvider({
     applyGenerationResult,
     bridge,
     markRunFailed,
+    markSignedOut,
     refreshAccount,
     refreshSession,
     syncRunningJobs,
@@ -439,7 +498,9 @@ export function HiggsfieldProvider({
       runningJobs,
       videoDraftSource,
       refreshAccount,
+      refreshSession,
       signIn,
+      signOut,
       chooseVideoSource,
       chooseOutputRoot,
       revealOutputRoot,
@@ -473,7 +534,9 @@ export function HiggsfieldProvider({
       runningJobs,
       videoDraftSource,
       refreshAccount,
+      refreshSession,
       signIn,
+      signOut,
       chooseVideoSource,
       chooseOutputRoot,
       revealOutputRoot,

@@ -65,6 +65,7 @@ export interface ModelOption {
   id: string
   label: string
   hint: string | null
+  badges?: string[]
 }
 
 export interface VideoSource {
@@ -129,7 +130,9 @@ export interface HiggsfieldAppValue {
   runningJobs: number
   videoDraftSource: VideoSource | null
   refreshAccount: () => Promise<void>
+  refreshSession: () => Promise<void>
   signIn: () => Promise<void>
+  signOut: () => Promise<void>
   chooseVideoSource: () => Promise<VideoSource | null>
   chooseOutputRoot: () => Promise<void>
   revealOutputRoot: () => Promise<void>

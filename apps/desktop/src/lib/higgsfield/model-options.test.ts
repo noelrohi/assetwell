@@ -18,11 +18,19 @@ describe("model options", () => {
             label: "Video Model",
             mediaKind: "video",
             hint: "video",
+            badges: ["new"],
           },
         ],
         "video",
       ),
-    ).toEqual([{ id: "video-model", label: "Video Model", hint: "video" }])
+    ).toEqual([
+      {
+        id: "video-model",
+        label: "Video Model",
+        hint: "video",
+        badges: ["new"],
+      },
+    ])
   })
 
   test("falls back to every returned model when the CLI does not tag rows", () => {

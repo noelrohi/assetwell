@@ -13,7 +13,13 @@ import type {
 interface RawModel {
   display_name?: unknown
   job_set_type?: unknown
+  job_type?: unknown
   type?: unknown
+  badges?: unknown
+  labels?: unknown
+  is_new?: unknown
+  isNew?: unknown
+  new?: unknown
 }
 
 interface RawModelParam {
@@ -84,17 +90,19 @@ export function parseModelList(
 
   if (Array.isArray(json)) {
     return json.flatMap((model) => {
-      const id = stringOrNull(model.job_set_type)
+      const id = rawModelId(model)
       if (!id) return []
       const mediaKind = normalizeMediaKind(model.type, fallbackMediaKind)
       const label = stringOrNull(model.display_name) ?? titleFromId(id)
+      const badges = rawModelBadges(model)
 
       return [
         {
           id,
           label,
           mediaKind,
-          hint: `${mediaKind} model`,
+          hint: null,
+          ...(badges.length ? { badges } : {}),
         },
       ]
     })
@@ -113,7 +121,7 @@ export function parseModelDetails(
     throw new Error("Could not read Higgsfield model details.")
   }
 
-  const id = stringOrNull(json.job_set_type) ?? fallbackModel
+  const id = rawModelId(json) ?? fallbackModel
   const mediaKind = normalizeMediaKind(json.type, fallbackMediaKind)
   const params = Array.isArray(json.params)
     ? json.params.flatMap(normalizeModelParam)
@@ -194,10 +202,49 @@ function parseModelTable(
           id: match[1],
           label: match[2].trim(),
           mediaKind,
-          hint: `${mediaKind} model`,
+          hint: null,
         },
       ]
     })
+}
+
+function rawModelId(model: RawModel) {
+  return stringOrNull(model.job_set_type) ?? stringOrNull(model.job_type)
+}
+
+function rawModelBadges(model: RawModel) {
+  const badges = [
+    ...(isTruthyFlag(model.is_new) ||
+    isTruthyFlag(model.isNew) ||
+    isTruthyFlag(model.new)
+      ? ["new"]
+      : []),
+    ...stringList(model.badges),
+    ...stringList(model.labels),
+  ]
+
+  return badges
+    .map((badge) => badge.trim())
+    .filter(Boolean)
+    .filter(
+      (badge, index, array) =>
+        array.findIndex(
+          (candidate) => candidate.toLowerCase() === badge.toLowerCase(),
+        ) === index,
+    )
+}
+
+function stringList(value: unknown) {
+  if (typeof value === "string") return [value]
+  if (!Array.isArray(value)) return []
+  return value.flatMap((item) => {
+    const text = stringOrNull(item)
+    return text ? [text] : []
+  })
+}
+
+function isTruthyFlag(value: unknown) {
+  return value === true || value === 1 || value === "1" || value === "true"
 }
 
 function normalizeModelParam(param: unknown): HiggsfieldModelParam[] {

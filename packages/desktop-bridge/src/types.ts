@@ -52,6 +52,7 @@ export type HiggsfieldMediaKind = "image" | "video" | "audio" | "text"
 
 export type HiggsfieldProductAction =
   | "sign-in"
+  | "sign-out"
   | "check-credits"
   | "check-workspace"
   | "list-models"
@@ -99,6 +100,7 @@ export interface HiggsfieldModel {
   label: string
   mediaKind: HiggsfieldMediaKind
   hint: string | null
+  badges?: string[]
 }
 
 export interface HiggsfieldModelListRequest {
@@ -368,6 +370,7 @@ export interface DesktopBridge {
   higgsfield: {
     getStatus(): Promise<HiggsfieldCliStatus>
     signIn(): Promise<HiggsfieldCommandRun>
+    signOut(): Promise<HiggsfieldCommandRun>
     checkCredits(): Promise<HiggsfieldAccountStatus>
     checkWorkspace(): Promise<HiggsfieldWorkspaceContext>
     listModels(request?: HiggsfieldModelListRequest): Promise<HiggsfieldModel[]>

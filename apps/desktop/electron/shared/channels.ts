@@ -6,6 +6,7 @@ export const IPC_CHANNELS = {
   higgsfield: {
     getStatus: "assetwell:higgsfield:get-status",
     signIn: "assetwell:higgsfield:sign-in",
+    signOut: "assetwell:higgsfield:sign-out",
     checkCredits: "assetwell:higgsfield:check-credits",
     checkWorkspace: "assetwell:higgsfield:check-workspace",
     listModels: "assetwell:higgsfield:list-models",

@@ -24,6 +24,16 @@ async function makeFile(name = "asset.png") {
   return filePath
 }
 
+async function waitForSpawnCount(count: number) {
+  for (let attempt = 0; attempt < 10; attempt += 1) {
+    if (spawnCalls.length >= count) return
+    await Promise.resolve()
+  }
+  throw new Error(
+    `Expected ${count} spawned processes, got ${spawnCalls.length}.`,
+  )
+}
+
 describe("Higgsfield CLI commands", () => {
   let userDataRoot = ""
 
@@ -96,6 +106,122 @@ describe("Higgsfield CLI commands", () => {
         },
       ],
     })
+  })
+
+  test("treats a logged-out auth token check as unauthenticated", async () => {
+    const status = cli.getHiggsfieldCliStatus()
+
+    await waitForSpawnCount(1)
+    expect(spawnCalls[0].args).toEqual(["version"])
+    await completeSpawn(spawnCalls[0], { stdout: "1.0.2\n" })
+
+    await waitForSpawnCount(2)
+    expect(spawnCalls[1].args).toEqual(["auth", "token"])
+    await completeSpawn(spawnCalls[1], {
+      stderr: "Error: not authenticated\n",
+      exitCode: 1,
+    })
+
+    await expect(status).resolves.toMatchObject({
+      installed: true,
+      authStatus: "unauthenticated",
+      workspaceStatus: "unknown",
+      detail: "Sign in to connect your Higgsfield account.",
+    })
+    expect(spawnCalls).toHaveLength(2)
+  })
+
+  test("auto-selects the default workspace during status checks", async () => {
+    const status = cli.getHiggsfieldCliStatus()
+
+    await waitForSpawnCount(1)
+    expect(spawnCalls[0].args).toEqual(["version"])
+    await completeSpawn(spawnCalls[0], { stdout: "1.0.2\n" })
+
+    await waitForSpawnCount(2)
+    expect(spawnCalls[1].args).toEqual(["auth", "token"])
+    await completeSpawn(spawnCalls[1], { stdout: "redacted-token\n" })
+
+    await waitForSpawnCount(3)
+    expect(spawnCalls[2].args).toEqual(["workspace", "status"])
+    await completeSpawn(spawnCalls[2], {
+      stdout: "No workspace selected.\n",
+    })
+
+    await waitForSpawnCount(4)
+    expect(spawnCalls[3].args).toEqual(["--json", "workspace", "list"])
+    await completeSpawn(spawnCalls[3], {
+      stdout: `[
+        {"id":"workspace-empty","name":"Empty","credits":0,"is_selected":false},
+        {"id":"workspace-funded","name":"Funded","credits":42,"is_selected":false}
+      ]`,
+    })
+
+    await waitForSpawnCount(5)
+    expect(spawnCalls[4].args).toEqual(["workspace", "set", "workspace-funded"])
+    await completeSpawn(spawnCalls[4])
+
+    await waitForSpawnCount(6)
+    expect(spawnCalls[5].args).toEqual(["workspace", "status"])
+    await completeSpawn(spawnCalls[5], {
+      stdout: "Default workspace selected\n",
+    })
+
+    await expect(status).resolves.toMatchObject({
+      installed: true,
+      authStatus: "authenticated",
+      workspaceStatus: "verified",
+      detail: null,
+    })
+  })
+
+  test("selects the default workspace before checking credits", async () => {
+    const account = cli.getHiggsfieldAccountStatus()
+
+    await waitForSpawnCount(1)
+    expect(spawnCalls[0].args).toEqual(["workspace", "status"])
+    await completeSpawn(spawnCalls[0], {
+      stdout: "No workspace selected.\n",
+    })
+
+    await waitForSpawnCount(2)
+    expect(spawnCalls[1].args).toEqual(["--json", "workspace", "list"])
+    await completeSpawn(spawnCalls[1], {
+      stdout: `[
+        {"id":"workspace-empty","name":"Empty","credits":0,"is_selected":false},
+        {"id":"workspace-funded","name":"Funded","credits":42,"is_selected":false}
+      ]`,
+    })
+
+    await waitForSpawnCount(3)
+    expect(spawnCalls[2].args).toEqual(["workspace", "set", "workspace-funded"])
+    await completeSpawn(spawnCalls[2])
+
+    await waitForSpawnCount(4)
+    expect(spawnCalls[3].args).toEqual(["workspace", "status"])
+    await completeSpawn(spawnCalls[3], {
+      stdout: "Default workspace selected\n",
+    })
+
+    await waitForSpawnCount(5)
+    expect(spawnCalls[4].args).toEqual(["--json", "account", "status"])
+    await completeSpawn(spawnCalls[4], {
+      stdout: `{"email":"team@example.com","credits":42,"subscription_plan_type":"creator"}`,
+    })
+
+    await expect(account).resolves.toMatchObject({
+      email: "team@example.com",
+      credits: 42,
+      plan: "creator",
+    })
+  })
+
+  test("builds sign-out command as a product action", async () => {
+    const run = cli.startSignOutCommand(() => undefined)
+
+    expect(run).toMatchObject({ action: "sign-out", title: "Sign out" })
+    expect(spawnCalls[0].args).toEqual(["auth", "logout"])
+    await completeLastSpawn()
   })
 
   test("can skip waiting for generation results", async () => {

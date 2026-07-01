@@ -21,7 +21,12 @@ import {
 } from "@/components/ui/popover"
 import { cn } from "@/lib/utils"
 
-export type ModelOption = { id: string; label: string; hint: string | null }
+export type ModelOption = {
+  id: string
+  label: string
+  hint: string | null
+  badges?: string[]
+}
 
 export type ModelRecommendation = {
   key: string
@@ -79,6 +84,14 @@ function readFavouriteModelIds() {
 function writeFavouriteModelIds(ids: string[]) {
   if (typeof window === "undefined") return
   window.localStorage.setItem(MODEL_FAVOURITES_STORAGE_KEY, JSON.stringify(ids))
+}
+
+function ModelBadge({ children }: { children: React.ReactNode }) {
+  return (
+    <span className="shrink-0 rounded-full border border-ember/25 bg-ember/10 px-1.5 py-0.5 text-[0.55rem] font-semibold uppercase tracking-[0.14em] text-ember">
+      {children}
+    </span>
+  )
 }
 
 export function ModelPicker({
@@ -140,7 +153,7 @@ export function ModelPicker({
     return (
       <CommandItem
         key={model.id}
-        value={`${model.label} ${model.hint ?? ""}`}
+        value={`${model.label} ${model.hint ?? ""} ${model.badges?.join(" ") ?? ""}`}
         onSelect={() => {
           onChange(model.id)
           setOpen(false)
@@ -148,7 +161,12 @@ export function ModelPicker({
         className="items-start gap-2.5 py-2 pr-2"
       >
         <span className="flex min-w-0 flex-1 flex-col">
-          <span className="truncate text-foreground">{model.label}</span>
+          <span className="flex min-w-0 items-center gap-1.5">
+            <span className="truncate text-foreground">{model.label}</span>
+            {model.badges?.map((badge) => (
+              <ModelBadge key={badge}>{badge}</ModelBadge>
+            ))}
+          </span>
           {model.hint && (
             <span className="truncate text-xs text-muted-foreground">
               {model.hint}
@@ -183,6 +201,9 @@ export function ModelPicker({
     <Popover open={open} onOpenChange={setOpen}>
       <PopoverTrigger className="flex h-8 max-w-[15rem] items-center gap-1.5 rounded-full px-3 text-xs font-medium transition-colors hover:bg-accent data-[state=open]:bg-accent">
         <span className="truncate">{selected?.label ?? "Select model"}</span>
+        {selected?.badges?.slice(0, 2).map((badge) => (
+          <ModelBadge key={badge}>{badge}</ModelBadge>
+        ))}
         {selectedIsFavourite && (
           <IconStarFilled className="size-3.5 shrink-0 text-ember" />
         )}

@@ -16,5 +16,6 @@ export function toModelOptions(
     id: model.id,
     label: model.label,
     hint: model.hint,
+    ...(model.badges?.length ? { badges: model.badges } : {}),
   }))
 }

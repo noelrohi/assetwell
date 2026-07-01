@@ -115,29 +115,28 @@ export async function getHiggsfieldCliStatus(): Promise<HiggsfieldCliStatus> {
     effectiveVersionResult.stderr,
   )
 
-  const accountResult = await collectHiggsfieldOutput(
+  const authResult = await collectHiggsfieldOutput(
     executable,
-    ["account", "status"],
-    8_000,
+    ["auth", "token"],
+    5_000,
   )
-  const accountOutput = `${accountResult.stdout}\n${accountResult.stderr}`
   const authStatus =
-    accountResult.exitCode === 0
+    authResult.exitCode === 0 &&
+    firstMeaningfulLine(authResult.stdout, authResult.stderr)
       ? "authenticated"
-      : looksUnauthenticated(accountOutput)
-        ? "unauthenticated"
-        : "unknown"
+      : authResult.timedOut
+        ? "unknown"
+        : "unauthenticated"
 
   const workspaceResult =
     authStatus === "authenticated"
-      ? await collectHiggsfieldOutput(
-          executable,
-          ["workspace", "status"],
-          8_000,
-        )
+      ? await ensureHiggsfieldWorkspaceSelected(executable)
       : null
   const workspaceStatus: HiggsfieldWorkspaceStatus =
-    workspaceResult?.exitCode === 0 ? "verified" : "unknown"
+    workspaceResult?.exitCode === 0 &&
+    !looksWorkspaceUnselected(workspaceResult)
+      ? "verified"
+      : "unknown"
 
   return {
     installed: true,
@@ -149,7 +148,7 @@ export async function getHiggsfieldCliStatus(): Promise<HiggsfieldCliStatus> {
     detail: statusDetail(
       executable,
       effectiveVersionResult,
-      accountResult,
+      authResult,
       workspaceResult,
     ),
     checkedAt: new Date().toISOString(),
@@ -158,6 +157,9 @@ export async function getHiggsfieldCliStatus(): Promise<HiggsfieldCliStatus> {
 
 export async function getHiggsfieldAccountStatus(): Promise<HiggsfieldAccountStatus> {
   const executable = resolveHiggsfieldExecutable()
+  const workspaceResult = await ensureHiggsfieldWorkspaceSelected(executable)
+  ensureWorkspaceReady(workspaceResult, "Check workspace")
+
   const result = await collectHiggsfieldOutput(
     executable,
     ["--json", "account", "status"],
@@ -170,6 +172,9 @@ export async function getHiggsfieldAccountStatus(): Promise<HiggsfieldAccountSta
 
 export async function getHiggsfieldWorkspaceContext(): Promise<HiggsfieldWorkspaceContext> {
   const executable = resolveHiggsfieldExecutable()
+  const workspaceResult = await ensureHiggsfieldWorkspaceSelected(executable)
+  ensureWorkspaceReady(workspaceResult, "Check workspace")
+
   const result = await collectHiggsfieldOutput(
     executable,
     ["--json", "workspace", "list"],
@@ -219,6 +224,18 @@ export function startSignInCommand(emit: CommandOutputEmitter) {
       startMessage:
         "Opening Higgsfield sign in. Complete the browser prompt, then return to Assetwell.",
       args: ["auth", "login"],
+    },
+    emit,
+  )
+}
+
+export function startSignOutCommand(emit: CommandOutputEmitter) {
+  return startHiggsfieldCommand(
+    {
+      action: "sign-out",
+      title: "Sign out",
+      startMessage: "Signing out of Higgsfield.",
+      args: ["auth", "logout"],
     },
     emit,
   )
@@ -455,6 +472,59 @@ function startQueuedHiggsfieldCommand(queued: QueuedHiggsfieldCommand) {
     })
     drainHiggsfieldQueue()
   })
+}
+
+async function ensureHiggsfieldWorkspaceSelected(
+  executable: ResolvedHiggsfieldExecutable,
+): Promise<CollectedCommand> {
+  const statusResult = await collectHiggsfieldOutput(
+    executable,
+    ["workspace", "status"],
+    8_000,
+  )
+
+  if (!looksWorkspaceUnselected(statusResult)) return statusResult
+
+  // The Higgsfield CLI currently prints "No workspace selected." with a
+  // successful exit code, so inspect output before trusting exit status.
+  const listResult = await collectHiggsfieldOutput(
+    executable,
+    ["--json", "workspace", "list"],
+    10_000,
+  )
+  if (listResult.exitCode !== 0) return statusResult
+
+  const workspace = defaultHiggsfieldWorkspace(listResult.stdout)
+  if (!workspace) return statusResult
+
+  const setResult = await collectHiggsfieldOutput(
+    executable,
+    ["workspace", "set", workspace.id],
+    10_000,
+  )
+  if (setResult.exitCode !== 0) return statusResult
+
+  return collectHiggsfieldOutput(executable, ["workspace", "status"], 8_000)
+}
+
+function defaultHiggsfieldWorkspace(stdout: string) {
+  const context = parseWorkspaceContext(stdout)
+  const workspacesByCredits = [...context.workspaces].sort(
+    (left, right) => (right.credits ?? 0) - (left.credits ?? 0),
+  )
+
+  return context.selected ?? workspacesByCredits[0] ?? null
+}
+
+function ensureWorkspaceReady(result: CollectedCommand, action: string) {
+  ensureCommandSucceeded(result, action)
+  if (looksWorkspaceUnselected(result)) {
+    throw new Error("No Higgsfield workspace is selected.")
+  }
+}
+
+function looksWorkspaceUnselected(result: CollectedCommand) {
+  return /\bno workspace selected\b/i.test(`${result.stdout}\n${result.stderr}`)
 }
 
 function collectHiggsfieldOutput(
@@ -963,7 +1033,7 @@ function firstMeaningfulLine(...values: Array<string | null | undefined>) {
 function statusDetail(
   executable: ResolvedHiggsfieldExecutable,
   versionResult: CollectedCommand,
-  accountResult: CollectedCommand,
+  authResult: CollectedCommand,
   workspaceResult: CollectedCommand | null,
 ) {
   const fallbackDetail =
@@ -971,8 +1041,15 @@ function statusDetail(
       ? `${executable.bundledDetail} Using the global Higgsfield fallback.`
       : null
 
-  if (accountResult.exitCode === 0) {
-    if (workspaceResult?.exitCode === 0) return fallbackDetail
+  if (
+    authResult.exitCode === 0 &&
+    firstMeaningfulLine(authResult.stdout, authResult.stderr)
+  ) {
+    if (
+      workspaceResult?.exitCode === 0 &&
+      !looksWorkspaceUnselected(workspaceResult)
+    )
+      return fallbackDetail
 
     const workspaceDetail = firstMeaningfulLine(
       workspaceResult?.stderr,
@@ -981,20 +1058,16 @@ function statusDetail(
     return workspaceDetail ?? fallbackDetail
   }
 
+  if (authResult.timedOut) {
+    return "Timed out while checking your Higgsfield sign-in."
+  }
+
   if (
-    looksUnauthenticated(`${accountResult.stdout}\n${accountResult.stderr}`)
+    looksUnauthenticated(`${authResult.stdout}\n${authResult.stderr}`) ||
+    authResult.exitCode !== 0
   ) {
     return "Sign in to connect your Higgsfield account."
   }
-
-  const accountDetail = firstMeaningfulLine(
-    accountResult.stderr,
-    accountResult.stdout,
-  )
-  if (accountDetail) return accountDetail
-
-  if (accountResult.timedOut)
-    return "Timed out while checking your Higgsfield account."
 
   const installDetail = firstMeaningfulLine(
     versionResult.stderr,

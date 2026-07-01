@@ -26,8 +26,14 @@ function AccountAvatar({ initial }: { initial: string }) {
 
 export function NavUser() {
   const { isMobile } = useSidebar()
-  const { account, settings, signIn, chooseOutputRoot, revealOutputRoot } =
-    useHiggsfieldApp()
+  const {
+    account,
+    settings,
+    signIn,
+    signOut,
+    chooseOutputRoot,
+    revealOutputRoot,
+  } = useHiggsfieldApp()
 
   const isSignedIn = Boolean(account?.email)
   const name = account?.email?.split("@")[0] ?? "Assetwell"
@@ -85,7 +91,10 @@ export function NavUser() {
             ) : null}
             <DropdownMenuSeparator />
             {isSignedIn ? (
-              <DropdownMenuItem variant="destructive">
+              <DropdownMenuItem
+                variant="destructive"
+                onClick={() => void signOut()}
+              >
                 <IconLogout />
                 Sign out
               </DropdownMenuItem>

@@ -2,6 +2,7 @@ import React from "react"
 import { createRoot } from "react-dom/client"
 import { RouterProvider } from "@tanstack/react-router"
 
+import { AppAuthGate } from "@/components/blocks/layout/app-auth-gate"
 import { Toaster } from "@/components/ui/sonner"
 import { HiggsfieldProvider } from "@/lib/higgsfield"
 import { UpdaterProvider } from "@/lib/updater"
@@ -13,8 +14,10 @@ createRoot(document.getElementById("root")!).render(
   <React.StrictMode>
     <HiggsfieldProvider>
       <UpdaterProvider>
-        <RouterProvider router={router} />
-        <WhatsNewDialog />
+        <AppAuthGate>
+          <RouterProvider router={router} />
+          <WhatsNewDialog />
+        </AppAuthGate>
         <Toaster theme="dark" position="bottom-center" />
       </UpdaterProvider>
     </HiggsfieldProvider>

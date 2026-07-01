@@ -61,6 +61,10 @@ const bridgeInvocationCases = {
     call: (bridge) => bridge.higgsfield.signIn(),
     expected: [IPC_CHANNELS.higgsfield.signIn],
   },
+  "higgsfield.signOut": {
+    call: (bridge) => bridge.higgsfield.signOut(),
+    expected: [IPC_CHANNELS.higgsfield.signOut],
+  },
   "higgsfield.checkCredits": {
     call: (bridge) => bridge.higgsfield.checkCredits(),
     expected: [IPC_CHANNELS.higgsfield.checkCredits],

@@ -30,6 +30,7 @@ import {
   getHiggsfieldWorkspaceContext,
   startGenerateCommand,
   startSignInCommand,
+  startSignOutCommand,
   startUploadAssetCommand,
 } from "../higgsfield-cli"
 import { IPC_CHANNELS } from "../shared/channels"
@@ -41,6 +42,10 @@ export function registerHiggsfieldIpc() {
 
   ipcMain.handle(IPC_CHANNELS.higgsfield.signIn, (event) => {
     return startSignInCommand(streamToInvoker(event))
+  })
+
+  ipcMain.handle(IPC_CHANNELS.higgsfield.signOut, (event) => {
+    return startSignOutCommand(streamToInvoker(event))
   })
 
   ipcMain.handle(IPC_CHANNELS.higgsfield.checkCredits, (event) => {

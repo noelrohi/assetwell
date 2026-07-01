@@ -16,6 +16,7 @@ const bridge: DesktopBridge = {
   higgsfield: {
     getStatus: () => ipcRenderer.invoke(IPC_CHANNELS.higgsfield.getStatus),
     signIn: () => ipcRenderer.invoke(IPC_CHANNELS.higgsfield.signIn),
+    signOut: () => ipcRenderer.invoke(IPC_CHANNELS.higgsfield.signOut),
     checkCredits: () =>
       ipcRenderer.invoke(IPC_CHANNELS.higgsfield.checkCredits),
     checkWorkspace: () =>

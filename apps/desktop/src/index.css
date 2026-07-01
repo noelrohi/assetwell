@@ -197,6 +197,35 @@
       0 0 18px -2px oklch(0.782 0.142 63 / 0.5);
   }
 
+  @keyframes assetwell-auth-orb-breathe {
+    0%,
+    100% {
+      transform: scale(1);
+      box-shadow:
+        0 0 0 1px oklch(1 0 0 / 0.08),
+        0 18px 48px -24px color-mix(in oklab, var(--ember) 48%, transparent);
+    }
+
+    50% {
+      transform: scale(1.035);
+      box-shadow:
+        0 0 0 1px oklch(1 0 0 / 0.12),
+        0 22px 58px -18px color-mix(in oklab, var(--ember) 64%, transparent);
+    }
+  }
+
+  .assetwell-auth-orb {
+    transform-origin: center;
+    animation: assetwell-auth-orb-breathe 1.8s cubic-bezier(0.23, 1, 0.32, 1)
+      infinite;
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .assetwell-auth-orb {
+      animation: none;
+    }
+  }
+
   /* sweeping highlight for generating skeletons */
   @keyframes stage-shimmer {
     100% {
