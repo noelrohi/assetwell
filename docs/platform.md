@@ -18,8 +18,8 @@ The desired flow is mirrored by the reference app at `~/sandbox/dilag`-adjacent 
 
 - **Bundle the Higgsfield CLI** inside the app — no npm, ever (the `bundled` executable source).
 - First run: if not authenticated, a single **"Sign in to Higgsfield"** screen → browser login → land directly on **Create**.
-- **One workspace**, auto-selected, never asked.
-- CLI version, install state, and workspace IDs are never shown.
+- One default Higgsfield workspace is verified under the hood; users are not asked to manage Higgsfield workspaces in Assetwell.
+- CLI version, install state, and workspace IDs are never shown in the main product UI.
 - After sign-in, open to the composer with an empty recent grid; generated creatives become the user's working set.
 
 ## 3. Create (image)
@@ -58,7 +58,7 @@ Canonical target sizes, display labels, availability, and unavailable placement 
 ## 6. Libraries
 
 - **Prompt templates split Image / Video** — each shipped-starters + user-saved, plain text. They are managed from **Prompt templates** and picked inline from composers.
-- **Uploads** — local workspace folders of saved images (logo/product/mood) plus a scoped visible creative/video output library, no Higgsfield workspace switching. The **Uploads** screen adds/removes files and switches the active local folder before showing the picker and generated outputs.
+- **Uploads** — shared Higgsfield image uploads are organized by Assetwell Brands, a local metadata overlay (`uploadId -> brandId`) with real brands, `Unsorted`, and `All`. Higgsfield remains the shared upload store and does not provide folders/tags. Generated creative/video outputs are locally scoped by the active Assetwell Brand.
 - **soul-id is deferred to phase 2** (the marquee consistency feature, but it adds training/onboarding weight).
 
 ## 7. Navigation
@@ -81,7 +81,7 @@ Canonical target sizes, display labels, availability, and unavailable placement 
 
 ## 10. UI implementation status
 
-The renderer is built (Darkroom Gallery aesthetic, TanStack Router, shadcn) and now routes real generation through the Higgsfield bridge. Local library state is persisted in SQLite with the previous JSON snapshot retained as a fallback, outputs are written to the configurable `~/Assetwell`-style output root, image/video outputs are post-processed to exact target dimensions, narrow banner placements are marked coming soon, and auth/zero-credit states block generation. Remaining v1 hardening: durable recovery for Higgsfield jobs after app exit, richer model-parameter UX beyond aspect ratio, and a reindex/import flow for existing output folders.
+The renderer is built (Darkroom Gallery aesthetic, TanStack Router, shadcn) and now routes real generation through the Higgsfield bridge. Local library state is persisted in SQLite with the previous JSON snapshot retained as a fallback, Brand metadata is stored locally, outputs are written to the configurable `~/Assetwell`-style output root under the active Brand scope, shared Higgsfield image uploads can be listed/created for references, image/video outputs are post-processed to exact target dimensions, narrow banner placements are marked coming soon, and auth/zero-credit states block generation. Remaining v1 hardening: durable recovery for Higgsfield jobs after app exit, richer model-parameter UX beyond aspect ratio, and a reindex/import flow for existing output folders.
 
 ---
 

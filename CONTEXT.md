@@ -14,11 +14,14 @@
 - **Higgsfield Command Run**: a spawned `higgsfield` process owned by the Electron Host, with stdout, stderr, and exit events streamed to the Renderer.
 - **App Data Root**: Electron `app.getPath("userData")`, where Assetwell stores its local JSON snapshot, settings, and other app-owned state.
 - **Assetwell Output Root**: the user-owned folder where generated creative files and Uploads reference images are written. It defaults to `~/Assetwell` on macOS, Windows, and Linux and is user-configurable from the account menu.
-- **Uploads Workspace**: an Assetwell-local folder label under `Uploads/` (for example `Default/` or `Brand A/`) that scopes reusable reference images and the visible generated creative/video library. It never maps to a Higgsfield billing workspace or calls `hf workspace set`.
-- **Local Library Snapshot**: the persisted JSON index of recent creatives, videos, prompt presets, Uploads workspace ids, and local file paths. It is a convenience index; generated files and Uploads files remain plain files under the Assetwell Output Root.
+- **Higgsfield Workspace Selection**: the hidden account/team context verified through the Higgsfield CLI. Assetwell assumes the client's default Higgsfield workspace under the hood and does not expose workspace management in the product UI.
+- **Assetwell Brand**: the visible organization layer for the small team's brands. Brand metadata is local Assetwell state that scopes Uploads views and creative/video outputs without changing Higgsfield storage.
+- **Higgsfield Uploads Library**: shared image uploads in the default Higgsfield workspace, listed through `hf upload list` and created through `hf upload create`. Higgsfield does not provide folders/tags here; Assetwell overlays `uploadId -> brandId` metadata so uploads can appear under real brands or `Unsorted`.
+- **Uploads Compatibility Scope**: a legacy local folder under `Uploads/<scope id>/` retained for unauthenticated/dev fallback and existing reference files.
+- **Local Library Snapshot**: the persisted JSON index of recent creatives, videos, prompt presets, local output paths, saved reference metadata, and brand scope ids. It is a convenience index; generated files remain plain files under the Assetwell Output Root.
 
 ## Current Product Shape
 
 Assetwell is a minimal desktop wrapper for the Higgsfield CLI. It does not own Higgsfield authentication, models, accounts, workspaces, or generation jobs directly; it invokes the CLI and presents host-owned status and command output.
 
-Assetwell now has a small local library index and generated artifacts saved to the Assetwell Output Root. It still does not own Higgsfield accounts, workspaces, models, uploads, or generation jobs beyond the spawned CLI commands it starts locally.
+Assetwell now has a small local library index, local brand metadata, and generated artifacts saved to the Assetwell Output Root. It uses the default Higgsfield workspace and shared Higgsfield uploads through the CLI, but still does not own Higgsfield accounts, workspace lifecycle, model catalogs, upload storage, folders/tags, or generation jobs beyond the CLI commands it starts locally.
