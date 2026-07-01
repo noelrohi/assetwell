@@ -7,6 +7,24 @@ and this project uses semantic version tags for desktop releases.
 
 ## [Unreleased]
 
+## [0.0.9] - 2026-07-02
+
+### Added
+
+- Added Uploads workspace and brand organization, including filters, search, and shared upload scoping.
+- Added Upload image actions to copy, download, copy links, and open images.
+- Highlighted newly available Higgsfield models and added scroll affordances to command lists.
+
+### Changed
+
+- Refined video composer controls.
+- Documented why Higgsfield Unlimited Generate remains unsupported in Assetwell's CLI-backed integration.
+
+### Fixed
+
+- Hardened Higgsfield readiness checks and dev-only updater/model-detail handling.
+- Fixed release asset verification in the release workflow.
+
 ## [0.0.8] - 2026-06-30
 
 ### Fixed
