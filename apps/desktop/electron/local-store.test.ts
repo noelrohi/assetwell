@@ -126,6 +126,36 @@ describe("local store", () => {
     })
   })
 
+  test("uses the Uploads workspace output scope for export defaults", async () => {
+    const outputRoot = path.join(userDataRoot, "Library")
+    setNextOpenDialogResult({ canceled: false, filePaths: [outputRoot] })
+    await localStore.chooseAssetwellOutputRoot()
+
+    const sourceRoot = path.join(userDataRoot, "sources")
+    await mkdir(sourceRoot, { recursive: true })
+    const sourcePath = path.join(sourceRoot, "clip.mp4")
+    await writeFile(sourcePath, "video-bytes")
+
+    const targetPath = path.join(userDataRoot, "Downloads", "clip-copy.mp4")
+    setNextSaveDialogResult({ canceled: false, filePath: targetPath })
+
+    await localStore.exportVideo({
+      path: sourcePath,
+      title: "Launch Clip",
+      uploadWorkspaceId: "Brand A",
+    })
+
+    expect(saveDialogCalls[0]?.[0]).toMatchObject({
+      title: "Download video",
+      defaultPath: path.join(
+        outputRoot,
+        "Outputs",
+        "brand-a",
+        "launch-clip.mp4",
+      ),
+    })
+  })
+
   test("imports, sanitizes, dedupes, lists, and deletes Uploads images per workspace", async () => {
     const outputRoot = path.join(userDataRoot, "Library")
     setNextOpenDialogResult({ canceled: false, filePaths: [outputRoot] })
@@ -218,6 +248,22 @@ describe("local store", () => {
     })
   })
 
+  test("rejects duplicate Uploads workspace display names", async () => {
+    const outputRoot = path.join(userDataRoot, "Library")
+    setNextOpenDialogResult({ canceled: false, filePaths: [outputRoot] })
+    await localStore.chooseAssetwellOutputRoot()
+
+    await localStore.createUploadWorkspace({ name: "Brand-A" })
+    await localStore.updateUploadWorkspace({ id: "Brand-A", name: "Brand A" })
+
+    await expect(
+      localStore.createUploadWorkspace({ name: "Brand A" }),
+    ).rejects.toThrow("workspace with that name already exists")
+    await expect(
+      localStore.updateUploadWorkspace({ id: "Brand-A", name: " default " }),
+    ).rejects.toThrow("workspace with that name already exists")
+  })
+
   test("renames and deletes Uploads workspaces", async () => {
     const outputRoot = path.join(userDataRoot, "Library")
     setNextOpenDialogResult({ canceled: false, filePaths: [outputRoot] })
@@ -261,9 +307,17 @@ describe("local store", () => {
       { id: "Default", name: "Default", isDefault: true },
     ])
 
-    await expect(
-      localStore.updateUploadWorkspace({ id: "Default", name: "Inbox" }),
-    ).rejects.toThrow("default Uploads workspace cannot be renamed")
+    const renamedDefault = await localStore.updateUploadWorkspace({
+      id: "Default",
+      name: "Inbox",
+    })
+    expect(renamedDefault.workspaceState.workspaces).toEqual([
+      { id: "Default", name: "Inbox", isDefault: true },
+    ])
+    await expect(localStore.getUploadWorkspaceState()).resolves.toEqual({
+      activeWorkspaceId: "Default",
+      workspaces: [{ id: "Default", name: "Inbox", isDefault: true }],
+    })
     await expect(
       localStore.deleteUploadWorkspace({ id: "Default" }),
     ).rejects.toThrow("default Uploads workspace cannot be deleted")

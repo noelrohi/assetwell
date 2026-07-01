@@ -40,10 +40,12 @@ export interface Creative extends Omit<SeedCreative, "takes" | "placements"> {
   takes: Take[]
   placements: PlacementResult[]
   referenceAssets?: ReferenceAsset[]
+  uploadWorkspaceId?: string
   outputDirectoryName?: string
 }
 
 export interface VideoResult extends SeedVideoResult {
+  uploadWorkspaceId?: string
   url?: string
   filePath?: string
   runId?: string

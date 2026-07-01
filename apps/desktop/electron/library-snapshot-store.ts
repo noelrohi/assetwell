@@ -16,6 +16,7 @@ import type {
 const SNAPSHOT_SCHEMA_VERSION = 1
 const SQLITE_LIBRARY_SCHEMA_VERSION = 1
 const SNAPSHOT_ROW_ID = "library"
+const DEFAULT_UPLOAD_WORKSPACE_ID = "Default"
 const INTERRUPTED_MESSAGE =
   "Generation was interrupted before Assetwell received an output. Regenerate when ready."
 
@@ -203,7 +204,16 @@ function normalizeCreative(value: AssetwellPersistedCreative) {
     ? value.referenceAssets.flatMap(normalizeReference)
     : undefined
 
-  return [{ ...value, status, takes, placements, referenceAssets }]
+  return [
+    {
+      ...value,
+      status,
+      takes,
+      placements,
+      referenceAssets,
+      uploadWorkspaceId: normalizeUploadWorkspaceId(value.uploadWorkspaceId),
+    },
+  ]
 }
 
 function normalizeTake(take: AssetwellPersistedTake): AssetwellPersistedTake {
@@ -232,6 +242,7 @@ function normalizePlacement(
 
 function normalizeVideo(video: AssetwellPersistedVideo) {
   if (!video?.id || !video.prompt) return []
+  const uploadWorkspaceId = normalizeUploadWorkspaceId(video.uploadWorkspaceId)
   return [
     video.status === "pending"
       ? {
@@ -239,14 +250,21 @@ function normalizeVideo(video: AssetwellPersistedVideo) {
           status: "failed" as const,
           runId: undefined,
           error: INTERRUPTED_MESSAGE,
+          uploadWorkspaceId,
         }
-      : video,
+      : { ...video, uploadWorkspaceId },
   ]
 }
 
 function normalizeReference(reference: AssetwellPersistedReferenceAsset) {
   if (!reference?.id || !reference.name || !reference.url) return []
   return [reference]
+}
+
+function normalizeUploadWorkspaceId(value: unknown) {
+  return typeof value === "string" && value.trim()
+    ? value.trim()
+    : DEFAULT_UPLOAD_WORKSPACE_ID
 }
 
 function stateDirectory() {

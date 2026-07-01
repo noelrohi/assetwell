@@ -1,6 +1,7 @@
 node_modules
 bun.lock
 .turbo
+.vercel
 dist
 dist-electron
 release

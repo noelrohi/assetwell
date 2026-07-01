@@ -257,7 +257,7 @@ function Home() {
 const mockNav = [
   { label: "Create", icon: Wand2, active: true },
   { label: "Videos", icon: Film, active: false },
-  { label: "Brand memory", icon: Images, active: false },
+  { label: "Uploads", icon: Images, active: false },
   { label: "Prompt templates", icon: Layers3, active: false },
 ]
 

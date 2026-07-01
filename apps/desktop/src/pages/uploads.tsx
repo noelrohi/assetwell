@@ -11,12 +11,12 @@ import { useQueryState } from "nuqs"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { useHiggsfieldApp } from "@/lib/higgsfield"
-import { brandMemorySearchParser } from "@/lib/query-state"
+import { uploadsSearchParser } from "@/lib/query-state"
 import { cn } from "@/lib/utils"
 
-export function BrandMemoryPage() {
+export function UploadsPage() {
   const { uploads } = useHiggsfieldApp()
-  const [search, setSearch] = useQueryState("q", brandMemorySearchParser)
+  const [search, setSearch] = useQueryState("q", uploadsSearchParser)
   const [deletingId, setDeletingId] = React.useState<string | null>(null)
   const referenceLibrary = uploads.references
   const activeWorkspaceName = uploads.activeWorkspace.name
@@ -51,8 +51,8 @@ export function BrandMemoryPage() {
             Uploads
           </h1>
           <p className="mt-1.5 text-sm leading-6 text-muted-foreground text-pretty">
-            Local workspace folders for logos, product shots, and references the
-            Create composer pulls from.
+            Local workspace folders for logos, product shots, references, and
+            the generated outputs you want to keep together.
           </p>
         </div>
         <div className="flex flex-wrap items-center justify-end gap-2">

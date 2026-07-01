@@ -13,8 +13,9 @@
 - **Higgsfield Product Action**: a user-facing operation such as Sign in, Check credits, Choose model, Upload asset, Generate, or Open output. Product actions are exposed through the Desktop Bridge instead of raw CLI command arguments.
 - **Higgsfield Command Run**: a spawned `higgsfield` process owned by the Electron Host, with stdout, stderr, and exit events streamed to the Renderer.
 - **App Data Root**: Electron `app.getPath("userData")`, where Assetwell stores its local JSON snapshot, settings, and other app-owned state.
-- **Assetwell Output Root**: the user-owned folder where generated creative files and Brand Memory reference images are written. It defaults to `~/Assetwell` on macOS, Windows, and Linux and is user-configurable from the account menu.
-- **Local Library Snapshot**: the persisted JSON index of recent creatives, videos, prompt presets, and local file paths. It is a convenience index; generated files and Brand Memory files remain plain files under the Assetwell Output Root.
+- **Assetwell Output Root**: the user-owned folder where generated creative files and Uploads reference images are written. It defaults to `~/Assetwell` on macOS, Windows, and Linux and is user-configurable from the account menu.
+- **Uploads Workspace**: an Assetwell-local folder label under `Uploads/` (for example `Default/` or `Brand A/`) that scopes reusable reference images and the visible generated creative/video library. It never maps to a Higgsfield billing workspace or calls `hf workspace set`.
+- **Local Library Snapshot**: the persisted JSON index of recent creatives, videos, prompt presets, Uploads workspace ids, and local file paths. It is a convenience index; generated files and Uploads files remain plain files under the Assetwell Output Root.
 
 ## Current Product Shape
 

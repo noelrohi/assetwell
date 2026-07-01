@@ -7,7 +7,7 @@ export const promptFilterValues = ["all", "image", "video"] as const
 export const promptFilterParser =
   parseAsStringLiteral(promptFilterValues).withDefault("all")
 
-export const brandMemorySearchParser = parseAsString.withDefault("")
+export const uploadsSearchParser = parseAsString.withDefault("")
 
 export const creativePreviewSelectionParsers = {
   take: parseAsString,

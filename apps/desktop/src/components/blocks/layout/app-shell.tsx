@@ -133,33 +133,45 @@ function TitlebarUpdateButton({ className }: { className?: string }) {
   )
 }
 
-function PersistentSidebarControls() {
+// The titlebar controls stay window-fixed in both states so collapsing the
+// sidebar never drags them along with the inset; only the surface beneath them
+// changes (sidebar → background), so we crossfade the sidebar trigger styling in
+// place while measuring the whole control group for collapsed header padding.
+function PersistentSidebarControls({
+  onWidthChange,
+}: {
+  onWidthChange: (width: number) => void
+}) {
   const { state } = useSidebar()
+  const controlsRef = React.useRef<HTMLDivElement | null>(null)
+  const surfaceClassName =
+    state === "collapsed"
+      ? titlebarBackgroundControlClassName
+      : titlebarSidebarControlClassName
 
-  if (state === "collapsed") return null
+  React.useLayoutEffect(() => {
+    const element = controlsRef.current
+    if (!element) return
+
+    const updateWidth = () => {
+      onWidthChange(Math.ceil(element.getBoundingClientRect().width))
+    }
+
+    updateWidth()
+    if (typeof ResizeObserver === "undefined") return
+
+    const observer = new ResizeObserver(updateWidth)
+    observer.observe(element)
+
+    return () => observer.disconnect()
+  }, [onWidthChange])
 
   return (
-    <>
-      <TitlebarSidebarTrigger
-        className={cn(
-          "fixed left-[var(--titlebar-control-left)] top-[var(--titlebar-control-center-y)] z-50 -translate-y-1/2",
-          titlebarSidebarControlClassName,
-        )}
-      />
-      <TitlebarUpdateButton
-        className={cn(
-          "fixed left-[calc(var(--titlebar-control-left)+var(--titlebar-control-step))] top-[var(--titlebar-control-center-y)] z-50 -translate-y-1/2",
-          titlebarSidebarControlClassName,
-        )}
-      />
-    </>
-  )
-}
-
-function CollapsedTitlebarControls() {
-  return (
-    <div className="no-drag flex shrink-0 items-center gap-1">
-      <TitlebarSidebarTrigger className={titlebarBackgroundControlClassName} />
+    <div
+      ref={controlsRef}
+      className="no-drag fixed left-[var(--titlebar-control-left)] top-[var(--titlebar-control-center-y)] z-50 flex -translate-y-1/2 items-center gap-[var(--titlebar-control-inner-gap)]"
+    >
+      <TitlebarSidebarTrigger className={surfaceClassName} />
       <TitlebarUpdateButton />
     </div>
   )
@@ -172,12 +184,11 @@ function InsetHeader({ chrome }: { chrome: WindowChrome }) {
   return (
     <header
       className={cn(
-        "flex h-[44px] shrink-0 items-center gap-2 px-5 transition-[padding] duration-150 ease-out",
+        "flex h-[44px] shrink-0 items-center gap-2 px-5",
         chrome.headerDragClassName,
         isCollapsed && chrome.collapsedHeaderPaddingClassName,
       )}
     >
-      {isCollapsed && chrome.collapsedTitlebarControls}
       <div className="no-drag flex min-w-0 flex-1 items-center">
         <PageBreadcrumb />
       </div>
@@ -270,7 +281,6 @@ type WindowChrome = {
   sidebarTitlebarSpacerClassName: string | null
   headerDragClassName: string | null
   collapsedHeaderPaddingClassName: string | null
-  collapsedTitlebarControls: React.ReactNode | null
 }
 
 function useWindowChrome(): WindowChrome {
@@ -284,7 +294,6 @@ function useWindowChrome(): WindowChrome {
         sidebarTitlebarSpacerClassName: null,
         headerDragClassName: null,
         collapsedHeaderPaddingClassName: null,
-        collapsedTitlebarControls: null,
       }
     }
 
@@ -294,14 +303,22 @@ function useWindowChrome(): WindowChrome {
       sidebarTitlebarSpacerClassName:
         "drag h-[44px] flex-row items-center px-3 py-0",
       headerDragClassName: "drag",
-      collapsedHeaderPaddingClassName: "pl-[var(--titlebar-control-left)]",
-      collapsedTitlebarControls: <CollapsedTitlebarControls />,
+      // The fixed titlebar control group reports its rendered width here, so
+      // the collapsed breadcrumb stays clear when the update button appears.
+      collapsedHeaderPaddingClassName:
+        "pl-[calc(var(--titlebar-control-left)+var(--titlebar-controls-width)+var(--titlebar-control-gap))]",
     }
   }, [appInfo?.platform])
 }
 
 export function AppShell() {
   const chrome = useWindowChrome()
+  const [titlebarControlsWidth, setTitlebarControlsWidth] = React.useState<
+    number | null
+  >(null)
+  const handleTitlebarControlsWidth = React.useCallback((width: number) => {
+    setTitlebarControlsWidth(width)
+  }, [])
 
   return (
     <NuqsAdapter>
@@ -315,21 +332,22 @@ export function AppShell() {
             "--traffic-light-size": "12px",
             "--traffic-light-gap": "10px",
             "--titlebar-control-gap": "12px",
+            "--titlebar-control-inner-gap": "4px",
             "--titlebar-control-size": "24px",
+            "--titlebar-controls-width": titlebarControlsWidth
+              ? `${titlebarControlsWidth}px`
+              : "var(--titlebar-control-size)",
             "--titlebar-control-left":
               "calc(var(--traffic-light-left) + (var(--traffic-light-size) * 3) + (var(--traffic-light-gap) * 2) + var(--titlebar-control-gap))",
             "--titlebar-control-offset-y": "1px",
             "--titlebar-control-center-y":
               "calc(var(--traffic-light-top) + (var(--traffic-light-size) / 2) + var(--titlebar-control-offset-y))",
-            "--titlebar-control-step":
-              "calc(var(--titlebar-control-size) + 4px)",
           } as React.CSSProperties
         }
       >
         <AppSidebar
           titlebarSpacerClassName={chrome.sidebarTitlebarSpacerClassName}
         />
-        {chrome.hasCustomTitlebar && <PersistentSidebarControls />}
         <SidebarInset className="min-h-0 overflow-hidden border-l border-border bg-background">
           <InsetHeader chrome={chrome} />
           <div className="min-h-0 flex-1 overflow-y-auto">
@@ -338,6 +356,14 @@ export function AppShell() {
             </OnboardingGate>
           </div>
         </SidebarInset>
+        {/* Rendered last so the controls' no-drag region wins over the inset
+            header's drag region; otherwise the trigger is unclickable while the
+            sidebar is collapsed. */}
+        {chrome.hasCustomTitlebar && (
+          <PersistentSidebarControls
+            onWidthChange={handleTitlebarControlsWidth}
+          />
+        )}
       </SidebarProvider>
     </NuqsAdapter>
   )

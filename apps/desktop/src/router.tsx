@@ -3,10 +3,11 @@ import {
   createRootRoute,
   createRoute,
   createRouter,
+  redirect,
 } from "@tanstack/react-router"
 
 import { AppShell } from "@/components/blocks/layout/app-shell"
-import { BrandMemoryPage } from "@/pages/brand-memory"
+import { UploadsPage } from "@/pages/uploads"
 import { CreatePage } from "@/pages/create"
 import { CreativePage } from "@/pages/creative"
 import { PromptTemplatesPage } from "@/pages/prompt-templates"
@@ -27,10 +28,20 @@ const videosRoute = createRoute({
   component: VideosPage,
 })
 
-const brandMemoryRoute = createRoute({
+const uploadsRoute = createRoute({
+  getParentRoute: () => rootRoute,
+  path: "/uploads",
+  component: UploadsPage,
+})
+
+// Backward-compatible alias for older deep links before the product language
+// moved from Brand Memory to Uploads.
+const legacyUploadsRoute = createRoute({
   getParentRoute: () => rootRoute,
   path: "/brand-memory",
-  component: BrandMemoryPage,
+  beforeLoad: () => {
+    throw redirect({ to: "/uploads" })
+  },
 })
 
 const promptTemplatesRoute = createRoute({
@@ -54,7 +65,8 @@ const videoRoute = createRoute({
 const routeTree = rootRoute.addChildren([
   indexRoute,
   videosRoute,
-  brandMemoryRoute,
+  uploadsRoute,
+  legacyUploadsRoute,
   promptTemplatesRoute,
   creativeRoute,
   videoRoute,

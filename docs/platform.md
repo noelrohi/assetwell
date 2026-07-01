@@ -58,12 +58,12 @@ Canonical target sizes, display labels, availability, and unavailable placement 
 ## 6. Libraries
 
 - **Prompt templates split Image / Video** — each shipped-starters + user-saved, plain text. They are managed from **Prompt templates** and picked inline from composers.
-- **Brand memory** — a flat local folder of saved images (logo/product/mood), no tags/roles. The **Brand memory** screen adds/removes files; composer references query that folder before showing the picker.
+- **Uploads** — local workspace folders of saved images (logo/product/mood) plus a scoped visible creative/video output library, no Higgsfield workspace switching. The **Uploads** screen adds/removes files and switches the active local folder before showing the picker and generated outputs.
 - **soul-id is deferred to phase 2** (the marquee consistency feature, but it adds training/onboarding weight).
 
 ## 7. Navigation
 
-- Top-level destinations: **Create** (composer + your creatives grid), **Videos** (composer + videos gallery), **Brand memory**, and **Prompt templates** — plus detail pages and an account corner menu (credit balance + sign out).
+- Top-level destinations: **Create** (composer + your creatives grid), **Videos** (composer + videos gallery), **Uploads**, and **Prompt templates** — plus detail pages and an account corner menu (credit balance + sign out).
 - **Starred is cut for v1** (a flat recent-first grid is enough).
 
 ## 8. Local-first output (the "why desktop" differentiator)

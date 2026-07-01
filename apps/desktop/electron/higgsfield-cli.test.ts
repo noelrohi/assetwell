@@ -136,7 +136,7 @@ describe("Higgsfield CLI commands", () => {
     for (const call of spawnCalls) await completeSpawn(call)
   })
 
-  test("returns empty model details for unavailable fallback models", async () => {
+  test("surfaces unavailable model details as CLI errors", async () => {
     const details = cli.getHiggsfieldModelDetails({
       model: "soul-v2",
       mediaKind: "image",
@@ -148,13 +148,9 @@ describe("Higgsfield CLI commands", () => {
       exitCode: 1,
     })
 
-    await expect(details).resolves.toEqual({
-      id: "soul-v2",
-      label: "soul-v2",
-      mediaKind: "image",
-      params: [],
-      aspectRatios: [],
-    })
+    await expect(details).rejects.toThrow(
+      'Error: No model with job_set_type "soul-v2".',
+    )
   })
 
   test("validates renderer-provided generation inputs before spawning", () => {

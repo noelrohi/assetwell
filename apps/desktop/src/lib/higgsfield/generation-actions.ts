@@ -67,6 +67,7 @@ interface UseHiggsfieldGenerationActionsRequest {
   creatives: Creative[]
   videos: VideoResult[]
   referenceLibrary: ReferenceAsset[]
+  activeUploadWorkspaceId: string
   setCreatives: React.Dispatch<React.SetStateAction<Creative[]>>
   setVideos: React.Dispatch<React.SetStateAction<VideoResult[]>>
   pendingRuns: React.MutableRefObject<Map<string, PendingRun>>
@@ -87,6 +88,7 @@ export function useHiggsfieldGenerationActions({
   creatives,
   videos,
   referenceLibrary,
+  activeUploadWorkspaceId,
   setCreatives,
   setVideos,
   pendingRuns,
@@ -174,6 +176,7 @@ export function useHiggsfieldGenerationActions({
           selectedTakeId: "",
           placements: [],
           referenceAssets: references,
+          uploadWorkspaceId: activeUploadWorkspaceId,
           outputDirectoryName,
         },
         ...current,
@@ -196,6 +199,7 @@ export function useHiggsfieldGenerationActions({
                   request.ratioH,
                   aspectRatios,
                 ),
+                uploadWorkspaceId: activeUploadWorkspaceId,
                 outputDirectoryName,
                 outputFileName: `take-${index + 1}.png`,
                 outputSize: { width: request.ratioW, height: request.ratioH },
@@ -230,6 +234,7 @@ export function useHiggsfieldGenerationActions({
       return id
     },
     [
+      activeUploadWorkspaceId,
       bridge,
       canGenerate,
       getModelAspectRatios,
@@ -290,6 +295,7 @@ export function useHiggsfieldGenerationActions({
             assetPath: sourcePath,
             assetMediaKind: "image",
             aspectRatio,
+            uploadWorkspaceId: creative.uploadWorkspaceId,
             outputDirectoryName,
             outputFileName: `${placement}.png`,
             outputSize: { width: spec.width, height: spec.height },
@@ -448,6 +454,7 @@ export function useHiggsfieldGenerationActions({
 
       const result = await libraryBridge.exportCreativeZip({
         title: creative.title,
+        uploadWorkspaceId: creative.uploadWorkspaceId,
         outputDirectoryName: creative.outputDirectoryName,
         files: readyFiles,
       })
@@ -477,6 +484,7 @@ export function useHiggsfieldGenerationActions({
       const result = await libraryBridge.exportVideo({
         path: video.filePath,
         title: `${titleFromPrompt(video.prompt)}-${video.size}`,
+        uploadWorkspaceId: video.uploadWorkspaceId,
       })
 
       if (result) {
@@ -507,6 +515,7 @@ export function useHiggsfieldGenerationActions({
         sourceTitle: request.source.label,
         createdAt,
         durationSeconds: request.durationSeconds,
+        uploadWorkspaceId: activeUploadWorkspaceId,
       }))
       const aspectRatios = await getModelAspectRatios(request.model, "video")
 
@@ -532,6 +541,7 @@ export function useHiggsfieldGenerationActions({
                   aspectRatios,
                 ),
                 durationSeconds: request.durationSeconds,
+                uploadWorkspaceId: activeUploadWorkspaceId,
                 outputDirectoryName,
                 outputFileName: `${size}.mp4`,
                 outputSize: { width: spec.width, height: spec.height },
@@ -552,6 +562,7 @@ export function useHiggsfieldGenerationActions({
       )
     },
     [
+      activeUploadWorkspaceId,
       bridge,
       canGenerate,
       getModelAspectRatios,

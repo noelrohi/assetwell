@@ -65,14 +65,10 @@ export async function setActiveUploadsWorkspace(
   request: AssetwellSetActiveUploadWorkspaceRequest,
 ): Promise<AssetwellUploadsSnapshot> {
   const settings = await ensureUploadWorkspaceSettings()
-  const requested = normalizeUploadWorkspaceId(request.id)
-  const workspace = requested
-    ? findUploadWorkspace(settings.uploadWorkspaces, requested)
-    : null
-
-  if (!workspace) {
-    throw new Error("Unknown Uploads workspace.")
-  }
+  const workspace = requireUploadWorkspace(
+    settings.uploadWorkspaces,
+    request.id,
+  )
 
   const next = { ...settings, activeUploadWorkspaceId: workspace.id }
   await mkdir(uploadWorkspaceDirectory(next.outputRoot, workspace.id), {
@@ -86,42 +82,14 @@ export async function createUploadsWorkspace(
   request: AssetwellCreateUploadWorkspaceRequest,
 ): Promise<AssetwellUploadsSnapshot> {
   const settings = await ensureUploadWorkspaceSettings()
-  const name = normalizeUploadWorkspaceName(request.name)
+  const next = planCreateUploadWorkspace(settings, request.name)
 
-  if (!name) {
-    throw new Error("Workspace name is required.")
-  }
-
-  const requestedWorkspaceId = uploadWorkspaceIdFromName(name)
-  if (!requestedWorkspaceId) {
-    throw new Error("Workspace name is required.")
-  }
-
-  const existingWorkspace = findUploadWorkspace(
-    settings.uploadWorkspaces,
-    requestedWorkspaceId,
+  await mkdir(
+    uploadWorkspaceDirectory(next.outputRoot, next.activeUploadWorkspaceId),
+    {
+      recursive: true,
+    },
   )
-  const workspace =
-    existingWorkspace ??
-    ({
-      id: dedupeUploadWorkspaceId(
-        requestedWorkspaceId,
-        settings.uploadWorkspaces,
-      ),
-      name,
-    } satisfies UploadWorkspaceRecord)
-  const uploadWorkspaces = existingWorkspace
-    ? settings.uploadWorkspaces
-    : [...settings.uploadWorkspaces, workspace]
-  const next = {
-    ...settings,
-    activeUploadWorkspaceId: workspace.id,
-    uploadWorkspaces,
-  }
-
-  await mkdir(uploadWorkspaceDirectory(next.outputRoot, workspace.id), {
-    recursive: true,
-  })
   await writeUploadWorkspaceSettings(readSettingsFileSync(), next)
   return uploadsSnapshot(next)
 }
@@ -130,39 +98,7 @@ export async function updateUploadsWorkspace(
   request: AssetwellUpdateUploadWorkspaceRequest,
 ): Promise<AssetwellUploadsSnapshot> {
   const settings = await ensureUploadWorkspaceSettings()
-  const workspaceId = normalizeUploadWorkspaceId(request.id)
-  const workspace = workspaceId
-    ? findUploadWorkspace(settings.uploadWorkspaces, workspaceId)
-    : null
-
-  if (!workspace) {
-    throw new Error("Unknown Uploads workspace.")
-  }
-
-  if (workspace.id === DEFAULT_UPLOAD_WORKSPACE_ID) {
-    throw new Error("The default Uploads workspace cannot be renamed.")
-  }
-
-  const name = normalizeUploadWorkspaceName(request.name)
-  if (!name) {
-    throw new Error("Workspace name is required.")
-  }
-
-  const duplicate = settings.uploadWorkspaces.find(
-    (current) =>
-      current.id !== workspace.id &&
-      current.name.trim().toLowerCase() === name.toLowerCase(),
-  )
-  if (duplicate) {
-    throw new Error("A workspace with that name already exists.")
-  }
-
-  const next = {
-    ...settings,
-    uploadWorkspaces: settings.uploadWorkspaces.map((current) =>
-      current.id === workspace.id ? { ...current, name } : current,
-    ),
-  }
+  const next = planRenameUploadWorkspace(settings, request.id, request.name)
 
   await writeUploadWorkspaceSettings(readSettingsFileSync(), next)
   return uploadsSnapshot(next)
@@ -172,16 +108,12 @@ export async function deleteUploadsWorkspace(
   request: AssetwellDeleteUploadWorkspaceRequest,
 ): Promise<AssetwellUploadsSnapshot> {
   const settings = await ensureUploadWorkspaceSettings()
-  const workspaceId = normalizeUploadWorkspaceId(request.id)
-  const workspace = workspaceId
-    ? findUploadWorkspace(settings.uploadWorkspaces, workspaceId)
-    : null
+  const workspace = requireUploadWorkspace(
+    settings.uploadWorkspaces,
+    request.id,
+  )
 
-  if (!workspace) {
-    throw new Error("Unknown Uploads workspace.")
-  }
-
-  if (workspace.id === DEFAULT_UPLOAD_WORKSPACE_ID) {
+  if (isDefaultUploadWorkspaceId(workspace.id)) {
     throw new Error("The default Uploads workspace cannot be deleted.")
   }
 
@@ -213,6 +145,97 @@ export async function deleteUploadsWorkspace(
   )
   await writeUploadWorkspaceSettings(readSettingsFileSync(), next)
   return uploadsSnapshot(next)
+}
+
+function planCreateUploadWorkspace(
+  settings: NormalizedUploadWorkspaceSettings,
+  value: unknown,
+): NormalizedUploadWorkspaceSettings {
+  const name = requireUploadWorkspaceName(value)
+  const requestedWorkspaceId = uploadWorkspaceIdFromName(name)
+
+  if (!requestedWorkspaceId) {
+    throw new Error("Workspace name is required.")
+  }
+
+  assertUniqueUploadWorkspaceName(settings.uploadWorkspaces, name)
+
+  const workspace = {
+    id: dedupeUploadWorkspaceId(
+      requestedWorkspaceId,
+      settings.uploadWorkspaces,
+    ),
+    name,
+  } satisfies UploadWorkspaceRecord
+
+  return {
+    ...settings,
+    activeUploadWorkspaceId: workspace.id,
+    uploadWorkspaces: [...settings.uploadWorkspaces, workspace],
+  }
+}
+
+function planRenameUploadWorkspace(
+  settings: NormalizedUploadWorkspaceSettings,
+  id: unknown,
+  value: unknown,
+): NormalizedUploadWorkspaceSettings {
+  const workspace = requireUploadWorkspace(settings.uploadWorkspaces, id)
+  const name = requireUploadWorkspaceName(value)
+  assertUniqueUploadWorkspaceName(settings.uploadWorkspaces, name, workspace.id)
+
+  return {
+    ...settings,
+    uploadWorkspaces: settings.uploadWorkspaces.map((current) =>
+      current.id === workspace.id ? { ...current, name } : current,
+    ),
+  }
+}
+
+function requireUploadWorkspace(
+  workspaces: UploadWorkspaceRecord[],
+  value: unknown,
+) {
+  const workspaceId = normalizeUploadWorkspaceId(value)
+  const workspace = workspaceId
+    ? findUploadWorkspace(workspaces, workspaceId)
+    : null
+
+  if (!workspace) {
+    throw new Error("Unknown Uploads workspace.")
+  }
+
+  return workspace
+}
+
+function requireUploadWorkspaceName(value: unknown) {
+  const name = normalizeUploadWorkspaceName(value)
+
+  if (!name) {
+    throw new Error("Workspace name is required.")
+  }
+
+  return name
+}
+
+function assertUniqueUploadWorkspaceName(
+  workspaces: UploadWorkspaceRecord[],
+  name: string,
+  exceptWorkspaceId?: string,
+) {
+  const duplicate = workspaces.find(
+    (current) =>
+      current.id !== exceptWorkspaceId &&
+      uploadWorkspaceNameKey(current.name) === uploadWorkspaceNameKey(name),
+  )
+
+  if (duplicate) {
+    throw new Error("A workspace with that name already exists.")
+  }
+}
+
+function uploadWorkspaceNameKey(name: string) {
+  return (normalizeUploadWorkspaceName(name) ?? name.trim()).toLowerCase()
 }
 
 export async function listUploadsReferences(
@@ -381,10 +404,19 @@ function normalizeUploadWorkspaceSettings(
   discoveredWorkspaces: UploadWorkspaceRecord[],
 ): NormalizedUploadWorkspaceSettings {
   const uploadWorkspaces: UploadWorkspaceRecord[] = []
-  addUploadWorkspace(uploadWorkspaces, defaultUploadWorkspace)
+  const savedWorkspaces = savedUploadWorkspaces(settings)
+  const savedDefaultWorkspace = savedWorkspaces.find((workspace) =>
+    isDefaultUploadWorkspaceId(workspace.id),
+  )
+  addUploadWorkspace(
+    uploadWorkspaces,
+    savedDefaultWorkspace ?? defaultUploadWorkspace,
+  )
 
-  for (const workspace of savedUploadWorkspaces(settings)) {
-    addUploadWorkspace(uploadWorkspaces, workspace)
+  for (const workspace of savedWorkspaces) {
+    if (!isDefaultUploadWorkspaceId(workspace.id)) {
+      addUploadWorkspace(uploadWorkspaces, workspace)
+    }
   }
   for (const workspace of discoveredWorkspaces) {
     addUploadWorkspace(uploadWorkspaces, workspace)
@@ -514,7 +546,7 @@ function uploadWorkspaceState(
     workspaces: settings.uploadWorkspaces.map((workspace) => ({
       id: workspace.id,
       name: workspace.name,
-      isDefault: workspace.id === DEFAULT_UPLOAD_WORKSPACE_ID,
+      isDefault: isDefaultUploadWorkspaceId(workspace.id),
     })),
   }
 }
@@ -581,6 +613,10 @@ function addUploadWorkspace(
   if (!findUploadWorkspace(workspaceIds, workspace.id)) {
     workspaceIds.push(workspace)
   }
+}
+
+function isDefaultUploadWorkspaceId(workspaceId: string) {
+  return workspaceId.toLowerCase() === DEFAULT_UPLOAD_WORKSPACE_ID.toLowerCase()
 }
 
 function findUploadWorkspace(

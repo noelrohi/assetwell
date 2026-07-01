@@ -104,9 +104,10 @@ export async function exportCreativeZip(
   if (files.length === 0) return null
 
   const { outputRoot } = await getAssetwellSettings()
+  const exportRoot = scopedOutputRoot(outputRoot, request.uploadWorkspaceId)
   const defaultDir = request.outputDirectoryName
-    ? path.join(outputRoot, safePathPart(request.outputDirectoryName))
-    : outputRoot
+    ? path.join(exportRoot, safePathPart(request.outputDirectoryName))
+    : exportRoot
   await mkdir(defaultDir, { recursive: true })
 
   const result = owner
@@ -125,6 +126,12 @@ export async function exportCreativeZip(
 
   await writeFile(result.filePath, zipSync(entries, { level: 6 }))
   return { filePath: result.filePath }
+}
+
+function scopedOutputRoot(outputRoot: string, uploadWorkspaceId?: string) {
+  return uploadWorkspaceId
+    ? path.join(outputRoot, "Outputs", safePathPart(uploadWorkspaceId))
+    : outputRoot
 }
 
 function saveZipDialogOptions(
@@ -154,15 +161,16 @@ export async function exportVideo(
   }
 
   const { outputRoot } = await getAssetwellSettings()
-  await mkdir(outputRoot, { recursive: true })
+  const exportRoot = scopedOutputRoot(outputRoot, request.uploadWorkspaceId)
+  await mkdir(exportRoot, { recursive: true })
 
   const result = owner
     ? await dialog.showSaveDialog(
         owner,
-        saveVideoDialogOptions(request, outputRoot, sourceExt),
+        saveVideoDialogOptions(request, exportRoot, sourceExt),
       )
     : await dialog.showSaveDialog(
-        saveVideoDialogOptions(request, outputRoot, sourceExt),
+        saveVideoDialogOptions(request, exportRoot, sourceExt),
       )
 
   if (result.canceled || !result.filePath) return null

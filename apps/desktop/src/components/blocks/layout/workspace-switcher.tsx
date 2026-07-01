@@ -55,7 +55,7 @@ export function WorkspaceSwitcher() {
     React.useState<AssetwellUploadWorkspace | null>(null)
   const activeWorkspace = uploads.activeWorkspace
   const activeWorkspaceName = activeWorkspace.name
-  const canManageActiveWorkspace = !activeWorkspace.isDefault
+  const canDeleteActiveWorkspace = !activeWorkspace.isDefault
 
   async function submitWorkspaceName(name: string) {
     if (!editor) return false
@@ -140,11 +140,8 @@ export function WorkspaceSwitcher() {
                 New workspace…
               </DropdownMenuItem>
               <DropdownMenuItem
-                disabled={!canManageActiveWorkspace}
                 onClick={() => {
-                  if (canManageActiveWorkspace) {
-                    setEditor({ mode: "edit", workspace: activeWorkspace })
-                  }
+                  setEditor({ mode: "edit", workspace: activeWorkspace })
                 }}
                 className="gap-2"
               >
@@ -153,9 +150,9 @@ export function WorkspaceSwitcher() {
               </DropdownMenuItem>
               <DropdownMenuItem
                 variant="destructive"
-                disabled={!canManageActiveWorkspace}
+                disabled={!canDeleteActiveWorkspace}
                 onClick={() => {
-                  if (canManageActiveWorkspace) {
+                  if (canDeleteActiveWorkspace) {
                     setDeleteCandidate(activeWorkspace)
                   }
                 }}
@@ -238,8 +235,8 @@ function WorkspaceFormDialog({
             </DialogTitle>
             <DialogDescription>
               {isEditing
-                ? "Change the label shown in Assetwell. Files stay in the same local Uploads folder."
-                : "Create a separate local folder for a brand, campaign, or client."}
+                ? "Change the label shown in Assetwell. Files stay in the same local Uploads and outputs scope."
+                : "Create a separate local folder and output scope for a brand, campaign, or client."}
             </DialogDescription>
           </DialogHeader>
 
@@ -258,8 +255,8 @@ function WorkspaceFormDialog({
                 placeholder="e.g. Spring launch"
               />
               <FieldDescription>
-                Keep uploads separated without exposing Higgsfield workspace
-                details.
+                Keep uploads and generated outputs separated without exposing
+                Higgsfield workspace details.
               </FieldDescription>
               <FieldError>{error}</FieldError>
             </Field>
@@ -321,8 +318,8 @@ function DeleteWorkspaceDialog({
           <DialogTitle>Delete workspace?</DialogTitle>
           <DialogDescription>
             This removes “{workspace?.name ?? "this workspace"}” and deletes the
-            files in its local Uploads folder. Generated creatives stay in your
-            library.
+            files in its local Uploads folder. Generated output files stay on
+            disk.
           </DialogDescription>
         </DialogHeader>
         <DialogFooter>

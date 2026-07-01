@@ -66,6 +66,7 @@ interface HiggsfieldActionCommand {
   startMessage: string
   args: readonly string[]
   resultMediaKind?: HiggsfieldMediaKind
+  uploadWorkspaceId?: string
   outputDirectoryName?: string
   outputFileName?: string
   outputSize?: HiggsfieldOutputSize
@@ -206,16 +207,6 @@ export async function getHiggsfieldModelDetails(
     15_000,
   )
 
-  if (isMissingModelResult(result)) {
-    return {
-      id: model,
-      label: model,
-      mediaKind,
-      params: [],
-      aspectRatios: [],
-    }
-  }
-
   ensureCommandSucceeded(result, "Load model details")
   return parseModelDetails(result.stdout, model, mediaKind)
 }
@@ -335,6 +326,7 @@ export function startGenerateCommand(
       startMessage: "Sending your brief to Higgsfield.",
       args,
       resultMediaKind: mediaKind,
+      uploadWorkspaceId: request.uploadWorkspaceId,
       outputDirectoryName: request.outputDirectoryName,
       outputFileName: request.outputFileName,
       outputSize: request.outputSize,
@@ -554,7 +546,7 @@ async function saveGeneratedArtifacts(
   if (!command.outputDirectoryName && !command.outputFileName) return result
 
   const outputDirectory = path.join(
-    getAssetwellOutputRootSync(),
+    commandOutputRoot(command),
     safePathPart(command.outputDirectoryName ?? dateSlug()),
   )
   await mkdir(outputDirectory, { recursive: true })
@@ -581,6 +573,16 @@ async function saveGeneratedArtifacts(
   }
 
   return { artifacts }
+}
+
+function commandOutputRoot(command: HiggsfieldActionCommand) {
+  if (!command.uploadWorkspaceId) return getAssetwellOutputRootSync()
+
+  return path.join(
+    getAssetwellOutputRootSync(),
+    "Outputs",
+    safePathPart(command.uploadWorkspaceId),
+  )
 }
 
 async function saveArtifactToPath(
@@ -898,13 +900,6 @@ function mediaFlagForKind(mediaKind: HiggsfieldMediaKind) {
   if (mediaKind === "video") return "--video"
   if (mediaKind === "audio") return "--audio"
   return "--image"
-}
-
-function isMissingModelResult(result: CollectedCommand) {
-  return (
-    result.exitCode !== 0 &&
-    /No model with job_set_type/i.test(`${result.stdout}\n${result.stderr}`)
-  )
 }
 
 function ensureCommandSucceeded(result: CollectedCommand, title: string) {

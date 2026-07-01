@@ -2,7 +2,6 @@ import * as React from "react"
 import {
   IconCheck,
   IconSelector,
-  IconSparkles,
   IconStar,
   IconStarFilled,
 } from "@tabler/icons-react"
@@ -148,12 +147,6 @@ export function ModelPicker({
         }}
         className="items-start gap-2.5 py-2 pr-2"
       >
-        <IconSparkles
-          className={cn(
-            "mt-0.5 size-3.5 shrink-0",
-            active ? "!text-ember" : "text-muted-foreground",
-          )}
-        />
         <span className="flex min-w-0 flex-1 flex-col">
           <span className="truncate text-foreground">{model.label}</span>
           {model.hint && (
@@ -188,8 +181,7 @@ export function ModelPicker({
 
   return (
     <Popover open={open} onOpenChange={setOpen}>
-      <PopoverTrigger className="flex h-8 max-w-[15rem] items-center gap-1.5 rounded-full border border-border/70 bg-background/50 px-3 text-xs font-medium transition-colors hover:bg-accent data-[state=open]:bg-accent">
-        <IconSparkles className="size-3.5 shrink-0 text-ember" />
+      <PopoverTrigger className="flex h-8 max-w-[15rem] items-center gap-1.5 rounded-full px-3 text-xs font-medium transition-colors hover:bg-accent data-[state=open]:bg-accent">
         <span className="truncate">{selected?.label ?? "Select model"}</span>
         {selectedIsFavourite && (
           <IconStarFilled className="size-3.5 shrink-0 text-ember" />

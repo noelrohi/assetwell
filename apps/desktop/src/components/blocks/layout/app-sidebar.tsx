@@ -26,7 +26,7 @@ const NAV = [
   { to: "/", label: "Create", icon: IconWand, exact: true },
   { to: "/videos", label: "Videos", icon: IconMovie, exact: false },
   {
-    to: "/brand-memory",
+    to: "/uploads",
     label: "Uploads",
     icon: IconLibraryPhoto,
     exact: false,

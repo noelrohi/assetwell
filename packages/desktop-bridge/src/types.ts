@@ -144,6 +144,7 @@ export interface HiggsfieldGenerateRequest {
   assetMediaKind?: Exclude<HiggsfieldMediaKind, "text">
   aspectRatio?: string
   durationSeconds?: number
+  uploadWorkspaceId?: string
   outputDirectoryName?: string
   outputFileName?: string
   outputSize?: HiggsfieldOutputSize
@@ -217,6 +218,7 @@ export interface AssetwellPersistedCreative {
   selectedTakeId: string
   placements: AssetwellPersistedPlacement[]
   referenceAssets?: AssetwellPersistedReferenceAsset[]
+  uploadWorkspaceId?: string
   outputDirectoryName?: string
 }
 
@@ -230,6 +232,7 @@ export interface AssetwellPersistedVideo {
   sourceTitle?: string
   createdAt: string
   durationSeconds?: number
+  uploadWorkspaceId?: string
   url?: string
   filePath?: string
   runId?: string
@@ -324,6 +327,7 @@ export interface AssetwellExportZipFile {
 
 export interface AssetwellExportCreativeZipRequest {
   title: string
+  uploadWorkspaceId?: string
   outputDirectoryName?: string
   files: AssetwellExportZipFile[]
 }
@@ -335,6 +339,7 @@ export interface AssetwellExportCreativeZipResult {
 export interface AssetwellExportVideoRequest {
   path: string
   title: string
+  uploadWorkspaceId?: string
 }
 
 export interface AssetwellExportVideoResult {

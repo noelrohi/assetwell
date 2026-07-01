@@ -19,29 +19,14 @@ Higgsfield owns authentication, accounts, workspaces, models, generation, upload
 
 The renderer talks to the Electron Host through `window.assetwell`, typed by `DesktopBridge`.
 
-The current contract is:
+`packages/desktop-bridge/src/types.ts` is the source of truth for method names, request/response shapes, and event payloads. At the domain level the bridge exposes:
 
-- `app.getInfo()`: returns Host App Info from Electron.
-- `higgsfield.getStatus()`: checks bundled/global CLI availability, version, account authentication, and workspace status.
-- `higgsfield.signIn()`: starts the Higgsfield browser sign-in flow and streams progress.
-- `higgsfield.checkCredits()`: checks account plan and credits.
-- `higgsfield.checkWorkspace()`: checks the active account/workspace context.
-- `higgsfield.listModels({ mediaKind })`: lists available Higgsfield models for a creative format.
-- `higgsfield.getModelDetails({ model, mediaKind })`: reads model params such as supported aspect ratios so the renderer can show valid controls.
-- `higgsfield.chooseAsset(mediaKind)`: opens a native file picker for image, video, or audio assets.
-- `higgsfield.uploadAsset({ filePath })`: uploads a selected local asset.
-- `higgsfield.generate({ model, prompt, mediaKind, assetPath, assetPaths, aspectRatio, durationSeconds, outputSize, waitForResult })`: creates a Higgsfield generation job, streams progress, and saves local artifacts. Outputs with `outputSize` are center-cropped/resized to the exact target dimensions before saving locally.
-- `library.loadSnapshot()`: loads the local library from SQLite, falling back to the legacy JSON snapshot and migrating it forward.
-- `library.saveSnapshot(snapshot)`: saves the local library to SQLite and keeps a JSON snapshot as a fallback.
-- `library.listReferenceAssets()`: scans the Brand Memory folder under the configured output root.
-- `library.importReferenceAssets()`: opens a native image picker and copies selected files into Brand Memory.
-- `library.revealReferenceAssets()`: opens the Brand Memory folder.
-- `library.deleteReferenceAsset({ id })`: removes a scanned Brand Memory file by stable folder-derived id.
-- `higgsfield.openOutput({ target })`: opens a generated URL or local output path.
-- `higgsfield.cancelCommand(runId)`: stops a running CLI process owned by the Electron Host.
-- `higgsfield.onCommandOutput(listener)`: subscribes to product-level command output events.
+- `app`: host-owned app metadata and release-note lookup.
+- `higgsfield`: product-level CLI capabilities such as status, sign-in, credits/workspace checks, model list/detail reads, asset picking/uploading, generation, output opening, cancellation, and streamed command output.
+- `library`: Assetwell-owned local persistence, settings, output-root picker/reveal, Uploads workspace/reference-file snapshots and mutations, and export helpers.
+- `updater`: packaged-app downloaded-update state and install handoff.
 
-This is intentionally small. New bridge methods should be product-level Higgsfield wrapper capabilities, not raw Electron wrappers or arbitrary CLI command runners. Channel names, executable paths, command arguments, and transport details belong in Electron Host adapters.
+This is intentionally small. New bridge methods should be product-level Higgsfield wrapper capabilities or host-owned Assetwell behaviors, not raw Electron wrappers or arbitrary CLI command runners. Channel names, executable paths, command arguments, and transport details belong in Electron Host adapters.
 
 ## IPC Ownership
 
@@ -51,7 +36,7 @@ The current IPC domains are:
 
 - `app-info`: owns Electron metadata exposed through `DesktopBridge.app.getInfo()`.
 - `higgsfield`: owns CLI process invocation, bundled/global executable resolution, install/auth/workspace detection, sign-in, model/account/generation/upload actions, cancellation, file picking, output opening, exact image post-processing, and streamed command output.
-- `library`: owns the local library store, JSON snapshot fallback, settings, output-root picker/reveal, and ZIP export.
+- `library`: owns the local library store façade, JSON snapshot fallback, settings, output-root picker/reveal, ZIP export, and delegates Uploads workspace/reference-file behavior to `uploads-store`.
 
 Add another IPC domain only when there is real behavior behind it. A folder of pass-through modules would make the interface larger without improving locality.
 
@@ -66,7 +51,7 @@ The adapter:
 - checks version, authentication status, and workspace status,
 - starts sign-in, credit checks, model listing/detail inspection, uploads, and generation through product actions,
 - validates model, prompt, aspect-ratio, and file inputs before spawning the CLI,
-- saves generated artifacts under the configured Assetwell Output Root,
+- saves generated artifacts under the active Uploads workspace's output scope inside the configured Assetwell Output Root,
 - post-processes generated images/videos to exact target dimensions when the renderer supplies `outputSize` (Electron `nativeImage` for images, bundled `ffmpeg-static` for videos),
 - streams stdout, stderr, system messages, result artifacts, and exit events to the renderer without showing raw command invocations.
 
@@ -77,9 +62,9 @@ The adapter:
 Assetwell has two storage locations:
 
 - **App Data Root:** Electron `app.getPath("userData")`; app-owned state lives under `state/` (`library.v1.sqlite` as the primary local library store, `library.v1.json` as a fallback snapshot, and `settings.json`).
-- **Assetwell Output Root:** defaults to `~/Assetwell` and can be changed by the user; generated images/videos are written as plain files in folder-per-creative directories. The `Brand Memory/` child folder stores reusable reference images that the renderer scans through the library bridge.
+- **Assetwell Output Root:** defaults to `~/Assetwell` and can be changed by the user. Generated images/videos are written as plain files in `Outputs/<Upload workspace id>/<folder-per-creative>/`, so switching Uploads workspaces also switches the visible creative/video output library. The `Uploads/` child folder stores reusable reference images in local workspace subfolders such as `Uploads/Default/` and `Uploads/Brand A/`. Upload workspace `id` is the sanitized folder key; `name` is the user-facing label stored in settings. These workspaces are Assetwell-local folder labels only and never call `hf workspace set`.
 
-The local library store remains a convenience index and can be rebuilt from future import/reindex flows. On launch Assetwell reads SQLite first, then falls back to the JSON snapshot and migrates it forward. Generated artifacts and Brand Memory files are user-owned files. If Assetwell closes while a CLI command is pending, the next launch marks that local item as failed/interrupted rather than pretending Higgsfield job state is recoverable.
+The local library store remains a convenience index and can be rebuilt from future import/reindex flows. On launch Assetwell reads SQLite first, then falls back to the JSON snapshot and migrates it forward. Generated artifacts and Uploads files are user-owned files. If the legacy `Brand Memory/` folder exists, Assetwell migrates it into the `Default` Uploads workspace. If Assetwell closes while a CLI command is pending, the next launch marks that local item as failed/interrupted rather than pretending Higgsfield job state is recoverable.
 
 ## Website Download Policy
 
