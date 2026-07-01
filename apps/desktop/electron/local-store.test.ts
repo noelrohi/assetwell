@@ -248,6 +248,105 @@ describe("local store", () => {
     })
   })
 
+  test("stores Assetwell brand metadata and upload assignments locally", async () => {
+    const initial = await localStore.loadBrandState()
+
+    expect(initial).toMatchObject({
+      activeBrandId: null,
+      activeBrandView: "all",
+      brands: [{ id: "brand-default", name: "Default brand", isDefault: true }],
+      assignments: [],
+    })
+
+    const created = await localStore.createBrand({ name: "Brand/A?" })
+    const brand = created.brands.find((item) => item.name === "Brand/A?")
+    expect(brand).toMatchObject({ id: "brand-a", isDefault: false })
+    expect(created.activeBrandView).toBe("brand")
+    expect(created.activeBrandId).toBe("brand-a")
+
+    const assigned = await localStore.assignUploadsToBrand({
+      uploadIds: [" upload-1 ", "upload-2", "upload-1"],
+      brandId: "brand-a",
+    })
+    expect(assigned.assignments).toEqual([
+      { uploadId: "upload-1", brandId: "brand-a" },
+      { uploadId: "upload-2", brandId: "brand-a" },
+    ])
+
+    const renamed = await localStore.updateBrand({
+      id: "brand-a",
+      name: "Brand Alpha",
+    })
+    expect(renamed.brands).toContainEqual({
+      id: "brand-a",
+      name: "Brand Alpha",
+      isDefault: false,
+    })
+
+    const unsorted = await localStore.assignUploadsToBrand({
+      uploadIds: ["upload-2"],
+      brandId: null,
+    })
+    expect(unsorted.assignments).toContainEqual({
+      uploadId: "upload-2",
+      brandId: null,
+    })
+
+    const view = await localStore.setActiveBrand({ view: "unsorted" })
+    expect(view.activeBrandView).toBe("unsorted")
+    expect(view.activeBrandId).toBe(null)
+
+    const stored = JSON.parse(
+      await readFile(
+        path.join(userDataRoot, "state", "brands.v1.json"),
+        "utf8",
+      ),
+    ) as { brands?: unknown[]; assignments?: unknown[] }
+    expect(stored.brands).toContainEqual({
+      id: "brand-a",
+      name: "Brand Alpha",
+    })
+    expect(stored.assignments).toContainEqual({
+      uploadId: "upload-1",
+      brandId: "brand-a",
+    })
+  })
+
+  test("adds a compatibility Uploads scope when activating a Higgsfield workspace", async () => {
+    const outputRoot = path.join(userDataRoot, "Library")
+    setNextOpenDialogResult({ canceled: false, filePaths: [outputRoot] })
+    await localStore.chooseAssetwellOutputRoot()
+
+    const workspaceId = "54343c6a-aeb7-4499-a546-31bd6c14760c"
+    const snapshot = await localStore.setActiveUploadWorkspace({
+      id: workspaceId,
+      name: "Paid Team",
+    })
+
+    expect(snapshot.workspaceState.activeWorkspaceId).toBe(workspaceId)
+    expect(snapshot.workspaceState.workspaces).toContainEqual({
+      id: workspaceId,
+      name: "Paid Team",
+      isDefault: false,
+    })
+    await writeFile(
+      path.join(outputRoot, "Uploads", workspaceId, "reference.png"),
+      "asset",
+    )
+    await expect(localStore.listReferenceAssets()).resolves.toMatchObject([
+      { name: "reference.png" },
+    ])
+
+    const settings = JSON.parse(
+      await readFile(path.join(userDataRoot, "state", "settings.json"), "utf8"),
+    ) as { activeUploadWorkspaceId?: string; uploadWorkspaces?: unknown[] }
+    expect(settings.activeUploadWorkspaceId).toBe(workspaceId)
+    expect(settings.uploadWorkspaces).toContainEqual({
+      id: workspaceId,
+      name: "Paid Team",
+    })
+  })
+
   test("rejects duplicate Uploads workspace display names", async () => {
     const outputRoot = path.join(userDataRoot, "Library")
     setNextOpenDialogResult({ canceled: false, filePaths: [outputRoot] })

@@ -73,6 +73,14 @@ const bridgeInvocationCases = {
     call: (bridge) => bridge.higgsfield.checkWorkspace(),
     expected: [IPC_CHANNELS.higgsfield.checkWorkspace],
   },
+  "higgsfield.setWorkspace": {
+    call: (bridge) =>
+      bridge.higgsfield.setWorkspace({ id: "workspace-funded" }),
+    expected: [
+      IPC_CHANNELS.higgsfield.setWorkspace,
+      { id: "workspace-funded" },
+    ],
+  },
   "higgsfield.listModels": {
     call: (bridge) => bridge.higgsfield.listModels({ mediaKind: "video" }),
     expected: [IPC_CHANNELS.higgsfield.listModels, { mediaKind: "video" }],
@@ -88,9 +96,29 @@ const bridgeInvocationCases = {
       { model: "veo3_1_lite", mediaKind: "video" },
     ],
   },
+  "higgsfield.listUploads": {
+    call: (bridge) =>
+      bridge.higgsfield.listUploads({ mediaKind: "image", size: 100 }),
+    expected: [
+      IPC_CHANNELS.higgsfield.listUploads,
+      { mediaKind: "image", size: 100 },
+    ],
+  },
   "higgsfield.chooseAsset": {
     call: (bridge) => bridge.higgsfield.chooseAsset("image"),
     expected: [IPC_CHANNELS.higgsfield.chooseAsset, "image"],
+  },
+  "higgsfield.chooseAssets": {
+    call: (bridge) => bridge.higgsfield.chooseAssets("image"),
+    expected: [IPC_CHANNELS.higgsfield.chooseAssets, "image"],
+  },
+  "higgsfield.createUpload": {
+    call: (bridge) =>
+      bridge.higgsfield.createUpload({ filePath: "/tmp/reference.png" }),
+    expected: [
+      IPC_CHANNELS.higgsfield.createUpload,
+      { filePath: "/tmp/reference.png" },
+    ],
   },
   "higgsfield.uploadAsset": {
     call: (bridge) =>
@@ -144,6 +172,41 @@ const bridgeInvocationCases = {
     call: (bridge) => bridge.library.revealOutputRoot(),
     expected: [IPC_CHANNELS.library.revealOutputRoot],
   },
+  "library.loadBrandState": {
+    call: (bridge) => bridge.library.loadBrandState(),
+    expected: [IPC_CHANNELS.library.loadBrandState],
+  },
+  "library.setActiveBrand": {
+    call: (bridge) =>
+      bridge.library.setActiveBrand({ view: "brand", id: "brand-default" }),
+    expected: [
+      IPC_CHANNELS.library.setActiveBrand,
+      { view: "brand", id: "brand-default" },
+    ],
+  },
+  "library.createBrand": {
+    call: (bridge) => bridge.library.createBrand({ name: "Brand A" }),
+    expected: [IPC_CHANNELS.library.createBrand, { name: "Brand A" }],
+  },
+  "library.updateBrand": {
+    call: (bridge) =>
+      bridge.library.updateBrand({ id: "brand-a", name: "Brand Alpha" }),
+    expected: [
+      IPC_CHANNELS.library.updateBrand,
+      { id: "brand-a", name: "Brand Alpha" },
+    ],
+  },
+  "library.assignUploadsToBrand": {
+    call: (bridge) =>
+      bridge.library.assignUploadsToBrand({
+        uploadIds: ["upload-1"],
+        brandId: "brand-a",
+      }),
+    expected: [
+      IPC_CHANNELS.library.assignUploadsToBrand,
+      { uploadIds: ["upload-1"], brandId: "brand-a" },
+    ],
+  },
   "library.loadUploadsSnapshot": {
     call: (bridge) => bridge.library.loadUploadsSnapshot(),
     expected: [IPC_CHANNELS.library.loadUploadsSnapshot],
@@ -179,14 +242,6 @@ const bridgeInvocationCases = {
   "library.revealReferenceAssets": {
     call: (bridge) => bridge.library.revealReferenceAssets(),
     expected: [IPC_CHANNELS.library.revealReferenceAssets],
-  },
-  "library.deleteReferenceAsset": {
-    call: (bridge) =>
-      bridge.library.deleteReferenceAsset({ id: "reference-1" }),
-    expected: [
-      IPC_CHANNELS.library.deleteReferenceAsset,
-      { id: "reference-1" },
-    ],
   },
   "library.exportCreativeZip": {
     call: (bridge) =>

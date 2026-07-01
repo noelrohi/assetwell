@@ -175,6 +175,38 @@ describe("Higgsfield CLI commands", () => {
     })
   })
 
+  test("switches Higgsfield workspaces through the CLI", async () => {
+    const context = cli.setHiggsfieldWorkspace({ id: " workspace-funded " })
+
+    await waitForSpawnCount(1)
+    expect(spawnCalls[0].args).toEqual(["workspace", "set", "workspace-funded"])
+    await completeSpawn(spawnCalls[0])
+
+    await waitForSpawnCount(2)
+    expect(spawnCalls[1].args).toEqual(["workspace", "status"])
+    await completeSpawn(spawnCalls[1], {
+      stdout: "Funded workspace selected\n",
+    })
+
+    await waitForSpawnCount(3)
+    expect(spawnCalls[2].args).toEqual(["--json", "workspace", "list"])
+    await completeSpawn(spawnCalls[2], {
+      stdout: `[
+        {"id":"workspace-empty","name":"Empty","credits":0,"is_selected":false},
+        {"id":"workspace-funded","name":"Funded","credits":42,"is_selected":true}
+      ]`,
+    })
+
+    await expect(context).resolves.toMatchObject({
+      selected: {
+        id: "workspace-funded",
+        name: "Funded",
+        credits: 42,
+        isSelected: true,
+      },
+    })
+  })
+
   test("selects the default workspace before checking credits", async () => {
     const account = cli.getHiggsfieldAccountStatus()
 
@@ -214,6 +246,98 @@ describe("Higgsfield CLI commands", () => {
       credits: 42,
       plan: "creator",
     })
+  })
+
+  test("lists Higgsfield uploads through the selected workspace", async () => {
+    const uploads = cli.getHiggsfieldUploads({ mediaKind: "image", size: 100 })
+
+    await waitForSpawnCount(1)
+    expect(spawnCalls[0].args).toEqual(["workspace", "status"])
+    await completeSpawn(spawnCalls[0], {
+      stdout: "Funded workspace selected\n",
+    })
+
+    await waitForSpawnCount(2)
+    expect(spawnCalls[1].args).toEqual([
+      "--json",
+      "upload",
+      "list",
+      "--image",
+      "--size",
+      "100",
+    ])
+    await completeSpawn(spawnCalls[1], {
+      stdout: `{
+        "cursor": "next-cursor",
+        "items": [{
+          "id": "808ccacb-d4be-465e-b02d-432de39b97a8",
+          "type": "image",
+          "url": "https://cdn.example.com/upload.png"
+        }]
+      }`,
+    })
+
+    await expect(uploads).resolves.toMatchObject({
+      cursor: "next-cursor",
+      items: [
+        {
+          uploadId: "808ccacb-d4be-465e-b02d-432de39b97a8",
+          name: "Upload 808ccacb",
+          mediaKind: "image",
+        },
+      ],
+    })
+  })
+
+  test("creates Higgsfield uploads through the CLI", async () => {
+    const asset = await makeFile("reference.png")
+    const upload = cli.createHiggsfieldUpload({ filePath: asset })
+
+    await waitForSpawnCount(1)
+    expect(spawnCalls[0].args).toEqual(["workspace", "status"])
+    await completeSpawn(spawnCalls[0], {
+      stdout: "Funded workspace selected\n",
+    })
+
+    await waitForSpawnCount(2)
+    expect(spawnCalls[1].args).toEqual(["--json", "upload", "create", asset])
+    await completeSpawn(spawnCalls[1], {
+      stdout: `{
+        "id": "808ccacb-d4be-465e-b02d-432de39b97a8",
+        "type": "image",
+        "url": "https://cdn.example.com/upload.png"
+      }`,
+    })
+
+    await expect(upload).resolves.toMatchObject({
+      uploadId: "808ccacb-d4be-465e-b02d-432de39b97a8",
+      url: "https://cdn.example.com/upload.png",
+    })
+  })
+
+  test("passes Higgsfield upload ids as generation media references", async () => {
+    cli.startGenerateCommand(
+      {
+        model: "image_model",
+        prompt: "Use a shared reference",
+        mediaKind: "image",
+        assetPath: "808ccacb-d4be-465e-b02d-432de39b97a8",
+      },
+      () => undefined,
+    )
+
+    expect(spawnCalls[0].args).toEqual([
+      "--json",
+      "generate",
+      "create",
+      "image_model",
+      "--prompt",
+      "Use a shared reference",
+      "--image",
+      "808ccacb-d4be-465e-b02d-432de39b97a8",
+      "--wait",
+    ])
+    await completeLastSpawn()
   })
 
   test("builds sign-out command as a product action", async () => {

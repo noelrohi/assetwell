@@ -6,6 +6,8 @@ import {
   parseGenerationResult,
   parseModelDetails,
   parseModelList,
+  parseUpload,
+  parseUploadList,
   parseWorkspaceContext,
 } from "./higgsfield-output"
 
@@ -138,6 +140,59 @@ kling3_0                    Kling v3.0                  video`,
       credits: 2680.8,
       isSelected: false,
       userRole: "owner",
+    })
+  })
+
+  test("parses upload list responses", () => {
+    const result = parseUploadList(
+      `{
+        "cursor": "1782878629.830526",
+        "items": [
+          {
+            "created_at": "2026-07-01T04:03:49.830526Z",
+            "id": "808ccacb-d4be-465e-b02d-432de39b97a8",
+            "type": "image",
+            "url": "https://cdn.example.com/upload.png"
+          }
+        ]
+      }`,
+      "image",
+      "2026-07-01T04:04:00.000Z",
+    )
+
+    expect(result).toEqual({
+      cursor: "1782878629.830526",
+      checkedAt: "2026-07-01T04:04:00.000Z",
+      items: [
+        {
+          id: "808ccacb-d4be-465e-b02d-432de39b97a8",
+          uploadId: "808ccacb-d4be-465e-b02d-432de39b97a8",
+          name: "Upload 808ccacb",
+          url: "https://cdn.example.com/upload.png",
+          mediaKind: "image",
+          createdAt: "2026-07-01T04:03:49.830526Z",
+          sizeBytes: null,
+        },
+      ],
+    })
+  })
+
+  test("parses direct upload create responses", () => {
+    const asset = parseUpload(
+      `{
+        "id": "808ccacb-d4be-465e-b02d-432de39b97a8",
+        "type": "image",
+        "url": "https://cdn.example.com/upload.png"
+      }`,
+      "image",
+    )
+
+    expect(asset).toMatchObject({
+      id: "808ccacb-d4be-465e-b02d-432de39b97a8",
+      uploadId: "808ccacb-d4be-465e-b02d-432de39b97a8",
+      name: "Upload 808ccacb",
+      url: "https://cdn.example.com/upload.png",
+      mediaKind: "image",
     })
   })
 
