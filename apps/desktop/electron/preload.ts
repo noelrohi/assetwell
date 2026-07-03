@@ -80,6 +80,16 @@ const bridge: DesktopBridge = {
       ipcRenderer.invoke(IPC_CHANNELS.library.updateBrand, request),
     assignUploadsToBrand: (request) =>
       ipcRenderer.invoke(IPC_CHANNELS.library.assignUploadsToBrand, request),
+    loadUploadFolderState: () =>
+      ipcRenderer.invoke(IPC_CHANNELS.library.loadUploadFolderState),
+    createUploadFolder: (request) =>
+      ipcRenderer.invoke(IPC_CHANNELS.library.createUploadFolder, request),
+    updateUploadFolder: (request) =>
+      ipcRenderer.invoke(IPC_CHANNELS.library.updateUploadFolder, request),
+    deleteUploadFolder: (request) =>
+      ipcRenderer.invoke(IPC_CHANNELS.library.deleteUploadFolder, request),
+    assignUploadsToFolder: (request) =>
+      ipcRenderer.invoke(IPC_CHANNELS.library.assignUploadsToFolder, request),
     loadUploadsSnapshot: () =>
       ipcRenderer.invoke(IPC_CHANNELS.library.loadUploadsSnapshot),
     setActiveUploadWorkspace: (request) =>

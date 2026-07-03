@@ -207,6 +207,37 @@ const bridgeInvocationCases = {
       { uploadIds: ["upload-1"], brandId: "brand-a" },
     ],
   },
+  "library.loadUploadFolderState": {
+    call: (bridge) => bridge.library.loadUploadFolderState(),
+    expected: [IPC_CHANNELS.library.loadUploadFolderState],
+  },
+  "library.createUploadFolder": {
+    call: (bridge) => bridge.library.createUploadFolder({ name: "Folder A" }),
+    expected: [IPC_CHANNELS.library.createUploadFolder, { name: "Folder A" }],
+  },
+  "library.updateUploadFolder": {
+    call: (bridge) =>
+      bridge.library.updateUploadFolder({ id: "folder-a", name: "Folder B" }),
+    expected: [
+      IPC_CHANNELS.library.updateUploadFolder,
+      { id: "folder-a", name: "Folder B" },
+    ],
+  },
+  "library.deleteUploadFolder": {
+    call: (bridge) => bridge.library.deleteUploadFolder({ id: "folder-a" }),
+    expected: [IPC_CHANNELS.library.deleteUploadFolder, { id: "folder-a" }],
+  },
+  "library.assignUploadsToFolder": {
+    call: (bridge) =>
+      bridge.library.assignUploadsToFolder({
+        uploadIds: ["upload-1"],
+        folderId: "folder-a",
+      }),
+    expected: [
+      IPC_CHANNELS.library.assignUploadsToFolder,
+      { uploadIds: ["upload-1"], folderId: "folder-a" },
+    ],
+  },
   "library.loadUploadsSnapshot": {
     call: (bridge) => bridge.library.loadUploadsSnapshot(),
     expected: [IPC_CHANNELS.library.loadUploadsSnapshot],

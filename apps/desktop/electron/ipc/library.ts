@@ -1,8 +1,11 @@
 import { BrowserWindow, ipcMain, type IpcMainInvokeEvent } from "electron"
 import type {
   AssetwellAssignUploadsToBrandRequest,
+  AssetwellAssignUploadsToFolderRequest,
   AssetwellCreateBrandRequest,
+  AssetwellCreateUploadFolderRequest,
   AssetwellCreateUploadWorkspaceRequest,
+  AssetwellDeleteUploadFolderRequest,
   AssetwellDeleteUploadWorkspaceRequest,
   AssetwellExportCreativeZipRequest,
   AssetwellExportVideoRequest,
@@ -10,14 +13,18 @@ import type {
   AssetwellSetActiveBrandRequest,
   AssetwellSetActiveUploadWorkspaceRequest,
   AssetwellUpdateBrandRequest,
+  AssetwellUpdateUploadFolderRequest,
   AssetwellUpdateUploadWorkspaceRequest,
 } from "@assetwell/desktop-bridge"
 
 import {
   assignUploadsToBrand,
+  assignUploadsToFolder,
   chooseAssetwellOutputRoot,
   createBrand,
+  createUploadFolder,
   createUploadWorkspace,
+  deleteUploadFolder,
   deleteUploadWorkspace,
   exportCreativeZip,
   exportVideo,
@@ -25,6 +32,7 @@ import {
   importReferenceAssets,
   loadBrandState,
   loadLibrarySnapshot,
+  loadUploadFolderState,
   loadUploadsSnapshot,
   revealAssetwellOutputRoot,
   revealReferenceAssets,
@@ -32,6 +40,7 @@ import {
   setActiveBrand,
   setActiveUploadWorkspace,
   updateBrand,
+  updateUploadFolder,
   updateUploadWorkspace,
 } from "../local-store"
 import { IPC_CHANNELS } from "../shared/channels"
@@ -89,6 +98,38 @@ export function registerLibraryIpc() {
     IPC_CHANNELS.library.assignUploadsToBrand,
     (_event, request: AssetwellAssignUploadsToBrandRequest) => {
       return assignUploadsToBrand(request)
+    },
+  )
+
+  ipcMain.handle(IPC_CHANNELS.library.loadUploadFolderState, () => {
+    return loadUploadFolderState()
+  })
+
+  ipcMain.handle(
+    IPC_CHANNELS.library.createUploadFolder,
+    (_event, request: AssetwellCreateUploadFolderRequest) => {
+      return createUploadFolder(request)
+    },
+  )
+
+  ipcMain.handle(
+    IPC_CHANNELS.library.updateUploadFolder,
+    (_event, request: AssetwellUpdateUploadFolderRequest) => {
+      return updateUploadFolder(request)
+    },
+  )
+
+  ipcMain.handle(
+    IPC_CHANNELS.library.deleteUploadFolder,
+    (_event, request: AssetwellDeleteUploadFolderRequest) => {
+      return deleteUploadFolder(request)
+    },
+  )
+
+  ipcMain.handle(
+    IPC_CHANNELS.library.assignUploadsToFolder,
+    (_event, request: AssetwellAssignUploadsToFolderRequest) => {
+      return assignUploadsToFolder(request)
     },
   )
 
