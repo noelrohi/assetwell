@@ -447,7 +447,7 @@ function normalizeUpload(
 function uploadName(upload: RawUpload, uploadId: string, url: string) {
   return (
     uploadNameFromJson(upload) ??
-    uploadNameFromUrl(url) ??
+    uploadNameFromUrl(url, uploadId) ??
     uploadDisplayName(uploadId)
   )
 }
@@ -470,7 +470,7 @@ function uploadNameFromJson(upload: RawUpload) {
   return null
 }
 
-function uploadNameFromUrl(url: string) {
+function uploadNameFromUrl(url: string, uploadId: string) {
   try {
     const pathname = new URL(url).pathname
     const rawName = pathname.split("/").filter(Boolean).pop()
@@ -482,6 +482,14 @@ function uploadNameFromUrl(url: string) {
       !name ||
       !(IMAGE_EXTENSIONS.test(name) || VIDEO_EXTENSIONS.test(name))
     ) {
+      return null
+    }
+
+    const nameWithoutExtension = name.replace(
+      /\.(png|jpe?g|webp|gif|mp4|mov|webm|m4v)$/i,
+      "",
+    )
+    if (nameWithoutExtension.toLowerCase() === uploadId.toLowerCase()) {
       return null
     }
 

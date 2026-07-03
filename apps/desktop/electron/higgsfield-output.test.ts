@@ -197,6 +197,33 @@ kling3_0                    Kling v3.0                  video`,
     })
   })
 
+  test("keeps friendly upload names when URL basenames are ids", () => {
+    const idUpload = "808ccacb-d4be-465e-b02d-432de39b97a8"
+    const namedUpload = "9b71d3d1-f536-43c5-a29c-1d0555f58aef"
+    const result = parseUploadList(
+      `{
+        "items": [
+          {
+            "id": "${idUpload}",
+            "type": "image",
+            "url": "https://cdn.example.com/user_xxx/808CCACB-D4BE-465E-B02D-432DE39B97A8.png"
+          },
+          {
+            "id": "${namedUpload}",
+            "type": "image",
+            "url": "https://cdn.example.com/user_xxx/spring-hero.png"
+          }
+        ]
+      }`,
+      "image",
+    )
+
+    expect(result.items.map((item) => item.name)).toEqual([
+      "Upload 808ccacb",
+      "spring-hero.png",
+    ])
+  })
+
   test("falls back to a synthetic upload name for hash-only URLs", () => {
     const asset = parseUpload(
       `{
