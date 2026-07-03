@@ -135,6 +135,39 @@ export interface AssetwellAssignUploadsToBrandRequest {
   brandId: string | null
 }
 
+export interface AssetwellUploadFolder {
+  id: string
+  name: string
+}
+
+export interface AssetwellUploadFolderAssignment {
+  uploadId: string
+  folderId: string | null
+}
+
+export interface AssetwellUploadFolderState {
+  folders: AssetwellUploadFolder[]
+  assignments: AssetwellUploadFolderAssignment[]
+}
+
+export interface AssetwellCreateUploadFolderRequest {
+  name: string
+}
+
+export interface AssetwellUpdateUploadFolderRequest {
+  id: string
+  name: string
+}
+
+export interface AssetwellDeleteUploadFolderRequest {
+  id: string
+}
+
+export interface AssetwellAssignUploadsToFolderRequest {
+  uploadIds: string[]
+  folderId: string | null
+}
+
 export interface HiggsfieldAccountStatus {
   email: string | null
   plan: string | null
@@ -319,6 +352,7 @@ export interface AssetwellPersistedReferenceAsset {
   sizeBytes?: number | null
   modifiedAt?: string | null
   brandId?: string | null
+  folderId?: string | null
 }
 
 export interface AssetwellReferenceAsset extends AssetwellPersistedReferenceAsset {
@@ -494,6 +528,19 @@ export interface DesktopBridge {
     assignUploadsToBrand(
       request: AssetwellAssignUploadsToBrandRequest,
     ): Promise<AssetwellBrandState>
+    loadUploadFolderState(): Promise<AssetwellUploadFolderState>
+    createUploadFolder(
+      request: AssetwellCreateUploadFolderRequest,
+    ): Promise<AssetwellUploadFolderState>
+    updateUploadFolder(
+      request: AssetwellUpdateUploadFolderRequest,
+    ): Promise<AssetwellUploadFolderState>
+    deleteUploadFolder(
+      request: AssetwellDeleteUploadFolderRequest,
+    ): Promise<AssetwellUploadFolderState>
+    assignUploadsToFolder(
+      request: AssetwellAssignUploadsToFolderRequest,
+    ): Promise<AssetwellUploadFolderState>
     loadUploadsSnapshot(): Promise<AssetwellUploadsSnapshot>
     setActiveUploadWorkspace(
       request: AssetwellSetActiveUploadWorkspaceRequest,
