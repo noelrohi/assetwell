@@ -14,7 +14,6 @@ import {
   IconSearch,
 } from "@tabler/icons-react"
 import { parseAsString, useQueryState } from "nuqs"
-import { toast } from "sonner"
 
 import { Button } from "@/components/ui/button"
 import {
@@ -41,6 +40,12 @@ import {
   type FolderSubmitResult,
 } from "@/components/blocks/uploads/upload-folder-dialog"
 import { UploadFoldersSection } from "@/components/blocks/uploads/upload-folders-section"
+import {
+  copyImage,
+  copyImageLink,
+  downloadImage,
+  openImage,
+} from "@/lib/image-actions"
 import { useHiggsfieldApp } from "@/lib/higgsfield"
 import { uploadsSearchParser } from "@/lib/query-state"
 import {
@@ -642,175 +647,22 @@ const UploadCard = React.memo(function UploadCard({
         </button>
       </ContextMenuTrigger>
       <ContextMenuContent className="w-52">
-        <ContextMenuItem onSelect={() => void copyUploadImage(asset)}>
+        <ContextMenuItem onSelect={() => void copyImage(asset)}>
           <IconCopy /> Copy image
         </ContextMenuItem>
-        <ContextMenuItem onSelect={() => void downloadUploadImage(asset)}>
+        <ContextMenuItem onSelect={() => void downloadImage(asset)}>
           <IconDownload /> Download image
         </ContextMenuItem>
-        <ContextMenuItem onSelect={() => void copyUploadImageLink(asset)}>
+        <ContextMenuItem onSelect={() => void copyImageLink(asset)}>
           <IconLink /> Copy image link
         </ContextMenuItem>
-        <ContextMenuItem onSelect={() => openUploadImage(asset)}>
+        <ContextMenuItem onSelect={() => openImage(asset)}>
           <IconExternalLink /> Open image in new tab
         </ContextMenuItem>
       </ContextMenuContent>
     </ContextMenu>
   )
 })
-
-async function copyUploadImage(asset: ReferenceAsset) {
-  if (!navigator.clipboard?.write || typeof ClipboardItem === "undefined") {
-    try {
-      await writeUploadImageLink(asset)
-      toast("Image copy is not supported", {
-        description: "Copied the image link instead.",
-      })
-    } catch {
-      toast("Could not copy image")
-    }
-    return
-  }
-
-  try {
-    const sourceBlob = await fetchImageBlob(asset.url)
-    const clipboardBlob =
-      sourceBlob.type === "image/png"
-        ? sourceBlob
-        : await convertImageBlobToPng(sourceBlob)
-
-    await navigator.clipboard.write([
-      new ClipboardItem({ [clipboardBlob.type]: clipboardBlob }),
-    ])
-    toast("Image copied")
-  } catch {
-    toast("Could not copy image", {
-      description: "Try copying the image link instead.",
-    })
-  }
-}
-
-async function downloadUploadImage(asset: ReferenceAsset) {
-  try {
-    const blob = await fetchImageBlob(asset.url)
-    triggerBlobDownload(blob, uploadImageFileName(asset, blob.type))
-    toast("Image download started")
-  } catch {
-    triggerUrlDownload(asset.url, uploadImageFileName(asset))
-    toast("Image opened for download", {
-      description: "If it opens in the browser, save it from there.",
-    })
-  }
-}
-
-async function copyUploadImageLink(asset: ReferenceAsset) {
-  try {
-    await writeUploadImageLink(asset)
-    toast("Image link copied")
-  } catch {
-    toast("Could not copy image link")
-  }
-}
-
-async function writeUploadImageLink(asset: ReferenceAsset) {
-  await navigator.clipboard.writeText(asset.url)
-}
-
-function openUploadImage(asset: ReferenceAsset) {
-  window.open(asset.url, "_blank", "noopener,noreferrer")
-}
-
-async function fetchImageBlob(url: string) {
-  const response = await fetch(url)
-  if (!response.ok) throw new Error(`Could not load image (${response.status})`)
-
-  const blob = await response.blob()
-  if (!blob.type.startsWith("image/")) {
-    throw new Error("Downloaded asset is not an image")
-  }
-
-  return blob
-}
-
-async function convertImageBlobToPng(blob: Blob) {
-  const bitmap = await createImageBitmap(blob)
-  const canvas = document.createElement("canvas")
-  canvas.width = bitmap.width
-  canvas.height = bitmap.height
-
-  const context = canvas.getContext("2d")
-  if (!context) throw new Error("Could not prepare image for clipboard")
-
-  context.drawImage(bitmap, 0, 0)
-  bitmap.close()
-
-  return new Promise<Blob>((resolve, reject) => {
-    canvas.toBlob((pngBlob) => {
-      if (pngBlob) resolve(pngBlob)
-      else reject(new Error("Could not prepare image for clipboard"))
-    }, "image/png")
-  })
-}
-
-function triggerBlobDownload(blob: Blob, fileName: string) {
-  const url = URL.createObjectURL(blob)
-  triggerUrlDownload(url, fileName)
-  window.setTimeout(() => URL.revokeObjectURL(url), 1000)
-}
-
-function triggerUrlDownload(url: string, fileName: string) {
-  const link = document.createElement("a")
-  link.href = url
-  link.download = fileName
-  link.rel = "noopener"
-  document.body.append(link)
-  link.click()
-  link.remove()
-}
-
-function uploadImageFileName(asset: ReferenceAsset, contentType?: string) {
-  const name = sanitizeDownloadName(asset.name) || "assetwell-image"
-  if (/\.[a-z0-9]{2,5}$/i.test(name)) return name
-
-  return `${name}${imageExtensionFromUrl(asset.url) ?? imageExtensionForType(contentType) ?? ".png"}`
-}
-
-function sanitizeDownloadName(name: string) {
-  return name
-    .trim()
-    .replace(/[<>:"/\\|?*\u0000-\u001f]+/g, "-")
-    .replace(/\s+/g, " ")
-    .slice(0, 80)
-    .replace(/^\.+$/, "")
-}
-
-function imageExtensionFromUrl(url: string) {
-  try {
-    const extension = new URL(url).pathname.match(
-      /\.(avif|gif|jpeg|jpg|png|webp)$/i,
-    )?.[0]
-    return extension?.toLowerCase()
-  } catch {
-    return null
-  }
-}
-
-function imageExtensionForType(contentType?: string) {
-  switch (contentType) {
-    case "image/avif":
-      return ".avif"
-    case "image/gif":
-      return ".gif"
-    case "image/jpeg":
-      return ".jpg"
-    case "image/png":
-      return ".png"
-    case "image/webp":
-      return ".webp"
-    default:
-      return null
-  }
-}
 
 function ViewportUploadImage({ src, alt }: { src: string; alt: string }) {
   const rootRef = React.useRef<HTMLSpanElement | null>(null)
