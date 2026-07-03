@@ -1,36 +1,66 @@
 import {
   IconAlertTriangle,
   IconChecks,
+  IconCopy,
+  IconDownload,
+  IconFolderOpen,
   IconLoader2,
   IconPhotoPlus,
   IconSparkles,
 } from "@tabler/icons-react"
 
-import type { Creative } from "@/lib/higgsfield"
+import {
+  ContextMenu,
+  ContextMenuContent,
+  ContextMenuItem,
+  ContextMenuTrigger,
+} from "@/components/ui/context-menu"
+import type { Creative, Take } from "@/lib/higgsfield"
+import {
+  copyImage,
+  downloadImage,
+  type ImageActionAsset,
+} from "@/lib/image-actions"
 import { aspectOf } from "@/lib/placements"
 import { cn } from "@/lib/utils"
 
 export type StagePreviewState = "image" | "generating" | "empty" | "failed"
 
+interface StageImageAsset extends ImageActionAsset {
+  filePath?: string | null
+}
+
 export function CreativeStage({
   creative,
   previewUrl,
   previewState,
+  previewFilePath,
   selectedTakeUrl,
   selectedSize,
   onSelectTake,
+  openOutput,
 }: {
   creative: Creative
   previewUrl: string
   previewState: StagePreviewState
+  previewFilePath?: string | null
   selectedTakeUrl: string
   selectedSize: { width: number; height: number }
   onSelectTake: (takeId: string) => void
+  openOutput: (target?: string | null) => Promise<void>
 }) {
   const selectedAspect = aspectOf(selectedSize.width, selectedSize.height)
   const selectedRatio = selectedSize.width / selectedSize.height
   const previewWidth = `min(100%, ${selectedSize.width}px, calc(70vh * ${selectedRatio}))`
   const sizeLabel = `${selectedSize.width} × ${selectedSize.height}`
+  const previewImage: StageImageAsset | null =
+    previewState === "image" && previewUrl
+      ? {
+          url: previewUrl,
+          name: `${creative.title} · ${sizeLabel}`,
+          filePath: previewFilePath,
+        }
+      : null
 
   const hasFrame = previewState === "image" || previewState === "generating"
 
@@ -51,12 +81,19 @@ export function CreativeStage({
               width: previewWidth,
             }}
           >
-            {previewState === "image" && previewUrl ? (
-              <img
-                src={previewUrl}
-                alt={creative.title}
-                className="size-full object-contain"
-              />
+            {previewImage ? (
+              <StageImageContextMenu
+                image={previewImage}
+                openOutput={openOutput}
+              >
+                <figure className="size-full">
+                  <img
+                    src={previewUrl}
+                    alt={creative.title}
+                    className="size-full object-contain"
+                  />
+                </figure>
+              </StageImageContextMenu>
             ) : (
               <GeneratingState sizeLabel={sizeLabel} />
             )}
@@ -85,39 +122,105 @@ export function CreativeStage({
             : "Takes — pick your hero"}
         </p>
         <div className="flex gap-2.5">
-          {creative.takes.map((take) => (
-            <button
-              key={take.id}
-              disabled={take.status !== "ready"}
-              onClick={() => onSelectTake(take.id)}
-              className={cn(
-                "relative aspect-square w-20 overflow-hidden rounded-lg border-2 transition-all",
-                selectedTakeUrl === take.url
-                  ? "border-ember"
-                  : "border-transparent hover:border-border",
-              )}
-            >
-              {take.status === "ready" ? (
-                <img
-                  src={take.url}
-                  alt={creative.takes.length === 1 ? "base image" : "take"}
-                  className="size-full object-cover"
-                />
-              ) : (
+          {creative.takes.map((take, index) =>
+            take.status === "ready" && take.url ? (
+              <StageImageContextMenu
+                key={take.id}
+                image={takeImageAsset(creative, take, index)}
+                openOutput={openOutput}
+              >
+                <button
+                  type="button"
+                  onClick={() => onSelectTake(take.id)}
+                  className={takeButtonClassName(selectedTakeUrl === take.url)}
+                >
+                  <img
+                    src={take.url}
+                    alt={creative.takes.length === 1 ? "base image" : "take"}
+                    className="size-full object-cover"
+                  />
+                  {creative.selectedTakeId === take.id && (
+                    <span className="absolute top-1 right-1 grid size-4 place-items-center rounded-full bg-ember text-ember-foreground">
+                      <IconChecks className="size-2.5" />
+                    </span>
+                  )}
+                </button>
+              </StageImageContextMenu>
+            ) : (
+              <button
+                key={take.id}
+                type="button"
+                disabled
+                className={takeButtonClassName(false)}
+              >
                 <div className="grid size-full place-items-center bg-muted/40">
                   <IconLoader2 className="size-4 animate-spin text-ember" />
                 </div>
-              )}
-              {creative.selectedTakeId === take.id && (
-                <span className="absolute top-1 right-1 grid size-4 place-items-center rounded-full bg-ember text-ember-foreground">
-                  <IconChecks className="size-2.5" />
-                </span>
-              )}
-            </button>
-          ))}
+                {creative.selectedTakeId === take.id && (
+                  <span className="absolute top-1 right-1 grid size-4 place-items-center rounded-full bg-ember text-ember-foreground">
+                    <IconChecks className="size-2.5" />
+                  </span>
+                )}
+              </button>
+            ),
+          )}
         </div>
       </div>
     </div>
+  )
+}
+
+function StageImageContextMenu({
+  children,
+  image,
+  openOutput,
+}: {
+  children: React.ReactElement
+  image: StageImageAsset
+  openOutput: (target?: string | null) => Promise<void>
+}) {
+  return (
+    <ContextMenu>
+      <ContextMenuTrigger asChild>{children}</ContextMenuTrigger>
+      <ContextMenuContent className="w-48">
+        <ContextMenuItem
+          onSelect={() => void copyImage(image, { fallbackToLink: false })}
+        >
+          <IconCopy /> Copy image
+        </ContextMenuItem>
+        <ContextMenuItem onSelect={() => void downloadImage(image)}>
+          <IconDownload /> Download image
+        </ContextMenuItem>
+        <ContextMenuItem
+          disabled={!image.filePath}
+          onSelect={() => void openOutput(image.filePath)}
+        >
+          <IconFolderOpen /> Reveal in folder
+        </ContextMenuItem>
+      </ContextMenuContent>
+    </ContextMenu>
+  )
+}
+
+function takeImageAsset(
+  creative: Creative,
+  take: Take,
+  index: number,
+): StageImageAsset {
+  return {
+    url: take.url,
+    filePath: take.filePath,
+    name:
+      creative.takes.length === 1
+        ? `${creative.title} · base image`
+        : `${creative.title} · take ${index + 1}`,
+  }
+}
+
+function takeButtonClassName(selected: boolean) {
+  return cn(
+    "relative aspect-square w-20 overflow-hidden rounded-lg border-2 transition-all disabled:cursor-not-allowed disabled:opacity-70",
+    selected ? "border-ember" : "border-transparent hover:border-border",
   )
 }
 

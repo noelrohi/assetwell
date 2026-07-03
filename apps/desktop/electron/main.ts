@@ -32,7 +32,12 @@ const appIndexPath = path.join(__dirname, "../dist/index.html")
 protocol.registerSchemesAsPrivileged([
   {
     scheme: LOCAL_ASSET_PROTOCOL,
-    privileges: { bypassCSP: false, secure: true, standard: true },
+    privileges: {
+      bypassCSP: false,
+      secure: true,
+      standard: true,
+      supportFetchAPI: true,
+    },
   },
 ])
 

@@ -155,9 +155,11 @@ export function CreativePage() {
           creative={creative}
           previewUrl={previewUrl}
           previewState={previewState}
+          previewFilePath={selectedSource?.filePath}
           selectedTakeUrl={selectedTakeUrl}
           selectedSize={selectedStageSize}
           onSelectTake={handleSelectTake}
+          openOutput={openOutput}
         />
         <PlacementsPanel
           creative={creative}
