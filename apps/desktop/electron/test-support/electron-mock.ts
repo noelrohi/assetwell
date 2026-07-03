@@ -25,8 +25,11 @@ const defaultSaveDialogResult: SaveDialogReturnValue = {
 let userDataRoot = "/tmp/assetwell"
 let nextOpenDialogResult: OpenDialogReturnValue = defaultOpenDialogResult
 let nextSaveDialogResult: SaveDialogReturnValue = defaultSaveDialogResult
+let nextGetPathForFile: (file: File) => string = (file) =>
+  `/mock-path/${file.name}`
 
 export const exposedWorlds: ExposedWorlds = {}
+export const getPathForFileCalls: File[] = []
 export const ipcInvokeCalls: IpcInvokeCall[] = []
 export const ipcRendererListeners = new Map<string, IpcRendererHandler>()
 export const removedIpcRendererListeners: Array<
@@ -47,6 +50,8 @@ export function resetElectronMock() {
   openDialogCalls.length = 0
   saveDialogCalls.length = 0
   openedPaths.length = 0
+  getPathForFileCalls.length = 0
+  nextGetPathForFile = (file) => `/mock-path/${file.name}`
 }
 
 export function setElectronUserDataRoot(root: string) {
@@ -59,6 +64,10 @@ export function setNextOpenDialogResult(result: OpenDialogReturnValue) {
 
 export function setNextSaveDialogResult(result: SaveDialogReturnValue) {
   nextSaveDialogResult = result
+}
+
+export function setNextGetPathForFile(impl: (file: File) => string) {
+  nextGetPathForFile = impl
 }
 
 export function exposedInMainWorld<T>(name: string) {
@@ -97,6 +106,12 @@ mock.module("electron", () => ({
     }),
   },
   BrowserWindow: { fromWebContents: () => null },
+  webUtils: {
+    getPathForFile: (file: File) => {
+      getPathForFileCalls.push(file)
+      return nextGetPathForFile(file)
+    },
+  },
   ipcMain: { handle: () => undefined },
   contextBridge: {
     exposeInMainWorld: (name: string, value: unknown) => {

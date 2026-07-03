@@ -47,6 +47,7 @@ export {
   deleteUploadsReference as deleteReferenceAsset,
   deleteUploadsWorkspace as deleteUploadWorkspace,
   getUploadWorkspaceState,
+  importUploadsReferencePaths as importReferenceAssetPaths,
   importUploadsReferences as importReferenceAssets,
   listUploadsReferences as listReferenceAssets,
   loadUploadsSnapshot,

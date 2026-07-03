@@ -306,18 +306,46 @@ export async function importUploadsReferences(
     : await dialog.showOpenDialog(options)
 
   if (!result.canceled) {
-    for (const sourcePath of result.filePaths) {
-      const safeName = safeReferenceAssetFileName(path.basename(sourcePath))
-      if (!safeName) continue
-
-      const firstTarget = path.join(assetsRoot, safeName)
-      if (path.resolve(sourcePath) === path.resolve(firstTarget)) continue
-
-      await copyFile(sourcePath, dedupeReferenceAssetPath(assetsRoot, safeName))
-    }
+    await copyReferenceAssetsIntoWorkspace(assetsRoot, result.filePaths)
   }
 
   return uploadsSnapshot(settings)
+}
+
+/**
+ * Imports images from absolute file system paths (e.g. resolved from a
+ * renderer drag-and-drop), skipping the file picker entirely. Mirrors the
+ * dialog-based import's copy-into-library behavior exactly.
+ */
+export async function importUploadsReferencePaths(
+  filePaths: string[],
+): Promise<AssetwellUploadsSnapshot> {
+  const settings = await ensureUploadWorkspaceSettings()
+  const assetsRoot = uploadWorkspaceDirectory(
+    settings.outputRoot,
+    settings.activeUploadWorkspaceId,
+  )
+  await mkdir(assetsRoot, { recursive: true })
+
+  await copyReferenceAssetsIntoWorkspace(assetsRoot, filePaths)
+
+  return uploadsSnapshot(settings)
+}
+
+async function copyReferenceAssetsIntoWorkspace(
+  assetsRoot: string,
+  sourcePaths: string[],
+) {
+  for (const sourcePath of sourcePaths) {
+    const safeName = safeReferenceAssetFileName(path.basename(sourcePath))
+    if (!safeName) continue
+    if (!statSync(sourcePath, { throwIfNoEntry: false })?.isFile()) continue
+
+    const firstTarget = path.join(assetsRoot, safeName)
+    if (path.resolve(sourcePath) === path.resolve(firstTarget)) continue
+
+    await copyFile(sourcePath, dedupeReferenceAssetPath(assetsRoot, safeName))
+  }
 }
 
 export async function revealUploadsReferences() {

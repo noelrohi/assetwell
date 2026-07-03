@@ -1,4 +1,4 @@
-import { contextBridge, ipcRenderer } from "electron"
+import { contextBridge, ipcRenderer, webUtils } from "electron"
 import type {
   AssetwellUpdateInfo,
   DesktopBridge,
@@ -12,6 +12,8 @@ const bridge: DesktopBridge = {
     getInfo: () => ipcRenderer.invoke(IPC_CHANNELS.app.getInfo),
     getCurrentReleaseNotes: () =>
       ipcRenderer.invoke(IPC_CHANNELS.app.getCurrentReleaseNotes),
+    getDroppedFilePaths: (files) =>
+      files.map((file) => webUtils.getPathForFile(file)),
   },
   higgsfield: {
     getStatus: () => ipcRenderer.invoke(IPC_CHANNELS.higgsfield.getStatus),
@@ -105,6 +107,11 @@ const bridge: DesktopBridge = {
       ipcRenderer.invoke(IPC_CHANNELS.library.deleteUploadWorkspace, request),
     importReferenceAssets: () =>
       ipcRenderer.invoke(IPC_CHANNELS.library.importReferenceAssets),
+    importReferenceAssetPaths: (request) =>
+      ipcRenderer.invoke(
+        IPC_CHANNELS.library.importReferenceAssetPaths,
+        request,
+      ),
     revealReferenceAssets: () =>
       ipcRenderer.invoke(IPC_CHANNELS.library.revealReferenceAssets),
     exportCreativeZip: (request) =>

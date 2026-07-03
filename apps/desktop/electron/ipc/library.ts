@@ -9,6 +9,7 @@ import type {
   AssetwellDeleteUploadWorkspaceRequest,
   AssetwellExportCreativeZipRequest,
   AssetwellExportVideoRequest,
+  AssetwellImportReferenceAssetPathsRequest,
   AssetwellLibrarySnapshot,
   AssetwellSetActiveBrandRequest,
   AssetwellSetActiveUploadWorkspaceRequest,
@@ -29,6 +30,7 @@ import {
   exportCreativeZip,
   exportVideo,
   getAssetwellSettings,
+  importReferenceAssetPaths,
   importReferenceAssets,
   loadBrandState,
   loadLibrarySnapshot,
@@ -168,6 +170,13 @@ export function registerLibraryIpc() {
   ipcMain.handle(IPC_CHANNELS.library.importReferenceAssets, (event) => {
     return importReferenceAssets(ownerWindow(event))
   })
+
+  ipcMain.handle(
+    IPC_CHANNELS.library.importReferenceAssetPaths,
+    (_event, request: AssetwellImportReferenceAssetPathsRequest) => {
+      return importReferenceAssetPaths(request.filePaths)
+    },
+  )
 
   ipcMain.handle(IPC_CHANNELS.library.revealReferenceAssets, () => {
     return revealReferenceAssets()

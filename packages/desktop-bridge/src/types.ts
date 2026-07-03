@@ -402,6 +402,10 @@ export interface AssetwellDeleteReferenceAssetRequest {
   id: string
 }
 
+export interface AssetwellImportReferenceAssetPathsRequest {
+  filePaths: string[]
+}
+
 export type AssetwellPromptKind = "image" | "video"
 
 export interface AssetwellPromptPreset {
@@ -473,6 +477,14 @@ export interface DesktopBridge {
      * error to surface. The renderer does not supply the version.
      */
     getCurrentReleaseNotes(): Promise<AssetwellReleaseNotes | null>
+    /**
+     * Resolves absolute file system paths for `File` objects dropped onto the
+     * renderer (e.g. via HTML5 drag-and-drop). Dropped `File` objects carry no
+     * `.path` under `contextIsolation`, so this is a direct, synchronous
+     * preload-level call (not IPC — `File` objects cannot cross the IPC
+     * boundary) backed by Electron's `webUtils.getPathForFile`.
+     */
+    getDroppedFilePaths(files: File[]): string[]
   }
   higgsfield: {
     getStatus(): Promise<HiggsfieldCliStatus>
@@ -555,6 +567,9 @@ export interface DesktopBridge {
       request: AssetwellDeleteUploadWorkspaceRequest,
     ): Promise<AssetwellUploadsSnapshot>
     importReferenceAssets(): Promise<AssetwellUploadsSnapshot>
+    importReferenceAssetPaths(
+      request: AssetwellImportReferenceAssetPathsRequest,
+    ): Promise<AssetwellUploadsSnapshot>
     revealReferenceAssets(): Promise<boolean>
     exportCreativeZip(
       request: AssetwellExportCreativeZipRequest,

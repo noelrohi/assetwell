@@ -9,9 +9,11 @@ import type { IpcRendererEvent } from "electron"
 
 import {
   exposedInMainWorld,
+  getPathForFileCalls,
   ipcInvokeCalls,
   ipcRendererListeners,
   removedIpcRendererListeners,
+  setNextGetPathForFile,
   type IpcInvokeCall,
 } from "./test-support/electron-mock"
 import { IPC_CHANNELS } from "./shared/channels"
@@ -19,7 +21,10 @@ import { IPC_CHANNELS } from "./shared/channels"
 await import("./preload")
 
 type BridgeInvokePath =
-  | `app.${Extract<keyof DesktopBridge["app"], string>}`
+  | `app.${Exclude<
+      Extract<keyof DesktopBridge["app"], string>,
+      "getDroppedFilePaths"
+    >}`
   | `higgsfield.${Exclude<
       Extract<keyof DesktopBridge["higgsfield"], string>,
       "onCommandOutput"
@@ -270,6 +275,16 @@ const bridgeInvocationCases = {
     call: (bridge) => bridge.library.importReferenceAssets(),
     expected: [IPC_CHANNELS.library.importReferenceAssets],
   },
+  "library.importReferenceAssetPaths": {
+    call: (bridge) =>
+      bridge.library.importReferenceAssetPaths({
+        filePaths: ["/tmp/dropped.png"],
+      }),
+    expected: [
+      IPC_CHANNELS.library.importReferenceAssetPaths,
+      { filePaths: ["/tmp/dropped.png"] },
+    ],
+  },
   "library.revealReferenceAssets": {
     call: (bridge) => bridge.library.revealReferenceAssets(),
     expected: [IPC_CHANNELS.library.revealReferenceAssets],
@@ -305,6 +320,7 @@ describe("preload desktop bridge", () => {
     ipcInvokeCalls.length = 0
     ipcRendererListeners.clear()
     removedIpcRendererListeners.length = 0
+    getPathForFileCalls.length = 0
   })
 
   test("exposes the Assetwell bridge in the isolated world", () => {
@@ -331,6 +347,23 @@ describe("preload desktop bridge", () => {
         (bridgeCase) => bridgeCase.expected,
       ),
     )
+  })
+
+  test("resolves dropped File objects to absolute paths without using IPC", () => {
+    const bridge = exposedInMainWorld<DesktopBridge>("assetwell")
+    setNextGetPathForFile((file) => `/Users/demo/Desktop/${file.name}`)
+
+    const files = [
+      new File(["a"], "one.png", { type: "image/png" }),
+      new File(["b"], "two.webp", { type: "image/webp" }),
+    ]
+
+    expect(bridge.app.getDroppedFilePaths(files)).toEqual([
+      "/Users/demo/Desktop/one.png",
+      "/Users/demo/Desktop/two.webp",
+    ])
+    expect(getPathForFileCalls).toEqual(files)
+    expect(ipcInvokeCalls).toEqual([])
   })
 
   test("subscribes and unsubscribes command output events", () => {

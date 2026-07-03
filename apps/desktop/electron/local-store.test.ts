@@ -223,6 +223,39 @@ describe("local store", () => {
     ).toEqual(["logo-final.png"])
   })
 
+  test("imports Uploads images directly from dropped paths, validating host-side", async () => {
+    const outputRoot = path.join(userDataRoot, "Library")
+    setNextOpenDialogResult({ canceled: false, filePaths: [outputRoot] })
+    await localStore.chooseAssetwellOutputRoot()
+
+    const sourceRoot = path.join(userDataRoot, "sources")
+    await mkdir(sourceRoot, { recursive: true })
+    const imagePath = path.join(sourceRoot, "Drop Me!.png")
+    const textPath = path.join(sourceRoot, "notes.txt")
+    const missingPath = path.join(sourceRoot, "missing.png")
+    await writeFile(imagePath, "dropped")
+    await writeFile(textPath, "ignore")
+
+    const openDialogCallsBefore = openDialogCalls.length
+    const snapshot = await localStore.importReferenceAssetPaths([
+      imagePath,
+      textPath,
+      missingPath,
+    ])
+
+    expect(snapshot.references.map((asset) => asset.name)).toEqual([
+      "drop-me.png",
+    ])
+    expect(snapshot.references[0].filePath).toContain(
+      path.join("Uploads", "Default"),
+    )
+    expect(await readFile(snapshot.references[0].filePath, "utf8")).toBe(
+      "dropped",
+    )
+    // The path-based import never opens the file picker dialog.
+    expect(openDialogCalls.length).toBe(openDialogCallsBefore)
+  })
+
   test("stores Uploads workspace display names separately from folder ids", async () => {
     const outputRoot = path.join(userDataRoot, "Library")
     setNextOpenDialogResult({ canceled: false, filePaths: [outputRoot] })

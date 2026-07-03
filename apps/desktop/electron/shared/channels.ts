@@ -44,6 +44,7 @@ export const IPC_CHANNELS = {
     updateUploadWorkspace: "assetwell:library:update-upload-workspace",
     deleteUploadWorkspace: "assetwell:library:delete-upload-workspace",
     importReferenceAssets: "assetwell:library:import-reference-assets",
+    importReferenceAssetPaths: "assetwell:library:import-reference-asset-paths",
     revealReferenceAssets: "assetwell:library:reveal-reference-assets",
     exportCreativeZip: "assetwell:library:export-creative-zip",
     exportVideo: "assetwell:library:export-video",

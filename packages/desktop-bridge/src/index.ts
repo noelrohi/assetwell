@@ -49,6 +49,7 @@ export type {
   AssetwellExportVideoRequest,
   AssetwellExportVideoResult,
   AssetwellExportZipFile,
+  AssetwellImportReferenceAssetPathsRequest,
   AssetwellJobStatus,
   AssetwellLibrarySnapshot,
   AssetwellPersistedCreative,
