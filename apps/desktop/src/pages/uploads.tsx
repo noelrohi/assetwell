@@ -6,25 +6,16 @@ import {
   IconDownload,
   IconExternalLink,
   IconFolder,
+  IconFolderOpen,
   IconLibraryPhoto,
   IconLink,
   IconPlus,
   IconRefresh,
   IconSearch,
-  IconPencil,
-  IconTrash,
 } from "@tabler/icons-react"
 import { parseAsString, useQueryState } from "nuqs"
 import { toast } from "sonner"
 
-import {
-  Breadcrumb,
-  BreadcrumbItem,
-  BreadcrumbLink,
-  BreadcrumbList,
-  BreadcrumbPage,
-  BreadcrumbSeparator,
-} from "@/components/ui/breadcrumb"
 import { Button } from "@/components/ui/button"
 import {
   ContextMenu,
@@ -33,14 +24,6 @@ import {
   ContextMenuTrigger,
 } from "@/components/ui/context-menu"
 import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog"
-import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
@@ -48,14 +31,14 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
-import {
-  Field,
-  FieldDescription,
-  FieldError,
-  FieldGroup,
-  FieldLabel,
-} from "@/components/ui/field"
 import { Input } from "@/components/ui/input"
+import { MoveToFolderMenu } from "@/components/blocks/uploads/move-to-folder-menu"
+import { UploadFolderBreadcrumb } from "@/components/blocks/uploads/upload-folder-breadcrumb"
+import {
+  UploadFolderFormDialog,
+  type FolderEditorState,
+} from "@/components/blocks/uploads/upload-folder-dialog"
+import { UploadFoldersSection } from "@/components/blocks/uploads/upload-folders-section"
 import { useHiggsfieldApp } from "@/lib/higgsfield"
 import { uploadsSearchParser } from "@/lib/query-state"
 import {
@@ -75,10 +58,6 @@ import type {
 } from "@/lib/higgsfield/types"
 
 const uploadsFolderParser = parseAsString
-
-type FolderEditorState =
-  | { mode: "create"; afterCreate?: (folderId: string) => Promise<void> | void }
-  | { mode: "edit"; folder: UploadFolder }
 
 export function UploadsPage() {
   const { uploads, brands, folders } = useHiggsfieldApp()
@@ -107,7 +86,9 @@ export function UploadsPage() {
   const isSearching = searchTerm.length > 0
   const showFolderTiles =
     !isSearching && !activeFolder && folderItems.length > 0
-  const showHeaderNewFolder = Boolean(activeFolder) || folderItems.length === 0
+  // Falls back to the header whenever the Folders section (which has its
+  // own "New folder" entry) isn't on screen — including while searching.
+  const showHeaderNewFolder = !showFolderTiles
 
   React.useEffect(() => {
     void refreshUploads()
@@ -210,7 +191,8 @@ export function UploadsPage() {
           ) : null}
           {uploads.canRevealReferences ? (
             <Button variant="outline" onClick={() => void uploads.reveal()}>
-              Open folder
+              <IconFolderOpen />
+              Reveal uploads
             </Button>
           ) : null}
           <Button onClick={() => void uploads.importFiles()}>
@@ -258,13 +240,13 @@ export function UploadsPage() {
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
                 <Button variant="outline" size="sm" disabled={moving}>
-                  Move to
+                  Move to brand
                   <IconChevronDown className="size-3.5" />
                 </Button>
               </DropdownMenuTrigger>
               <DropdownMenuContent align="end" className="min-w-48">
                 <DropdownMenuLabel className="text-xs text-muted-foreground">
-                  Move uploads
+                  Brands
                 </DropdownMenuLabel>
                 {brands.brands.map((brand) => (
                   <DropdownMenuItem
@@ -280,47 +262,21 @@ export function UploadsPage() {
                 </DropdownMenuItem>
               </DropdownMenuContent>
             </DropdownMenu>
-            <DropdownMenu>
-              <DropdownMenuTrigger asChild>
-                <Button variant="outline" size="sm" disabled={moving}>
-                  Move to folder
-                  <IconChevronDown className="size-3.5" />
-                </Button>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent align="end" className="min-w-48">
-                <DropdownMenuLabel className="text-xs text-muted-foreground">
-                  Move uploads
-                </DropdownMenuLabel>
-                {folderItems.map((folder) => (
-                  <DropdownMenuItem
-                    key={folder.id}
-                    onClick={() => void moveSelectionToFolder(folder.id)}
-                  >
-                    {folder.name}
-                  </DropdownMenuItem>
-                ))}
-                {folderItems.length > 0 ? <DropdownMenuSeparator /> : null}
-                <DropdownMenuItem
-                  onClick={() => void moveSelectionToFolder(null)}
-                >
-                  No folder
-                </DropdownMenuItem>
-                <DropdownMenuSeparator />
-                <DropdownMenuItem
-                  onClick={() =>
-                    setFolderEditor({
-                      mode: "create",
-                      afterCreate: async (createdFolderId) => {
-                        await moveSelectionToFolder(createdFolderId)
-                      },
-                    })
-                  }
-                >
-                  <IconPlus />
-                  New folder…
-                </DropdownMenuItem>
-              </DropdownMenuContent>
-            </DropdownMenu>
+            <MoveToFolderMenu
+              folders={folderItems}
+              disabled={moving}
+              onMove={(nextFolderId) =>
+                void moveSelectionToFolder(nextFolderId)
+              }
+              onCreateAndMove={() =>
+                setFolderEditor({
+                  mode: "create",
+                  afterCreate: async (createdFolderId) => {
+                    await moveSelectionToFolder(createdFolderId)
+                  },
+                })
+              }
+            />
             <Button
               variant="ghost"
               size="sm"
@@ -338,54 +294,22 @@ export function UploadsPage() {
       ) : null}
 
       {!isSearching && activeFolder ? (
-        <Breadcrumb className="mt-6">
-          <BreadcrumbList>
-            <BreadcrumbItem>
-              <BreadcrumbLink asChild>
-                <button type="button" onClick={() => void setFolderId(null)}>
-                  Uploads
-                </button>
-              </BreadcrumbLink>
-            </BreadcrumbItem>
-            <BreadcrumbSeparator />
-            <BreadcrumbItem>
-              <BreadcrumbPage>{activeFolder.name}</BreadcrumbPage>
-            </BreadcrumbItem>
-          </BreadcrumbList>
-        </Breadcrumb>
+        <UploadFolderBreadcrumb
+          folder={activeFolder}
+          count={folderCounts.get(activeFolder.id) ?? 0}
+          onBack={() => void setFolderId(null)}
+        />
       ) : null}
 
       {showFolderTiles ? (
-        <section className="mt-6">
-          <div className="mb-3 flex flex-wrap items-end justify-between gap-3">
-            <div>
-              <h2 className="text-sm font-medium text-foreground">Folders</h2>
-              <p className="mt-1 text-xs text-muted-foreground">
-                Local groupings across the current brand view.
-              </p>
-            </div>
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => setFolderEditor({ mode: "create" })}
-            >
-              <IconPlus />
-              New folder
-            </Button>
-          </div>
-          <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 xl:grid-cols-4">
-            {folderItems.map((folder) => (
-              <UploadFolderTile
-                key={folder.id}
-                folder={folder}
-                count={folderCounts.get(folder.id) ?? 0}
-                onOpen={(id) => void setFolderId(id)}
-                onRename={(folder) => setFolderEditor({ mode: "edit", folder })}
-                onDelete={(folder) => void deleteUploadFolder(folder)}
-              />
-            ))}
-          </div>
-        </section>
+        <UploadFoldersSection
+          folders={folderItems}
+          counts={folderCounts}
+          onOpen={(id) => void setFolderId(id)}
+          onRename={(folder) => setFolderEditor({ mode: "edit", folder })}
+          onDelete={(folder) => void deleteUploadFolder(folder)}
+          onCreate={() => setFolderEditor({ mode: "create" })}
+        />
       ) : null}
 
       {referenceLibrary.length === 0 && folderItems.length === 0 ? (
@@ -465,155 +389,6 @@ export function UploadsPage() {
         onSubmit={submitFolderName}
       />
     </div>
-  )
-}
-
-function UploadFolderTile({
-  folder,
-  count,
-  onOpen,
-  onRename,
-  onDelete,
-}: {
-  folder: UploadFolder
-  count: number
-  onOpen: (id: string) => void
-  onRename: (folder: UploadFolder) => void
-  onDelete: (folder: UploadFolder) => void
-}) {
-  return (
-    <ContextMenu>
-      <ContextMenuTrigger asChild>
-        <button
-          type="button"
-          onClick={() => onOpen(folder.id)}
-          className="group flex min-h-32 flex-col justify-between rounded-2xl border border-border/60 bg-card/50 p-4 text-left outline-none transition-all hover:border-border hover:bg-accent/50 focus-visible:ring-[3px] focus-visible:ring-ring/50 active:scale-[0.99]"
-        >
-          <span className="flex items-start justify-between gap-3">
-            <span className="grid size-11 place-items-center rounded-2xl border border-border/70 bg-background text-muted-foreground transition-colors group-hover:text-foreground">
-              <IconFolder className="size-5" />
-            </span>
-            <span className="rounded-full border border-border/60 bg-background/70 px-2 py-0.5 text-[11px] font-medium text-muted-foreground">
-              {count}
-            </span>
-          </span>
-          <span className="min-w-0">
-            <span className="block truncate text-sm font-medium text-foreground">
-              {folder.name}
-            </span>
-            <span className="mt-1 block text-xs text-muted-foreground">
-              {count === 1 ? "1 upload" : `${count} uploads`}
-            </span>
-          </span>
-        </button>
-      </ContextMenuTrigger>
-      <ContextMenuContent className="w-48">
-        <ContextMenuItem onSelect={() => onRename(folder)}>
-          <IconPencil /> Rename folder
-        </ContextMenuItem>
-        <ContextMenuItem onSelect={() => onDelete(folder)}>
-          <IconTrash /> Delete folder
-        </ContextMenuItem>
-      </ContextMenuContent>
-    </ContextMenu>
-  )
-}
-
-function UploadFolderFormDialog({
-  state,
-  onOpenChange,
-  onSubmit,
-}: {
-  state: FolderEditorState | null
-  onOpenChange: (open: boolean) => void
-  onSubmit: (name: string) => Promise<boolean>
-}) {
-  const [name, setName] = React.useState("")
-  const [error, setError] = React.useState<string | null>(null)
-  const [saving, setSaving] = React.useState(false)
-  const open = Boolean(state)
-  const isEditing = state?.mode === "edit"
-
-  React.useEffect(() => {
-    if (!state) return
-    setName(state.mode === "edit" ? state.folder.name : "")
-    setError(null)
-    setSaving(false)
-  }, [state])
-
-  async function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
-    event.preventDefault()
-    const trimmed = name.trim().replace(/\s+/g, " ")
-
-    if (!trimmed) {
-      setError("Name is required.")
-      return
-    }
-
-    setSaving(true)
-    const saved = await onSubmit(trimmed)
-    setSaving(false)
-
-    if (saved) onOpenChange(false)
-  }
-
-  return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-md">
-        <form onSubmit={handleSubmit}>
-          <DialogHeader>
-            <DialogTitle>
-              {isEditing ? "Rename folder" : "New folder"}
-            </DialogTitle>
-            <DialogDescription>
-              {isEditing
-                ? "Change the folder label shown on the Uploads page. Higgsfield uploads stay where they are."
-                : "Create a local folder for grouping Uploads without changing Higgsfield storage."}
-            </DialogDescription>
-          </DialogHeader>
-
-          <FieldGroup className="py-5">
-            <Field data-invalid={Boolean(error)}>
-              <FieldLabel htmlFor="upload-folder-name">Folder name</FieldLabel>
-              <Input
-                id="upload-folder-name"
-                value={name}
-                onChange={(event) => {
-                  setName(event.target.value)
-                  setError(null)
-                }}
-                disabled={saving}
-                autoFocus
-                placeholder="e.g. Spring launch"
-              />
-              <FieldDescription>
-                Folders are local Assetwell metadata layered over the shared
-                Uploads library.
-              </FieldDescription>
-              <FieldError>{error}</FieldError>
-            </Field>
-          </FieldGroup>
-
-          <DialogFooter>
-            <Button
-              type="button"
-              variant="outline"
-              disabled={saving}
-              onClick={() => onOpenChange(false)}
-            >
-              Cancel
-            </Button>
-            <Button type="submit" disabled={saving}>
-              {saving
-                ? "Saving…"
-                : isEditing
-                  ? "Rename folder"
-                  : "Create folder"}
-            </Button>
-          </DialogFooter>
-        </form>
-      </DialogContent>
-    </Dialog>
   )
 }
 
