@@ -11,6 +11,7 @@ honor its STOP conditions, and update your row when done.
 | 001  | In-app "What's New" after an update               | P2       | M      | —          | DONE   |
 | 002  | Support 728×90 / 320×50 via AI "strip" path       | P1       | M      | —          | TODO   |
 | 003  | Pad / edge-extend fallback for ultra-wide banners | P2       | M      | 002        | TODO   |
+| 004  | Local folders on the Uploads page (drill-in UI)   | P1       | L      | —          | DONE   |
 
 Status values: TODO | IN PROGRESS | DONE | BLOCKED (with one-line reason) | REJECTED (with one-line rationale)
 
@@ -48,6 +49,22 @@ banner ratio must be crop or pad. Chosen approach (002): regenerate the base cre
 as a **strip-composed 21:9** with `nano_banana_2` (keep headline/subject/logo in a
 center band), then center-crop — content survives because it was composed into the
 band. 003 adds a mirror-extend **pad** fallback for when the crop still clips.
+
+## Context for plan 004 (Uploads folders)
+
+Requested directly by the maintainer on 2026-07-03: a folder-based UI in
+Uploads — local-only grouping layered over the Higgsfield upload library,
+alongside the existing brand overlay. Folders mirror the brand pattern at
+every layer (bridge types → `upload-folder-store.ts` → IPC/preload → renderer
+merge → Uploads page). Two design decisions were left open (maintainer asked,
+no response before timeout); the plan proceeds with the recommended defaults
+and lists them as STOP conditions:
+
+- **Global flat folders**, orthogonal to brands (not nested per brand).
+- **Drill-in UI** (folder tiles + breadcrumb), not a second filter-chip row.
+
+If the maintainer wants per-brand nesting or chips instead, plan 004 needs a
+revision pass before execution — note it here.
 
 ## Findings considered and rejected
 
