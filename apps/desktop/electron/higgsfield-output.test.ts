@@ -2,6 +2,7 @@
 import { describe, expect, test } from "bun:test"
 
 import {
+  isoOrNull,
   parseAccountStatus,
   parseGenerationResult,
   parseModelDetails,
@@ -143,6 +144,18 @@ kling3_0                    Kling v3.0                  video`,
     })
   })
 
+  test("normalizes upload timestamps", () => {
+    const expected = "2026-07-03T09:50:35.368Z"
+
+    expect(isoOrNull(1783072235.368949)).toBe(expected)
+    expect(isoOrNull(1783072235368.949)).toBe(expected)
+    expect(isoOrNull("1783072235.368949")).toBe(expected)
+    expect(isoOrNull("2026-07-01T04:03:49.830526Z")).toBe(
+      "2026-07-01T04:03:49.830526Z",
+    )
+    expect(isoOrNull("not a date")).toBeNull()
+  })
+
   test("parses upload list responses with JSON upload names", () => {
     const result = parseUploadList(
       `{
@@ -176,6 +189,24 @@ kling3_0                    Kling v3.0                  video`,
         },
       ],
     })
+  })
+
+  test("parses numeric upload created_at timestamps", () => {
+    const result = parseUploadList(
+      `{
+        "items": [
+          {
+            "created_at": 1783072235.368949,
+            "id": "808ccacb-d4be-465e-b02d-432de39b97a8",
+            "type": "image",
+            "url": "https://cdn.example.com/upload.png"
+          }
+        ]
+      }`,
+      "image",
+    )
+
+    expect(result.items[0].createdAt).toBe("2026-07-03T09:50:35.368Z")
   })
 
   test("parses direct upload names from filename-bearing URLs", () => {

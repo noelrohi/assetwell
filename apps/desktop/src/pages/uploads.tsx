@@ -632,7 +632,10 @@ const UploadCard = React.memo(function UploadCard({
           </span>
           <div className="pointer-events-none absolute inset-x-0 bottom-0 h-28 bg-gradient-to-t from-black/85 via-black/25 to-transparent opacity-0 transition-opacity group-hover:opacity-100" />
           <div className="absolute inset-x-0 bottom-0 translate-y-2 p-3 text-white opacity-0 transition-all group-hover:translate-y-0 group-hover:opacity-100">
-            <p className="text-xs text-white/75 drop-shadow">
+            <p className="truncate text-xs font-medium text-white drop-shadow">
+              {asset.name}
+            </p>
+            <p className="mt-0.5 text-xs text-white/75 drop-shadow">
               {formatUploadDetail(asset, isRemote)}
             </p>
           </div>

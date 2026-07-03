@@ -257,6 +257,31 @@ export function bestArtifactExtension(
   return (artifact.mediaKind ?? fallbackMediaKind) === "video" ? ".mp4" : ".png"
 }
 
+export function isoOrNull(value: unknown) {
+  if (typeof value === "string") {
+    const text = value.trim()
+    if (!text) return null
+    if (isIsoLikeString(text)) return text
+    const timestamp = Number(text)
+    return timestampToIso(timestamp)
+  }
+
+  if (typeof value === "number") return timestampToIso(value)
+  return null
+}
+
+function timestampToIso(value: number) {
+  if (!Number.isFinite(value)) return null
+
+  const milliseconds = Math.abs(value) > 1e12 ? value : value * 1000
+  const date = new Date(milliseconds)
+  return Number.isFinite(date.getTime()) ? date.toISOString() : null
+}
+
+function isIsoLikeString(value: string) {
+  return /^\d{4}-\d{2}-\d{2}T/.test(value) && Number.isFinite(Date.parse(value))
+}
+
 function parseModelTable(
   stdout: string,
   fallbackMediaKind: HiggsfieldMediaKind,
@@ -421,8 +446,7 @@ function normalizeUpload(
   const url = stringOrNull(upload.url)
   if (!uploadId || !url) return []
 
-  const createdAt =
-    stringOrNull(upload.created_at) ?? stringOrNull(upload.createdAt)
+  const createdAt = isoOrNull(upload.created_at) ?? isoOrNull(upload.createdAt)
   const sizeBytes =
     numberOrNull(upload.size_bytes) ??
     numberOrNull(upload.sizeBytes) ??
