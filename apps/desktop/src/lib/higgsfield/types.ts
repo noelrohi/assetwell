@@ -1,6 +1,8 @@
 import type {
   AssetwellBrand,
   AssetwellBrandView,
+  AssetwellUploadFolder,
+  AssetwellUploadFolderAssignment,
   DesktopBridge,
   HiggsfieldAccountStatus,
   HiggsfieldCliStatus,
@@ -63,12 +65,14 @@ export interface ReferenceAsset extends SeedReferenceAsset {
   sizeBytes?: number | null
   modifiedAt?: string | null
   brandId?: string | null
+  folderId?: string | null
 }
 
 export type PromptPreset = AssetwellPromptPreset
 export type UploadWorkspace = AssetwellUploadWorkspace
 export type BrandView = AssetwellBrandView
 export type Brand = AssetwellBrand
+export type UploadFolder = AssetwellUploadFolder
 
 export interface ModelOption {
   id: string
@@ -121,6 +125,18 @@ export interface BrandsDomain {
   assignUploads: (
     uploadIds: string[],
     brandId: string | null,
+  ) => Promise<boolean>
+}
+
+export interface UploadFoldersDomain {
+  folders: UploadFolder[]
+  assignments: AssetwellUploadFolderAssignment[]
+  createFolder: (name: string) => Promise<string | null>
+  renameFolder: (id: string, name: string) => Promise<boolean>
+  deleteFolder: (id: string) => Promise<boolean>
+  assignUploads: (
+    uploadIds: string[],
+    folderId: string | null,
   ) => Promise<boolean>
 }
 
