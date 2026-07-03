@@ -67,8 +67,9 @@ export function countReferencesByFolder(
 export function useUploadFolders(
   libraryBridge?: LibraryBridge,
 ): UploadFoldersDomain {
-  const [state, setState] =
-    React.useState<AssetwellUploadFolderState>(emptyUploadFolderState)
+  const [state, setState] = React.useState<AssetwellUploadFolderState>(
+    emptyUploadFolderState,
+  )
   const stateRef = React.useRef(state)
 
   const applyUploadFolderState = React.useCallback(
@@ -165,11 +166,17 @@ export function useUploadFolders(
         try {
           const folder = requireFolder(stateRef.current.folders, id)
           const folderName = requireFolderName(name)
-          assertUniqueFolderName(stateRef.current.folders, folderName, folder.id)
+          assertUniqueFolderName(
+            stateRef.current.folders,
+            folderName,
+            folder.id,
+          )
           applyUploadFolderState({
             ...stateRef.current,
             folders: stateRef.current.folders.map((current) =>
-              current.id === folder.id ? { ...current, name: folderName } : current,
+              current.id === folder.id
+                ? { ...current, name: folderName }
+                : current,
             ),
           })
           toast("Folder renamed")
@@ -248,7 +255,7 @@ export function useUploadFolders(
       if (uniqueIds.length === 0) return true
 
       const folderName = folderId
-        ? findFolder(stateRef.current.folders, folderId)?.name ?? "folder"
+        ? (findFolder(stateRef.current.folders, folderId)?.name ?? "folder")
         : null
 
       if (!libraryBridge) {

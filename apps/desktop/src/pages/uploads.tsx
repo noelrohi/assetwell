@@ -83,10 +83,7 @@ type FolderEditorState =
 export function UploadsPage() {
   const { uploads, brands, folders } = useHiggsfieldApp()
   const [search, setSearch] = useQueryState("q", uploadsSearchParser)
-  const [folderId, setFolderId] = useQueryState(
-    "folder",
-    uploadsFolderParser,
-  )
+  const [folderId, setFolderId] = useQueryState("folder", uploadsFolderParser)
   const [selectedIds, setSelectedIds] = React.useState<Set<string>>(
     () => new Set(),
   )
@@ -108,7 +105,8 @@ export function UploadsPage() {
   )
   const activeFolderId = activeFolder?.id ?? null
   const isSearching = searchTerm.length > 0
-  const showFolderTiles = !isSearching && !activeFolder && folderItems.length > 0
+  const showFolderTiles =
+    !isSearching && !activeFolder && folderItems.length > 0
   const showHeaderNewFolder = Boolean(activeFolder) || folderItems.length === 0
 
   React.useEffect(() => {
@@ -382,9 +380,7 @@ export function UploadsPage() {
                 folder={folder}
                 count={folderCounts.get(folder.id) ?? 0}
                 onOpen={(id) => void setFolderId(id)}
-                onRename={(folder) =>
-                  setFolderEditor({ mode: "edit", folder })
-                }
+                onRename={(folder) => setFolderEditor({ mode: "edit", folder })}
                 onDelete={(folder) => void deleteUploadFolder(folder)}
               />
             ))}

@@ -56,10 +56,9 @@ describe("Upload folder helpers", () => {
       { ...reference("foldered"), folderId: "folder-a" },
     ]
 
-    expect(referencesInFolder(references, null).map((item) => item.id)).toEqual([
-      "root",
-      "missing",
-    ])
+    expect(referencesInFolder(references, null).map((item) => item.id)).toEqual(
+      ["root", "missing"],
+    )
     expect(
       referencesInFolder(references, "folder-a").map((item) => item.id),
     ).toEqual(["foldered"])

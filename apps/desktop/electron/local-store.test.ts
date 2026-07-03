@@ -367,9 +367,7 @@ describe("local store", () => {
     ])
 
     const deleted = await localStore.deleteUploadFolder({ id: "folder-a" })
-    expect(deleted.folders).toEqual([
-      { id: "folder-a-2", name: "Folder A" },
-    ])
+    expect(deleted.folders).toEqual([{ id: "folder-a-2", name: "Folder A" }])
     expect(deleted.assignments).toEqual([])
 
     const stored = JSON.parse(
