@@ -9,6 +9,7 @@ import { createReadStream } from "node:fs"
 import { stat } from "node:fs/promises"
 import { Readable } from "node:stream"
 import path from "node:path"
+import { fileURLToPath } from "node:url"
 
 import { registerAppInfoIpc } from "./ipc/app-info"
 import { registerHiggsfieldIpc } from "./ipc/higgsfield"
@@ -26,6 +27,7 @@ import { registerUpdaterIpc, startAutoUpdates } from "./updater"
 const APP_NAME = "Assetwell"
 const isDev = Boolean(process.env.VITE_DEV_SERVER_URL)
 const appIconPath = path.join(__dirname, "../build/icon.png")
+const appIndexPath = path.join(__dirname, "../dist/index.html")
 
 protocol.registerSchemesAsPrivileged([
   {
@@ -98,6 +100,28 @@ function registerLocalAssetProtocol() {
   })
 }
 
+function isAllowedAppNavigation(navigationUrl: string) {
+  try {
+    const target = new URL(navigationUrl)
+
+    if (isDev && process.env.VITE_DEV_SERVER_URL) {
+      return target.origin === new URL(process.env.VITE_DEV_SERVER_URL).origin
+    }
+
+    if (target.protocol !== "file:") return false
+    return path.resolve(fileURLToPath(target)) === path.resolve(appIndexPath)
+  } catch {
+    return false
+  }
+}
+
+function installNavigationGuard(mainWindow: BrowserWindow) {
+  mainWindow.webContents.on("will-navigate", (event, navigationUrl) => {
+    if (isAllowedAppNavigation(navigationUrl)) return
+    event.preventDefault()
+  })
+}
+
 function createWindow() {
   const platformWindowOptions: BrowserWindowConstructorOptions =
     process.platform === "darwin"
@@ -124,11 +148,13 @@ function createWindow() {
     },
   })
 
+  installNavigationGuard(mainWindow)
+
   if (isDev) {
     mainWindow.loadURL(process.env.VITE_DEV_SERVER_URL!)
     mainWindow.webContents.openDevTools({ mode: "detach" })
   } else {
-    mainWindow.loadFile(path.join(__dirname, "../dist/index.html"))
+    mainWindow.loadFile(appIndexPath)
   }
 }
 

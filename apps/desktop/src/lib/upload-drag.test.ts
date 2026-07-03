@@ -7,6 +7,7 @@ import {
   isInternalUploadDrag,
   isOsFileDrag,
   partitionImageFiles,
+  resolveUploadDragIds,
   UPLOAD_DRAG_MIME_TYPE,
 } from "./upload-drag"
 
@@ -65,6 +66,28 @@ describe("upload drag id payload", () => {
       "a",
       "b",
     ])
+  })
+})
+
+describe("resolveUploadDragIds", () => {
+  test("drags the full selection when the dragged card is selected", () => {
+    const selectedIds = new Set(["upload-1", "upload-2", "upload-3"])
+
+    expect(resolveUploadDragIds("upload-2", selectedIds)).toEqual([
+      "upload-1",
+      "upload-2",
+      "upload-3",
+    ])
+  })
+
+  test("drags only the card when it is outside the current selection", () => {
+    const selectedIds = new Set(["upload-1", "upload-2"])
+
+    expect(resolveUploadDragIds("upload-3", selectedIds)).toEqual(["upload-3"])
+  })
+
+  test("drags only the card when nothing is selected", () => {
+    expect(resolveUploadDragIds("upload-1", new Set())).toEqual(["upload-1"])
   })
 })
 

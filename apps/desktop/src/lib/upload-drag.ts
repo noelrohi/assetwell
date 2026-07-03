@@ -66,6 +66,13 @@ export function decodeUploadDragIds(raw: string): string[] | null {
   }
 }
 
+export function resolveUploadDragIds(
+  draggedId: string,
+  selectedIds: ReadonlySet<string>,
+): string[] {
+  return selectedIds.has(draggedId) ? Array.from(selectedIds) : [draggedId]
+}
+
 interface DragTypesSource {
   types: readonly string[] | DOMStringList
 }

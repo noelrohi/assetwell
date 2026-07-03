@@ -10,6 +10,16 @@ import { WhatsNewDialog } from "@/lib/whats-new"
 import { router } from "@/router"
 import "./index.css"
 
+function preventDefaultDragNavigation(event: DragEvent) {
+  event.preventDefault()
+}
+
+// Keep this listener in the bubble phase: React's root-level drop handlers
+// receive Uploads page drops first, then this document guard catches margins
+// and other screens so Chromium never navigates to a dropped file:// URL.
+document.addEventListener("dragover", preventDefaultDragNavigation)
+document.addEventListener("drop", preventDefaultDragNavigation)
+
 createRoot(document.getElementById("root")!).render(
   <React.StrictMode>
     <HiggsfieldProvider>

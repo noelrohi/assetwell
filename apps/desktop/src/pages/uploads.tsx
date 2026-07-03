@@ -33,6 +33,7 @@ import {
 } from "@/components/ui/dropdown-menu"
 import { Input } from "@/components/ui/input"
 import { MoveToFolderMenu } from "@/components/blocks/uploads/move-to-folder-menu"
+import { useUploadDragBadge } from "@/components/blocks/uploads/upload-drag-badge"
 import { UploadFolderBreadcrumb } from "@/components/blocks/uploads/upload-folder-breadcrumb"
 import {
   UploadFolderFormDialog,
@@ -49,7 +50,11 @@ import {
   countReferencesByFolder,
   referencesInFolder,
 } from "@/lib/upload-folders"
-import { encodeUploadDragIds, UPLOAD_DRAG_MIME_TYPE } from "@/lib/upload-drag"
+import {
+  encodeUploadDragIds,
+  resolveUploadDragIds,
+  UPLOAD_DRAG_MIME_TYPE,
+} from "@/lib/upload-drag"
 import { useDroppedUploads } from "@/lib/use-dropped-uploads"
 import { cn } from "@/lib/utils"
 import type {
@@ -88,7 +93,8 @@ export function UploadsPage() {
   const isSearching = searchTerm.length > 0
   const showFolderTiles =
     !isSearching && !activeFolder && folderItems.length > 0
-  const { isDraggingFiles, dropZoneHandlers } = useDroppedUploads({
+  const { dragBadge, setDragImage } = useUploadDragBadge()
+  const { isDraggingFiles, isImporting, dropZoneHandlers } = useDroppedUploads({
     uploads,
     brands,
     folders,
@@ -143,8 +149,7 @@ export function UploadsPage() {
   }, [])
 
   const getDragIds = React.useCallback(
-    (assetId: string) =>
-      selectedIds.has(assetId) ? Array.from(selectedIds) : [assetId],
+    (assetId: string) => resolveUploadDragIds(assetId, selectedIds),
     [selectedIds],
   )
 
@@ -205,6 +210,8 @@ export function UploadsPage() {
 
   return (
     <div className="mx-auto max-w-6xl px-6 pt-12 pb-24" {...dropZoneHandlers}>
+      {dragBadge}
+
       {isDraggingFiles ? (
         <div
           className="animate-in fade-in fixed inset-0 z-50 grid place-items-center bg-background/80 duration-150 backdrop-blur-sm"
@@ -279,6 +286,16 @@ export function UploadsPage() {
           </Button>
         </div>
       </div>
+
+      {isImporting ? (
+        <div
+          role="status"
+          className="animate-in fade-in slide-in-from-bottom-1 fixed right-6 bottom-6 z-40 flex items-center gap-2 rounded-full border border-border bg-card px-3 py-2 text-sm text-muted-foreground shadow-lg duration-150"
+        >
+          <span className="size-2 animate-pulse rounded-full bg-ember" />
+          Adding images to Uploads…
+        </div>
+      ) : null}
 
       {selectedCount > 0 ? (
         <div className="mt-4 flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-border/70 bg-card/60 px-3 py-2 shadow-sm">
@@ -425,6 +442,7 @@ export function UploadsPage() {
                 isRemote={uploads.isRemote}
                 onToggle={toggleSelected}
                 getDragIds={getDragIds}
+                setDragImage={setDragImage}
               />
             ))}
           </div>
@@ -520,6 +538,7 @@ interface UploadCardProps {
   isRemote: boolean
   onToggle: (id: string) => void
   getDragIds: (assetId: string) => string[]
+  setDragImage: (dataTransfer: DataTransfer, count: number) => void
 }
 
 const UploadCard = React.memo(function UploadCard({
@@ -528,6 +547,7 @@ const UploadCard = React.memo(function UploadCard({
   isRemote,
   onToggle,
   getDragIds,
+  setDragImage,
 }: UploadCardProps) {
   const [isDragging, setIsDragging] = React.useState(false)
 
@@ -543,9 +563,10 @@ const UploadCard = React.memo(function UploadCard({
         UPLOAD_DRAG_MIME_TYPE,
         encodeUploadDragIds(ids),
       )
+      setDragImage(event.dataTransfer, ids.length)
       setIsDragging(true)
     },
-    [asset.id, getDragIds],
+    [asset.id, getDragIds, setDragImage],
   )
 
   const handleDragEnd = React.useCallback(() => {
