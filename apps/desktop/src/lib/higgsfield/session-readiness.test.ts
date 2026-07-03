@@ -9,9 +9,9 @@ import {
 
 const baseStatus: HiggsfieldCliStatus = {
   installed: true,
-  version: "1.0.2",
+  version: "0.2.3",
   executableSource: "bundled",
-  bundledVersion: "1.0.2",
+  bundledVersion: "0.2.3",
   authStatus: "authenticated",
   workspaceStatus: "verified",
   detail: null,
