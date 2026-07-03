@@ -86,13 +86,14 @@ export function UploadsPage() {
   const isSearching = searchTerm.length > 0
   const showFolderTiles =
     !isSearching && !activeFolder && folderItems.length > 0
-  // Falls back to the header whenever the Folders section (which has its
-  // own "New folder" entry) isn't on screen — including while searching.
-  const showHeaderNewFolder = !showFolderTiles
 
   React.useEffect(() => {
     void refreshUploads()
   }, [refreshUploads])
+
+  React.useEffect(() => {
+    setSelectedIds((current) => (current.size === 0 ? current : new Set()))
+  }, [folderId])
 
   React.useEffect(() => {
     const visibleIds = new Set(referenceLibrary.map((asset) => asset.id))
@@ -180,15 +181,13 @@ export function UploadsPage() {
           </h1>
         </div>
         <div className="flex flex-wrap items-center justify-end gap-2">
-          {showHeaderNewFolder ? (
-            <Button
-              variant="outline"
-              onClick={() => setFolderEditor({ mode: "create" })}
-            >
-              <IconFolder />
-              New folder
-            </Button>
-          ) : null}
+          <Button
+            variant="outline"
+            onClick={() => setFolderEditor({ mode: "create" })}
+          >
+            <IconFolder />
+            New folder
+          </Button>
           {uploads.canRevealReferences ? (
             <Button variant="outline" onClick={() => void uploads.reveal()}>
               <IconFolderOpen />
@@ -264,6 +263,7 @@ export function UploadsPage() {
             </DropdownMenu>
             <MoveToFolderMenu
               folders={folderItems}
+              activeFolderId={activeFolderId}
               disabled={moving}
               onMove={(nextFolderId) =>
                 void moveSelectionToFolder(nextFolderId)
@@ -308,7 +308,6 @@ export function UploadsPage() {
           onOpen={(id) => void setFolderId(id)}
           onRename={(folder) => setFolderEditor({ mode: "edit", folder })}
           onDelete={(folder) => void deleteUploadFolder(folder)}
-          onCreate={() => setFolderEditor({ mode: "create" })}
         />
       ) : null}
 
@@ -335,6 +334,13 @@ export function UploadsPage() {
         <div className="mt-6 rounded-2xl border border-dashed border-border/70 p-10 text-center text-sm text-muted-foreground">
           No {itemLabel}s match “{searchTerm}”.
         </div>
+      ) : !isSearching &&
+        !activeFolder &&
+        folderItems.length > 0 &&
+        visibleReferences.length === 0 ? (
+        <p className="mt-4 text-sm text-muted-foreground">
+          Everything here is organized into folders.
+        </p>
       ) : !isSearching && activeFolder && visibleReferences.length === 0 ? (
         <div className="mt-6 grid min-h-72 place-items-center rounded-2xl border border-dashed border-border/70 p-8 text-center">
           <div className="max-w-sm">

@@ -37,6 +37,7 @@ export function UploadFolderFormDialog({
   const [saving, setSaving] = React.useState(false)
   const open = Boolean(state)
   const isEditing = state?.mode === "edit"
+  const saveError = "Could not save folder. The name may already be in use."
 
   React.useEffect(() => {
     if (!state) return
@@ -55,10 +56,15 @@ export function UploadFolderFormDialog({
     }
 
     setSaving(true)
-    const saved = await onSubmit(trimmed)
+    const saved = await onSubmit(trimmed).catch(() => false)
     setSaving(false)
 
-    if (saved) onOpenChange(false)
+    if (saved) {
+      onOpenChange(false)
+      return
+    }
+
+    setError(saveError)
   }
 
   return (
@@ -85,6 +91,9 @@ export function UploadFolderFormDialog({
                 onChange={(event) => {
                   setName(event.target.value)
                   setError(null)
+                }}
+                onFocus={(event) => {
+                  if (isEditing) event.currentTarget.select()
                 }}
                 disabled={saving}
                 autoFocus

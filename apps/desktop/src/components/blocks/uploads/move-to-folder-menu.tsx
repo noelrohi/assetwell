@@ -1,4 +1,4 @@
-import { IconChevronDown, IconPlus } from "@tabler/icons-react"
+import { IconCheck, IconChevronDown, IconPlus } from "@tabler/icons-react"
 
 import { Button } from "@/components/ui/button"
 import {
@@ -13,11 +13,13 @@ import type { UploadFolder } from "@/lib/higgsfield/types"
 
 export function MoveToFolderMenu({
   folders,
+  activeFolderId,
   disabled,
   onMove,
   onCreateAndMove,
 }: {
   folders: UploadFolder[]
+  activeFolderId: string | null
   disabled: boolean
   onMove: (folderId: string | null) => void
   onCreateAndMove: () => void
@@ -34,14 +36,27 @@ export function MoveToFolderMenu({
         <DropdownMenuLabel className="text-xs text-muted-foreground">
           Folders
         </DropdownMenuLabel>
-        {folders.map((folder) => (
-          <DropdownMenuItem key={folder.id} onClick={() => onMove(folder.id)}>
-            {folder.name}
-          </DropdownMenuItem>
-        ))}
+        {folders.map((folder) => {
+          const isCurrentFolder = folder.id === activeFolderId
+
+          return (
+            <DropdownMenuItem
+              key={folder.id}
+              disabled={isCurrentFolder}
+              onClick={() => onMove(folder.id)}
+            >
+              <span className="min-w-0 flex-1 truncate">{folder.name}</span>
+              {isCurrentFolder ? <IconCheck className="ml-auto" /> : null}
+            </DropdownMenuItem>
+          )
+        })}
         {folders.length > 0 ? <DropdownMenuSeparator /> : null}
-        <DropdownMenuItem onClick={() => onMove(null)}>
-          No folder
+        <DropdownMenuItem
+          disabled={activeFolderId === null}
+          onClick={() => onMove(null)}
+        >
+          <span className="flex-1">No folder</span>
+          {activeFolderId === null ? <IconCheck className="ml-auto" /> : null}
         </DropdownMenuItem>
         <DropdownMenuSeparator />
         <DropdownMenuItem onClick={onCreateAndMove}>
