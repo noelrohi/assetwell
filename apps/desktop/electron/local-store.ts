@@ -36,6 +36,13 @@ export {
   updateBrand,
 } from "./brand-store"
 export {
+  assignUploadsToFolder,
+  createUploadFolder,
+  deleteUploadFolder,
+  loadUploadFolderState,
+  updateUploadFolder,
+} from "./upload-folder-store"
+export {
   createUploadsWorkspace as createUploadWorkspace,
   deleteUploadsReference as deleteReferenceAsset,
   deleteUploadsWorkspace as deleteUploadWorkspace,

@@ -312,6 +312,81 @@ describe("local store", () => {
     })
   })
 
+  test("stores upload folders and upload assignments locally", async () => {
+    await expect(localStore.loadUploadFolderState()).resolves.toEqual({
+      folders: [],
+      assignments: [],
+    })
+
+    const created = await localStore.createUploadFolder({ name: "Folder/A?" })
+    expect(created.folders).toContainEqual({
+      id: "folder-a",
+      name: "Folder/A?",
+    })
+
+    const createdWithDuplicateSlug = await localStore.createUploadFolder({
+      name: "Folder A",
+    })
+    expect(createdWithDuplicateSlug.folders).toContainEqual({
+      id: "folder-a-2",
+      name: "Folder A",
+    })
+
+    await expect(
+      localStore.createUploadFolder({ name: " folder/a? " }),
+    ).rejects.toThrow("A folder with that name already exists.")
+
+    const renamed = await localStore.updateUploadFolder({
+      id: "folder-a",
+      name: "Folder Alpha",
+    })
+    expect(renamed.folders).toContainEqual({
+      id: "folder-a",
+      name: "Folder Alpha",
+    })
+
+    await expect(
+      localStore.updateUploadFolder({ id: "folder-a-2", name: "folder alpha" }),
+    ).rejects.toThrow("A folder with that name already exists.")
+
+    const assigned = await localStore.assignUploadsToFolder({
+      uploadIds: [" upload-1 ", "upload-2", "upload-1"],
+      folderId: "folder-a",
+    })
+    expect(assigned.assignments).toEqual([
+      { uploadId: "upload-1", folderId: "folder-a" },
+      { uploadId: "upload-2", folderId: "folder-a" },
+    ])
+
+    const unassigned = await localStore.assignUploadsToFolder({
+      uploadIds: ["upload-2"],
+      folderId: null,
+    })
+    expect(unassigned.assignments).toEqual([
+      { uploadId: "upload-1", folderId: "folder-a" },
+    ])
+
+    const deleted = await localStore.deleteUploadFolder({ id: "folder-a" })
+    expect(deleted.folders).toEqual([
+      { id: "folder-a-2", name: "Folder A" },
+    ])
+    expect(deleted.assignments).toEqual([])
+
+    const stored = JSON.parse(
+      await readFile(
+        path.join(userDataRoot, "state", "upload-folders.v1.json"),
+        "utf8",
+      ),
+    ) as { folders?: unknown[]; assignments?: unknown[] }
+    expect(stored.folders).toEqual([{ id: "folder-a-2", name: "Folder A" }])
+    expect(stored.assignments).toEqual([])
+
+    await expect(localStore.loadUploadFolderState()).resolves.toEqual({
+      folders: [{ id: "folder-a-2", name: "Folder A" }],
+      assignments: [],
+    })
+  })
+
   test("adds a compatibility Uploads scope when activating a Higgsfield workspace", async () => {
     const outputRoot = path.join(userDataRoot, "Library")
     setNextOpenDialogResult({ canceled: false, filePaths: [outputRoot] })
