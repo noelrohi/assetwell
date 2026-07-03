@@ -55,6 +55,7 @@ import {
   resolveUploadDragIds,
   UPLOAD_DRAG_MIME_TYPE,
 } from "@/lib/upload-drag"
+import { useDrainedUploads } from "@/lib/use-drained-uploads"
 import { useDroppedUploads } from "@/lib/use-dropped-uploads"
 import { cn } from "@/lib/utils"
 import type {
@@ -94,6 +95,7 @@ export function UploadsPage() {
   const showFolderTiles =
     !isSearching && !activeFolder && folderItems.length > 0
   const { dragBadge, setDragImage } = useUploadDragBadge()
+  const { isDraining, resetDrain } = useDrainedUploads(uploads)
   const { isDraggingFiles, isImporting, dropZoneHandlers } = useDroppedUploads({
     uploads,
     brands,
@@ -279,7 +281,11 @@ export function UploadsPage() {
           <Button
             variant="outline"
             size="icon"
-            onClick={() => void uploads.refresh()}
+            onClick={() => {
+              void refreshUploads()
+                .catch(() => undefined)
+                .finally(resetDrain)
+            }}
             aria-label="Refresh Uploads"
           >
             <IconRefresh />
@@ -382,7 +388,9 @@ export function UploadsPage() {
         />
       ) : null}
 
-      {referenceLibrary.length === 0 && folderItems.length === 0 ? (
+      {referenceLibrary.length === 0 &&
+      folderItems.length === 0 &&
+      !isDraining ? (
         <div className="mt-6 grid min-h-72 place-items-center rounded-2xl border border-dashed border-border/70 p-8 text-center">
           <div className="max-w-sm">
             <div className="mx-auto mb-4 grid size-12 place-items-center rounded-2xl border border-border bg-card text-muted-foreground">
@@ -402,35 +410,50 @@ export function UploadsPage() {
           </div>
         </div>
       ) : isSearching && visibleReferences.length === 0 ? (
-        <div className="mt-6 rounded-2xl border border-dashed border-border/70 p-10 text-center text-sm text-muted-foreground">
-          No {itemLabel}s match “{searchTerm}”.
-        </div>
+        isDraining ? (
+          <UploadsLoadingLine />
+        ) : (
+          <div className="mt-6 rounded-2xl border border-dashed border-border/70 p-10 text-center text-sm text-muted-foreground">
+            No {itemLabel}s match “{searchTerm}”.
+          </div>
+        )
       ) : !isSearching &&
         !activeFolder &&
         folderItems.length > 0 &&
         visibleReferences.length === 0 ? (
-        <p className="mt-4 text-sm text-muted-foreground">
-          Everything here is organized into folders.
-        </p>
+        isDraining ? (
+          <UploadsLoadingLine />
+        ) : (
+          <p className="mt-4 text-sm text-muted-foreground">
+            Everything here is organized into folders.
+          </p>
+        )
       ) : !isSearching && activeFolder && visibleReferences.length === 0 ? (
-        <div className="mt-6 grid min-h-72 place-items-center rounded-2xl border border-dashed border-border/70 p-8 text-center">
-          <div className="max-w-sm">
-            <div className="mx-auto mb-4 grid size-12 place-items-center rounded-2xl border border-border bg-card text-muted-foreground">
-              <IconFolder className="size-6" />
+        isDraining ? (
+          <UploadsLoadingLine />
+        ) : (
+          <div className="mt-6 grid min-h-72 place-items-center rounded-2xl border border-dashed border-border/70 p-8 text-center">
+            <div className="max-w-sm">
+              <div className="mx-auto mb-4 grid size-12 place-items-center rounded-2xl border border-border bg-card text-muted-foreground">
+                <IconFolder className="size-6" />
+              </div>
+              <h2 className="text-base font-medium text-foreground">
+                No uploads in {activeFolder.name} yet
+              </h2>
+              <p className="mt-2 text-sm leading-6 text-muted-foreground">
+                Move existing uploads into this folder, or add more files to the
+                shared library.
+              </p>
+              <Button
+                className="mt-5"
+                onClick={() => void uploads.importFiles()}
+              >
+                <IconPlus />
+                Add files
+              </Button>
             </div>
-            <h2 className="text-base font-medium text-foreground">
-              No uploads in {activeFolder.name} yet
-            </h2>
-            <p className="mt-2 text-sm leading-6 text-muted-foreground">
-              Move existing uploads into this folder, or add more files to the
-              shared library.
-            </p>
-            <Button className="mt-5" onClick={() => void uploads.importFiles()}>
-              <IconPlus />
-              Add files
-            </Button>
           </div>
-        </div>
+        )
       ) : visibleReferences.length > 0 ? (
         <>
           <div className="mt-6 grid grid-cols-2 gap-3 sm:grid-cols-3 xl:grid-cols-4">
@@ -446,18 +469,10 @@ export function UploadsPage() {
               />
             ))}
           </div>
-          {uploads.hasMore ? (
-            <div className="mt-6 flex justify-center">
-              <Button
-                variant="outline"
-                onClick={() => void uploads.loadMore()}
-                disabled={uploads.loadingMore}
-              >
-                {uploads.loadingMore ? "Loading…" : "Load more"}
-              </Button>
-            </div>
-          ) : null}
+          {isDraining ? <UploadsLoadingLine /> : null}
         </>
+      ) : isDraining ? (
+        <UploadsLoadingLine />
       ) : null}
 
       <UploadFolderFormDialog
@@ -468,6 +483,14 @@ export function UploadsPage() {
         onSubmit={submitFolderName}
       />
     </div>
+  )
+}
+
+function UploadsLoadingLine() {
+  return (
+    <p className="mt-6 text-center text-sm text-muted-foreground">
+      Loading uploads…
+    </p>
   )
 }
 
