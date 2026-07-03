@@ -45,6 +45,11 @@ import {
   parseWorkspaceContext,
 } from "./higgsfield-output"
 import { getAssetwellOutputRootSync } from "./local-store"
+import {
+  applyUploadNames,
+  loadUploadNames,
+  recordUploadName,
+} from "./upload-name-store"
 
 const GLOBAL_HIGGSFIELD_EXECUTABLE =
   process.platform === "win32" ? "higgsfield.cmd" : "higgsfield"
@@ -254,7 +259,9 @@ export async function getHiggsfieldUploads(
   const result = await collectHiggsfieldOutput(executable, args, 20_000)
 
   ensureCommandSucceeded(result, "Load uploads")
-  return parseUploadList(result.stdout, mediaKind)
+  const uploads = parseUploadList(result.stdout, mediaKind)
+  const uploadNames = await loadUploadNames()
+  return { ...uploads, items: applyUploadNames(uploads.items, uploadNames) }
 }
 
 export async function createHiggsfieldUpload(
@@ -273,7 +280,12 @@ export async function createHiggsfieldUpload(
   )
 
   ensureCommandSucceeded(result, "Upload asset")
-  return parseUpload(result.stdout, mediaKind)
+  const asset = parseUpload(result.stdout, mediaKind)
+  const uploadedName = await recordUploadName(
+    asset.uploadId,
+    path.basename(filePath),
+  )
+  return uploadedName ? { ...asset, name: uploadedName } : asset
 }
 
 export function startSignInCommand(emit: CommandOutputEmitter) {

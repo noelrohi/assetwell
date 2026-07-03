@@ -16,6 +16,7 @@ import {
 } from "./test-support/spawn-mock"
 
 const cli = await import("./higgsfield-cli")
+const uploadNameStore = await import("./upload-name-store")
 
 async function makeFile(name = "asset.png") {
   const dir = await mkdtemp(path.join(os.tmpdir(), "assetwell-cli-test-"))
@@ -289,6 +290,48 @@ describe("Higgsfield CLI commands", () => {
     })
   })
 
+  test("overlays stored upload names when listing Higgsfield uploads", async () => {
+    const uploadId = "808ccacb-d4be-465e-b02d-432de39b97a8"
+    await uploadNameStore.recordUploadName(uploadId, "Local Reference.png")
+
+    const uploads = cli.getHiggsfieldUploads({ mediaKind: "image", size: 100 })
+
+    await waitForSpawnCount(1)
+    expect(spawnCalls[0].args).toEqual(["workspace", "status"])
+    await completeSpawn(spawnCalls[0], {
+      stdout: "Funded workspace selected\n",
+    })
+
+    await waitForSpawnCount(2)
+    expect(spawnCalls[1].args).toEqual([
+      "--json",
+      "upload",
+      "list",
+      "--image",
+      "--size",
+      "100",
+    ])
+    await completeSpawn(spawnCalls[1], {
+      stdout: `{
+        "items": [{
+          "id": "${uploadId}",
+          "type": "image",
+          "url": "https://cdn.example.com/user_xxx/${uploadId}.png"
+        }]
+      }`,
+    })
+
+    await expect(uploads).resolves.toMatchObject({
+      items: [
+        {
+          uploadId,
+          name: "Local Reference.png",
+          mediaKind: "image",
+        },
+      ],
+    })
+  })
+
   test("creates Higgsfield uploads through the CLI", async () => {
     const asset = await makeFile("reference.png")
     const upload = cli.createHiggsfieldUpload({ filePath: asset })
@@ -311,6 +354,7 @@ describe("Higgsfield CLI commands", () => {
 
     await expect(upload).resolves.toMatchObject({
       uploadId: "808ccacb-d4be-465e-b02d-432de39b97a8",
+      name: "reference.png",
       url: "https://cdn.example.com/upload.png",
     })
   })
