@@ -18,7 +18,7 @@
         "@assetwell/ui": "workspace:*",
         "@fontsource-variable/jetbrains-mono": "^5.2.8",
         "@fontsource-variable/rethink-sans": "^5.2.8",
-        "@higgsfield/cli": "1.0.2",
+        "@higgsfield/cli": "0.2.3",
         "@tabler/icons-react": "catalog:",
         "@tailwindcss/vite": "catalog:",
         "@tanstack/react-router": "catalog:",
@@ -299,7 +299,7 @@
 
     "@fontsource-variable/rethink-sans": ["@fontsource-variable/rethink-sans@5.2.8", "", {}, "sha512-al4seUEA9sN3D7//lASAPUWPtehLIkKHQRxskZwTUHd3hOpfyjJWmXLOXYQwYAS5h4OhZ2D9S/3N73MzTJ5ecg=="],
 
-    "@higgsfield/cli": ["@higgsfield/cli@1.0.2", "", { "os": [ "linux", "win32", "darwin", ], "cpu": [ "x64", "arm64", ], "bin": { "higgsfield": "bin/higgsfield.js", "higgs": "bin/higgs.js" } }, "sha512-VqPI7nk98W97qsdrkatAjkE/VtxxCcWJ1ejOMP2tLDxzwOiw4waPM74FyKwGiwX28oh/aPFRITHO8J3BzbLCTQ=="],
+    "@higgsfield/cli": ["@higgsfield/cli@0.2.3", "", { "os": [ "linux", "win32", "darwin", ], "cpu": [ "x64", "arm64", ], "bin": { "higgs": "bin/higgs.js", "higgsfield": "bin/higgsfield.js" } }, "sha512-3Yjgf42+i+bSTdJMjrLi4EFqAzRIoPXQZMoY4mQldrDbgOZYSYrSYRZQbQwbuwzeB7x4+IJeQYd/5dOBKs3FnA=="],
 
     "@hono/node-server": ["@hono/node-server@1.19.14", "", { "peerDependencies": { "hono": "^4" } }, "sha512-GwtvgtXxnWsucXvbQXkRgqksiH2Qed37H9xHZocE5sA3N8O8O8/8FA3uclQXxXVzc9XBZuEOMK7+r02FmSpHtw=="],
 

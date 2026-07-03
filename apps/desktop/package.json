@@ -82,7 +82,7 @@
     "@assetwell/product": "workspace:*",
     "@assetwell/ui": "workspace:*",
     "@fontsource-variable/rethink-sans": "^5.2.8",
-    "@higgsfield/cli": "1.0.2",
+    "@higgsfield/cli": "0.2.3",
     "@tabler/icons-react": "catalog:",
     "@tailwindcss/vite": "catalog:",
     "@tanstack/react-router": "catalog:",

@@ -25,6 +25,7 @@ and this project uses semantic version tags for desktop releases.
 
 ### Fixed
 
+- Fixed Higgsfield sign-in failing with an OAuth redirect error by pinning the CLI back to 0.2.3.
 - Dropping an image outside a drop zone no longer replaces the app window with the image.
 - Duplicate folder names are now reported inside the folder dialog instead of a technical toast.
 
