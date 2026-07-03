@@ -49,6 +49,8 @@ import {
   countReferencesByFolder,
   referencesInFolder,
 } from "@/lib/upload-folders"
+import { encodeUploadDragIds, UPLOAD_DRAG_MIME_TYPE } from "@/lib/upload-drag"
+import { useDroppedUploads } from "@/lib/use-dropped-uploads"
 import { cn } from "@/lib/utils"
 import type {
   Brand,
@@ -86,6 +88,12 @@ export function UploadsPage() {
   const isSearching = searchTerm.length > 0
   const showFolderTiles =
     !isSearching && !activeFolder && folderItems.length > 0
+  const { isDraggingFiles, dropZoneHandlers } = useDroppedUploads({
+    uploads,
+    brands,
+    folders,
+    activeFolderId,
+  })
 
   React.useEffect(() => {
     void refreshUploads()
@@ -134,6 +142,29 @@ export function UploadsPage() {
     })
   }, [])
 
+  const getDragIds = React.useCallback(
+    (assetId: string) =>
+      selectedIds.has(assetId) ? Array.from(selectedIds) : [assetId],
+    [selectedIds],
+  )
+
+  const assignDraggedUploads = React.useCallback(
+    async (nextFolderId: string | null, uploadIds: string[]) => {
+      if (uploadIds.length === 0) return
+
+      const moved = await folders.assignUploads(uploadIds, nextFolderId)
+      if (!moved) return
+
+      setSelectedIds((current) => {
+        if (current.size === 0) return current
+        const next = new Set(current)
+        for (const id of uploadIds) next.delete(id)
+        return next.size === current.size ? current : next
+      })
+    },
+    [folders],
+  )
+
   async function moveSelection(brandId: string | null) {
     const uploadIds = Array.from(selectedIds)
     if (uploadIds.length === 0) return
@@ -173,7 +204,26 @@ export function UploadsPage() {
   }
 
   return (
-    <div className="mx-auto max-w-6xl px-6 pt-12 pb-24">
+    <div className="mx-auto max-w-6xl px-6 pt-12 pb-24" {...dropZoneHandlers}>
+      {isDraggingFiles ? (
+        <div
+          className="animate-in fade-in fixed inset-0 z-50 grid place-items-center bg-background/80 duration-150 backdrop-blur-sm"
+          aria-hidden="true"
+        >
+          <div className="animate-in zoom-in-95 mx-6 flex max-w-sm flex-col items-center gap-3 rounded-2xl border-2 border-dashed border-ember/50 bg-card/90 px-10 py-12 text-center shadow-2xl duration-150">
+            <div className="grid size-12 place-items-center rounded-2xl border border-ember/40 bg-ember/10 text-ember">
+              <IconLibraryPhoto className="size-6" />
+            </div>
+            <h2 className="text-base font-medium text-foreground">
+              Drop images to add them
+            </h2>
+            <p className="text-sm leading-6 text-muted-foreground">
+              Assetwell uploads them here and keeps your brand organization.
+            </p>
+          </div>
+        </div>
+      ) : null}
+
       <header className="flex flex-wrap items-end justify-between gap-4 pb-8">
         <div className="max-w-xl">
           <h1 className="font-display text-2xl tracking-tight text-balance">
@@ -298,6 +348,7 @@ export function UploadsPage() {
           folder={activeFolder}
           count={folderCounts.get(activeFolder.id) ?? 0}
           onBack={() => void setFolderId(null)}
+          onDropUploadIds={(ids) => void assignDraggedUploads(null, ids)}
         />
       ) : null}
 
@@ -308,6 +359,9 @@ export function UploadsPage() {
           onOpen={(id) => void setFolderId(id)}
           onRename={(folder) => setFolderEditor({ mode: "edit", folder })}
           onDelete={(folder) => void deleteUploadFolder(folder)}
+          onDropUploadIds={(folderId, ids) =>
+            void assignDraggedUploads(folderId, ids)
+          }
         />
       ) : null}
 
@@ -370,6 +424,7 @@ export function UploadsPage() {
                 selected={selectedIds.has(asset.id)}
                 isRemote={uploads.isRemote}
                 onToggle={toggleSelected}
+                getDragIds={getDragIds}
               />
             ))}
           </div>
@@ -464,6 +519,7 @@ interface UploadCardProps {
   selected: boolean
   isRemote: boolean
   onToggle: (id: string) => void
+  getDragIds: (assetId: string) => string[]
 }
 
 const UploadCard = React.memo(function UploadCard({
@@ -471,16 +527,39 @@ const UploadCard = React.memo(function UploadCard({
   selected,
   isRemote,
   onToggle,
+  getDragIds,
 }: UploadCardProps) {
+  const [isDragging, setIsDragging] = React.useState(false)
+
   const handleClick = React.useCallback(() => {
     onToggle(asset.id)
   }, [asset.id, onToggle])
+
+  const handleDragStart = React.useCallback(
+    (event: React.DragEvent<HTMLButtonElement>) => {
+      const ids = getDragIds(asset.id)
+      event.dataTransfer.effectAllowed = "move"
+      event.dataTransfer.setData(
+        UPLOAD_DRAG_MIME_TYPE,
+        encodeUploadDragIds(ids),
+      )
+      setIsDragging(true)
+    },
+    [asset.id, getDragIds],
+  )
+
+  const handleDragEnd = React.useCallback(() => {
+    setIsDragging(false)
+  }, [])
 
   return (
     <ContextMenu>
       <ContextMenuTrigger asChild>
         <button
           type="button"
+          draggable
+          onDragStart={handleDragStart}
+          onDragEnd={handleDragEnd}
           onClick={handleClick}
           aria-pressed={selected}
           className={cn(
@@ -488,6 +567,7 @@ const UploadCard = React.memo(function UploadCard({
             selected
               ? "border-ember ring-2 ring-ember/35"
               : "border-border/60 hover:border-border",
+            isDragging && "opacity-50",
           )}
         >
           <ViewportUploadImage src={asset.url} alt={asset.name} />

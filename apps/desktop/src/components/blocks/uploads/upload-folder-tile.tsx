@@ -1,3 +1,4 @@
+import * as React from "react"
 import {
   IconDotsVertical,
   IconFolder,
@@ -19,6 +20,12 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
 import type { UploadFolder } from "@/lib/higgsfield/types"
+import {
+  decodeUploadDragIds,
+  isInternalUploadDrag,
+  UPLOAD_DRAG_MIME_TYPE,
+} from "@/lib/upload-drag"
+import { cn } from "@/lib/utils"
 
 export function formatFolderCount(count: number) {
   if (count === 0) return "Empty"
@@ -32,6 +39,7 @@ interface UploadFolderTileProps {
   onOpen: (id: string) => void
   onRename: (folder: UploadFolder) => void
   onDelete: (folder: UploadFolder) => void
+  onDropUploadIds?: (ids: string[]) => void
 }
 
 export function UploadFolderTile({
@@ -40,18 +48,73 @@ export function UploadFolderTile({
   onOpen,
   onRename,
   onDelete,
+  onDropUploadIds,
 }: UploadFolderTileProps) {
   const countLabel = formatFolderCount(count)
+  const [isDropTarget, setIsDropTarget] = React.useState(false)
+  const dragDepthRef = React.useRef(0)
+
+  const handleDragEnter = React.useCallback(
+    (event: React.DragEvent<HTMLDivElement>) => {
+      if (!isInternalUploadDrag(event.dataTransfer)) return
+      event.preventDefault()
+      dragDepthRef.current += 1
+      setIsDropTarget(true)
+    },
+    [],
+  )
+
+  const handleDragOver = React.useCallback(
+    (event: React.DragEvent<HTMLDivElement>) => {
+      if (!isInternalUploadDrag(event.dataTransfer)) return
+      event.preventDefault()
+    },
+    [],
+  )
+
+  const handleDragLeave = React.useCallback(
+    (event: React.DragEvent<HTMLDivElement>) => {
+      if (!isInternalUploadDrag(event.dataTransfer)) return
+      dragDepthRef.current = Math.max(0, dragDepthRef.current - 1)
+      if (dragDepthRef.current === 0) setIsDropTarget(false)
+    },
+    [],
+  )
+
+  const handleDrop = React.useCallback(
+    (event: React.DragEvent<HTMLDivElement>) => {
+      if (!isInternalUploadDrag(event.dataTransfer)) return
+      event.preventDefault()
+      event.stopPropagation()
+      dragDepthRef.current = 0
+      setIsDropTarget(false)
+
+      const ids = decodeUploadDragIds(
+        event.dataTransfer.getData(UPLOAD_DRAG_MIME_TYPE),
+      )
+      if (ids) onDropUploadIds?.(ids)
+    },
+    [onDropUploadIds],
+  )
 
   return (
     <ContextMenu>
       <ContextMenuTrigger asChild>
-        <div className="group relative">
+        <div
+          className="group relative"
+          onDragEnter={handleDragEnter}
+          onDragOver={handleDragOver}
+          onDragLeave={handleDragLeave}
+          onDrop={handleDrop}
+        >
           <button
             type="button"
             onClick={() => onOpen(folder.id)}
             aria-label={`Open folder ${folder.name}, ${countLabel}`}
-            className="flex min-h-32 w-full flex-col justify-between gap-4 rounded-2xl border border-border/60 bg-card/40 p-4 text-left outline-none transition duration-150 ease-out hover:border-border hover:bg-card/70 focus-visible:ring-[3px] focus-visible:ring-ring/50 active:scale-[0.98]"
+            className={cn(
+              "flex min-h-32 w-full flex-col justify-between gap-4 rounded-2xl border border-border/60 bg-card/40 p-4 text-left outline-none transition duration-150 ease-out hover:border-border hover:bg-card/70 focus-visible:ring-[3px] focus-visible:ring-ring/50 active:scale-[0.98]",
+              isDropTarget && "border-ember ring-2 ring-ember/35",
+            )}
           >
             <span
               aria-hidden="true"

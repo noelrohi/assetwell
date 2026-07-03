@@ -250,7 +250,7 @@ export function useUploadFolders(
   )
 
   const assignUploads = React.useCallback(
-    async (uploadIds: string[], folderId: string | null) => {
+    async (uploadIds: string[], folderId: string | null, announce = true) => {
       const uniqueIds = uniqueUploadIds(uploadIds)
       if (uniqueIds.length === 0) return true
 
@@ -285,7 +285,7 @@ export function useUploadFolders(
               }),
             ),
           })
-          toastMove(uniqueIds.length, folderName)
+          if (announce) toastMove(uniqueIds.length, folderName)
           return true
         } catch (error) {
           toast("Could not move uploads", {
@@ -302,7 +302,7 @@ export function useUploadFolders(
             folderId,
           }),
         )
-        toastMove(uniqueIds.length, folderName)
+        if (announce) toastMove(uniqueIds.length, folderName)
         return true
       } catch (error) {
         toast("Could not move uploads", {

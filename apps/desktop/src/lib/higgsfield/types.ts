@@ -137,6 +137,7 @@ export interface UploadFoldersDomain {
   assignUploads: (
     uploadIds: string[],
     folderId: string | null,
+    announce?: boolean,
   ) => Promise<boolean>
 }
 

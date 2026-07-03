@@ -8,12 +8,14 @@ export function UploadFoldersSection({
   onOpen,
   onRename,
   onDelete,
+  onDropUploadIds,
 }: {
   folders: UploadFolder[]
   counts: ReadonlyMap<string, number>
   onOpen: (id: string) => void
   onRename: (folder: UploadFolder) => void
   onDelete: (folder: UploadFolder) => void
+  onDropUploadIds?: (folderId: string, ids: string[]) => void
 }) {
   return (
     <section className="mt-6 animate-in fade-in duration-200">
@@ -32,6 +34,11 @@ export function UploadFoldersSection({
             onOpen={onOpen}
             onRename={onRename}
             onDelete={onDelete}
+            onDropUploadIds={
+              onDropUploadIds
+                ? (ids) => onDropUploadIds(folder.id, ids)
+                : undefined
+            }
           />
         ))}
       </div>
