@@ -45,6 +45,10 @@ import {
   isInBrandView,
   useUploadsLibrary,
 } from "./uploads-library"
+import {
+  applyUploadFolderAssignments,
+  useUploadFolders,
+} from "./upload-folders"
 import { toModelOptions } from "./higgsfield/model-options"
 import { friendlyError, friendlyExit, titleFromPrompt } from "./higgsfield/text"
 import type {
@@ -129,6 +133,7 @@ export function HiggsfieldProvider({
     applyUploadsSnapshot,
     restorePersistedReferences,
   } = useUploadsLibrary(libraryBridge)
+  const uploadFolders = useUploadFolders(libraryBridge)
   const localReferenceLibrary = localUploads.references
   const [remoteUploadReferences, setRemoteUploadReferences] = React.useState<
     ReferenceAsset[]
@@ -142,6 +147,10 @@ export function HiggsfieldProvider({
   const brandIds = React.useMemo(
     () => new Set(brandState.brands.map((brand) => brand.id)),
     [brandState.brands],
+  )
+  const folderIds = React.useMemo(
+    () => new Set(uploadFolders.folders.map((folder) => folder.id)),
+    [uploadFolders.folders],
   )
   const activeBrand = React.useMemo(
     () =>
@@ -491,12 +500,22 @@ export function HiggsfieldProvider({
 
   const assignedRemoteUploadReferences = React.useMemo(
     () =>
-      applyUploadBrandAssignments(
-        remoteUploadReferences,
-        brandState.assignments,
-        brandIds,
+      applyUploadFolderAssignments(
+        applyUploadBrandAssignments(
+          remoteUploadReferences,
+          brandState.assignments,
+          brandIds,
+        ),
+        uploadFolders.assignments,
+        folderIds,
       ),
-    [brandIds, brandState.assignments, remoteUploadReferences],
+    [
+      brandIds,
+      brandState.assignments,
+      folderIds,
+      remoteUploadReferences,
+      uploadFolders.assignments,
+    ],
   )
   const activeRemoteUploadReferences = React.useMemo(
     () =>
@@ -517,12 +536,22 @@ export function HiggsfieldProvider({
   )
   const assignedLocalReferences = React.useMemo(
     () =>
-      applyUploadBrandAssignments(
-        localUploads.references,
-        brandState.assignments,
-        brandIds,
+      applyUploadFolderAssignments(
+        applyUploadBrandAssignments(
+          localUploads.references,
+          brandState.assignments,
+          brandIds,
+        ),
+        uploadFolders.assignments,
+        folderIds,
       ),
-    [brandIds, brandState.assignments, localUploads.references],
+    [
+      brandIds,
+      brandState.assignments,
+      folderIds,
+      localUploads.references,
+      uploadFolders.assignments,
+    ],
   )
   const activeLocalReferences = React.useMemo(
     () =>
@@ -949,6 +978,7 @@ export function HiggsfieldProvider({
       videos: visibleVideos,
       uploads: appUploads,
       brands,
+      folders: uploadFolders,
       imagePrompts: [
         ...customPrompts.filter((prompt) => prompt.kind === "image"),
         ...shippedImagePrompts,
@@ -993,6 +1023,7 @@ export function HiggsfieldProvider({
       visibleVideos,
       appUploads,
       brands,
+      uploadFolders,
       customPrompts,
       settings,
       runningJobs,

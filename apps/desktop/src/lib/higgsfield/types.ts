@@ -169,6 +169,7 @@ export interface HiggsfieldAppValue {
   videos: VideoResult[]
   uploads: UploadsDomain
   brands: BrandsDomain
+  folders: UploadFoldersDomain
   imagePrompts: PromptPreset[]
   videoPrompts: PromptPreset[]
   settings: AssetwellSettings | null
