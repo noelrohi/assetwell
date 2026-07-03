@@ -38,6 +38,7 @@ import { UploadFolderBreadcrumb } from "@/components/blocks/uploads/upload-folde
 import {
   UploadFolderFormDialog,
   type FolderEditorState,
+  type FolderSubmitResult,
 } from "@/components/blocks/uploads/upload-folder-dialog"
 import { UploadFoldersSection } from "@/components/blocks/uploads/upload-folders-section"
 import { useHiggsfieldApp } from "@/lib/higgsfield"
@@ -193,16 +194,17 @@ export function UploadsPage() {
     return moved
   }
 
-  async function submitFolderName(name: string) {
-    if (!folderEditor) return false
+  async function submitFolderName(name: string): Promise<FolderSubmitResult> {
+    if (!folderEditor) return { ok: false }
     if (folderEditor.mode === "edit") {
       return folders.renameFolder(folderEditor.folder.id, name)
     }
 
-    const createdFolderId = await folders.createFolder(name)
-    if (!createdFolderId) return false
-    await folderEditor.afterCreate?.(createdFolderId)
-    return true
+    const result = await folders.createFolder(name)
+    if (!result.ok) return result
+    if (!result.folderId) return { ok: false }
+    await folderEditor.afterCreate?.(result.folderId)
+    return { ok: true }
   }
 
   async function deleteUploadFolder(folder: UploadFolder) {
@@ -371,6 +373,8 @@ export function UploadsPage() {
           folder={activeFolder}
           count={folderCounts.get(activeFolder.id) ?? 0}
           onBack={() => void setFolderId(null)}
+          onRename={(folder) => setFolderEditor({ mode: "edit", folder })}
+          onDelete={(folder) => void deleteUploadFolder(folder)}
           onDropUploadIds={(ids) => void assignDraggedUploads(null, ids)}
         />
       ) : null}

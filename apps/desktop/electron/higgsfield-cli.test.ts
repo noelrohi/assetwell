@@ -282,7 +282,7 @@ describe("Higgsfield CLI commands", () => {
       items: [
         {
           uploadId: "808ccacb-d4be-465e-b02d-432de39b97a8",
-          name: "Upload 808ccacb",
+          name: "upload.png",
           mediaKind: "image",
         },
       ],

@@ -56,6 +56,14 @@ interface RawUpload {
   id?: unknown
   upload_id?: unknown
   uploadId?: unknown
+  name?: unknown
+  file_name?: unknown
+  fileName?: unknown
+  filename?: unknown
+  original_name?: unknown
+  originalName?: unknown
+  original_filename?: unknown
+  originalFilename?: unknown
   type?: unknown
   media_kind?: unknown
   mediaKind?: unknown
@@ -424,7 +432,7 @@ function normalizeUpload(
     {
       id: uploadId,
       uploadId,
-      name: uploadDisplayName(uploadId),
+      name: uploadName(upload, uploadId, url),
       url,
       mediaKind: normalizeUploadMediaKind(
         upload.type ?? upload.media_kind ?? upload.mediaKind,
@@ -434,6 +442,72 @@ function normalizeUpload(
       sizeBytes,
     },
   ]
+}
+
+function uploadName(upload: RawUpload, uploadId: string, url: string) {
+  return (
+    uploadNameFromJson(upload) ??
+    uploadNameFromUrl(url) ??
+    uploadDisplayName(uploadId)
+  )
+}
+
+function uploadNameFromJson(upload: RawUpload) {
+  for (const value of [
+    upload.name,
+    upload.file_name,
+    upload.fileName,
+    upload.filename,
+    upload.original_name,
+    upload.originalName,
+    upload.original_filename,
+    upload.originalFilename,
+  ]) {
+    const name = uploadNameValue(value)
+    if (name) return name
+  }
+
+  return null
+}
+
+function uploadNameFromUrl(url: string) {
+  try {
+    const pathname = new URL(url).pathname
+    const rawName = pathname.split("/").filter(Boolean).pop()
+    const name = uploadNameValue(
+      rawName ? safeDecodeURIComponent(rawName) : null,
+    )
+
+    if (
+      !name ||
+      !(IMAGE_EXTENSIONS.test(name) || VIDEO_EXTENSIONS.test(name))
+    ) {
+      return null
+    }
+
+    return name
+  } catch {
+    return null
+  }
+}
+
+function uploadNameValue(value: unknown) {
+  return (
+    stringOrNull(value)
+      ?.replace(/\\/g, "/")
+      .split("/")
+      .filter(Boolean)
+      .pop()
+      ?.trim() ?? null
+  )
+}
+
+function safeDecodeURIComponent(value: string) {
+  try {
+    return decodeURIComponent(value)
+  } catch {
+    return value
+  }
 }
 
 function uploadDisplayName(uploadId: string) {

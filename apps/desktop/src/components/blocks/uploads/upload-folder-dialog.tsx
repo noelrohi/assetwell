@@ -23,6 +23,11 @@ export type FolderEditorState =
   | { mode: "create"; afterCreate?: (folderId: string) => Promise<void> | void }
   | { mode: "edit"; folder: UploadFolder }
 
+export interface FolderSubmitResult {
+  ok: boolean
+  error?: string
+}
+
 export function UploadFolderFormDialog({
   state,
   onOpenChange,
@@ -30,7 +35,7 @@ export function UploadFolderFormDialog({
 }: {
   state: FolderEditorState | null
   onOpenChange: (open: boolean) => void
-  onSubmit: (name: string) => Promise<boolean>
+  onSubmit: (name: string) => Promise<FolderSubmitResult>
 }) {
   const [name, setName] = React.useState("")
   const [error, setError] = React.useState<string | null>(null)
@@ -56,15 +61,17 @@ export function UploadFolderFormDialog({
     }
 
     setSaving(true)
-    const saved = await onSubmit(trimmed).catch(() => false)
+    const result = await onSubmit(trimmed).catch<FolderSubmitResult>(() => ({
+      ok: false,
+    }))
     setSaving(false)
 
-    if (saved) {
+    if (result.ok) {
       onOpenChange(false)
       return
     }
 
-    setError(saveError)
+    setError(result.error ?? saveError)
   }
 
   return (

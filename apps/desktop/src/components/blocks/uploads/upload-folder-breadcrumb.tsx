@@ -1,5 +1,10 @@
 import * as React from "react"
-import { IconFolder } from "@tabler/icons-react"
+import {
+  IconDotsVertical,
+  IconFolder,
+  IconPencil,
+  IconTrash,
+} from "@tabler/icons-react"
 
 import {
   Breadcrumb,
@@ -9,6 +14,13 @@ import {
   BreadcrumbPage,
   BreadcrumbSeparator,
 } from "@/components/ui/breadcrumb"
+import { Button } from "@/components/ui/button"
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu"
 import type { UploadFolder } from "@/lib/higgsfield/types"
 import {
   decodeUploadDragIds,
@@ -23,11 +35,15 @@ export function UploadFolderBreadcrumb({
   folder,
   count,
   onBack,
+  onRename,
+  onDelete,
   onDropUploadIds,
 }: {
   folder: UploadFolder
   count: number
   onBack: () => void
+  onRename: (folder: UploadFolder) => void
+  onDelete: (folder: UploadFolder) => void
   onDropUploadIds?: (ids: string[]) => void
 }) {
   const [isDropTarget, setIsDropTarget] = React.useState(false)
@@ -77,40 +93,64 @@ export function UploadFolderBreadcrumb({
   )
 
   return (
-    <Breadcrumb className="mt-6 animate-in fade-in slide-in-from-top-1 duration-200">
-      <BreadcrumbList>
-        <BreadcrumbItem>
-          <BreadcrumbLink asChild>
-            <button
+    <Breadcrumb className="group mt-6 animate-in fade-in slide-in-from-top-1 duration-200">
+      <div className="flex items-center gap-1">
+        <BreadcrumbList>
+          <BreadcrumbItem>
+            <BreadcrumbLink asChild>
+              <button
+                type="button"
+                onClick={onBack}
+                onDragEnter={handleDragEnter}
+                onDragOver={handleDragOver}
+                onDragLeave={handleDragLeave}
+                onDrop={handleDrop}
+                className={cn(
+                  "rounded-sm px-1 -mx-1",
+                  isDropTarget && "bg-ember/10 text-ember ring-1 ring-ember/35",
+                )}
+              >
+                Uploads
+              </button>
+            </BreadcrumbLink>
+          </BreadcrumbItem>
+          <BreadcrumbSeparator />
+          <BreadcrumbItem>
+            <BreadcrumbPage className="inline-flex items-center gap-1.5">
+              <IconFolder
+                className="size-3.5 text-muted-foreground"
+                aria-hidden="true"
+              />
+              {folder.name}
+              <span className="font-normal text-muted-foreground">
+                · {formatFolderCount(count)}
+              </span>
+            </BreadcrumbPage>
+          </BreadcrumbItem>
+        </BreadcrumbList>
+
+        <DropdownMenu>
+          <DropdownMenuTrigger asChild>
+            <Button
               type="button"
-              onClick={onBack}
-              onDragEnter={handleDragEnter}
-              onDragOver={handleDragOver}
-              onDragLeave={handleDragLeave}
-              onDrop={handleDrop}
-              className={cn(
-                "rounded-sm px-1 -mx-1",
-                isDropTarget && "bg-ember/10 text-ember ring-1 ring-ember/35",
-              )}
+              variant="ghost"
+              size="icon-xs"
+              aria-label={`More actions for ${folder.name}`}
+              className="text-muted-foreground opacity-0 transition-opacity duration-150 group-hover:opacity-100 group-focus-within:opacity-100 hover:bg-card hover:text-foreground data-[state=open]:bg-card data-[state=open]:text-foreground data-[state=open]:opacity-100"
             >
-              Uploads
-            </button>
-          </BreadcrumbLink>
-        </BreadcrumbItem>
-        <BreadcrumbSeparator />
-        <BreadcrumbItem>
-          <BreadcrumbPage className="inline-flex items-center gap-1.5">
-            <IconFolder
-              className="size-3.5 text-muted-foreground"
-              aria-hidden="true"
-            />
-            {folder.name}
-            <span className="font-normal text-muted-foreground">
-              · {formatFolderCount(count)}
-            </span>
-          </BreadcrumbPage>
-        </BreadcrumbItem>
-      </BreadcrumbList>
+              <IconDotsVertical className="size-3.5" />
+            </Button>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent align="start" className="w-44">
+            <DropdownMenuItem onSelect={() => onRename(folder)}>
+              <IconPencil /> Rename folder
+            </DropdownMenuItem>
+            <DropdownMenuItem onSelect={() => onDelete(folder)}>
+              <IconTrash /> Delete folder
+            </DropdownMenuItem>
+          </DropdownMenuContent>
+        </DropdownMenu>
+      </div>
     </Breadcrumb>
   )
 }

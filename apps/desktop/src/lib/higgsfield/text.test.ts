@@ -35,6 +35,16 @@ describe("Higgsfield text helpers", () => {
     )
   })
 
+  test("cleans Electron IPC wrappers from error messages", () => {
+    expect(
+      friendlyError(
+        new Error(
+          "Error invoking remote method 'assetwell:library:create-upload-folder': Error: A folder with that name already exists.",
+        ),
+      ),
+    ).toBe("A folder with that name already exists.")
+  })
+
   test("creates compact titles and filesystem-safe slugs", () => {
     expect(titleFromPrompt("  Short   prompt  ")).toBe("Short prompt")
     expect(

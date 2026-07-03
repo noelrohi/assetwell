@@ -143,7 +143,7 @@ kling3_0                    Kling v3.0                  video`,
     })
   })
 
-  test("parses upload list responses", () => {
+  test("parses upload list responses with JSON upload names", () => {
     const result = parseUploadList(
       `{
         "cursor": "1782878629.830526",
@@ -151,6 +151,7 @@ kling3_0                    Kling v3.0                  video`,
           {
             "created_at": "2026-07-01T04:03:49.830526Z",
             "id": "808ccacb-d4be-465e-b02d-432de39b97a8",
+            "name": "Spring Launch Hero.png",
             "type": "image",
             "url": "https://cdn.example.com/upload.png"
           }
@@ -167,7 +168,7 @@ kling3_0                    Kling v3.0                  video`,
         {
           id: "808ccacb-d4be-465e-b02d-432de39b97a8",
           uploadId: "808ccacb-d4be-465e-b02d-432de39b97a8",
-          name: "Upload 808ccacb",
+          name: "Spring Launch Hero.png",
           url: "https://cdn.example.com/upload.png",
           mediaKind: "image",
           createdAt: "2026-07-01T04:03:49.830526Z",
@@ -177,12 +178,31 @@ kling3_0                    Kling v3.0                  video`,
     })
   })
 
-  test("parses direct upload create responses", () => {
+  test("parses direct upload names from filename-bearing URLs", () => {
     const asset = parseUpload(
       `{
         "id": "808ccacb-d4be-465e-b02d-432de39b97a8",
         "type": "image",
-        "url": "https://cdn.example.com/upload.png"
+        "url": "https://cdn.example.com/uploads/Summer%20Set.webp"
+      }`,
+      "image",
+    )
+
+    expect(asset).toMatchObject({
+      id: "808ccacb-d4be-465e-b02d-432de39b97a8",
+      uploadId: "808ccacb-d4be-465e-b02d-432de39b97a8",
+      name: "Summer Set.webp",
+      url: "https://cdn.example.com/uploads/Summer%20Set.webp",
+      mediaKind: "image",
+    })
+  })
+
+  test("falls back to a synthetic upload name for hash-only URLs", () => {
+    const asset = parseUpload(
+      `{
+        "id": "808ccacb-d4be-465e-b02d-432de39b97a8",
+        "type": "image",
+        "url": "https://cdn.example.com/uploads/808ccacbd4be465eb02d432de39b97a8"
       }`,
       "image",
     )
@@ -191,7 +211,7 @@ kling3_0                    Kling v3.0                  video`,
       id: "808ccacb-d4be-465e-b02d-432de39b97a8",
       uploadId: "808ccacb-d4be-465e-b02d-432de39b97a8",
       name: "Upload 808ccacb",
-      url: "https://cdn.example.com/upload.png",
+      url: "https://cdn.example.com/uploads/808ccacbd4be465eb02d432de39b97a8",
       mediaKind: "image",
     })
   })

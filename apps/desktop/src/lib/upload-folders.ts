@@ -127,12 +127,9 @@ export function useUploadFolders(
             folders: [...stateRef.current.folders, folder],
           })
           toast(`Created ${folder.name}`)
-          return folder.id
+          return { ok: true, folderId: folder.id }
         } catch (error) {
-          toast("Could not create folder", {
-            description: friendlyError(error),
-          })
-          return null
+          return { ok: false, error: friendlyError(error) }
         }
       }
 
@@ -149,12 +146,9 @@ export function useUploadFolders(
           )
 
         toast(`Created ${createdFolder?.name ?? name}`)
-        return createdFolder?.id ?? null
+        return { ok: true, folderId: createdFolder?.id }
       } catch (error) {
-        toast("Could not create folder", {
-          description: friendlyError(error),
-        })
-        return null
+        return { ok: false, error: friendlyError(error) }
       }
     },
     [applyUploadFolderState, libraryBridge],
@@ -180,12 +174,9 @@ export function useUploadFolders(
             ),
           })
           toast("Folder renamed")
-          return true
+          return { ok: true }
         } catch (error) {
-          toast("Could not rename folder", {
-            description: friendlyError(error),
-          })
-          return false
+          return { ok: false, error: friendlyError(error) }
         }
       }
 
@@ -194,12 +185,9 @@ export function useUploadFolders(
           await libraryBridge.updateUploadFolder({ id, name }),
         )
         toast("Folder renamed")
-        return true
+        return { ok: true }
       } catch (error) {
-        toast("Could not rename folder", {
-          description: friendlyError(error),
-        })
-        return false
+        return { ok: false, error: friendlyError(error) }
       }
     },
     [applyUploadFolderState, libraryBridge],

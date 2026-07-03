@@ -128,11 +128,17 @@ export interface BrandsDomain {
   ) => Promise<boolean>
 }
 
+export interface UploadFolderSaveResult {
+  ok: boolean
+  folderId?: string
+  error?: string
+}
+
 export interface UploadFoldersDomain {
   folders: UploadFolder[]
   assignments: AssetwellUploadFolderAssignment[]
-  createFolder: (name: string) => Promise<string | null>
-  renameFolder: (id: string, name: string) => Promise<boolean>
+  createFolder: (name: string) => Promise<UploadFolderSaveResult>
+  renameFolder: (id: string, name: string) => Promise<UploadFolderSaveResult>
   deleteFolder: (id: string) => Promise<boolean>
   assignUploads: (
     uploadIds: string[],

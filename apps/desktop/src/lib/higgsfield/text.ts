@@ -1,8 +1,30 @@
 import type { HiggsfieldCommandOutputEvent } from "@assetwell/desktop-bridge"
 
+const FALLBACK_ERROR =
+  "Higgsfield could not finish that request. Try again in a moment."
+
 export function friendlyError(error: unknown) {
-  if (error instanceof Error && error.message.trim()) return error.message
-  return "Higgsfield could not finish that request. Try again in a moment."
+  if (error instanceof Error) {
+    return cleanErrorMessage(error.message) ?? FALLBACK_ERROR
+  }
+
+  return FALLBACK_ERROR
+}
+
+function cleanErrorMessage(message: string) {
+  let cleaned = message.trim()
+  if (!cleaned) return null
+
+  cleaned = cleaned.replace(
+    /^Error invoking remote method ['"][^'"]+['"]:\s*/i,
+    "",
+  )
+
+  while (/^Error:\s*/i.test(cleaned)) {
+    cleaned = cleaned.replace(/^Error:\s*/i, "").trim()
+  }
+
+  return cleaned || null
 }
 
 export function friendlyExit(event: HiggsfieldCommandOutputEvent) {
