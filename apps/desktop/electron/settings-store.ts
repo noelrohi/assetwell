@@ -43,11 +43,30 @@ export function readJsonFileSync<T>(filePath: string): T | null {
   }
 }
 
+const pendingJsonWrites = new Map<string, Promise<void>>()
+let jsonWriteSequence = 0
+
 export async function writeJsonFile(filePath: string, value: unknown) {
-  await mkdir(path.dirname(filePath), { recursive: true })
-  const tempPath = `${filePath}.${process.pid}.${Date.now()}.tmp`
-  await writeFile(tempPath, `${JSON.stringify(value, null, 2)}\n`)
-  await rename(tempPath, filePath)
+  // Serialize writes per file: concurrent callers (e.g. a renderer effect
+  // double-invoked in dev) otherwise race the temp-file rename below.
+  const write = (pendingJsonWrites.get(filePath) ?? Promise.resolve())
+    .catch(() => undefined)
+    .then(async () => {
+      await mkdir(path.dirname(filePath), { recursive: true })
+      jsonWriteSequence += 1
+      const tempPath = `${filePath}.${process.pid}.${jsonWriteSequence}.tmp`
+      await writeFile(tempPath, `${JSON.stringify(value, null, 2)}\n`)
+      await rename(tempPath, filePath)
+    })
+
+  pendingJsonWrites.set(filePath, write)
+  try {
+    await write
+  } finally {
+    if (pendingJsonWrites.get(filePath) === write) {
+      pendingJsonWrites.delete(filePath)
+    }
+  }
 }
 
 export function defaultOutputRoot() {
