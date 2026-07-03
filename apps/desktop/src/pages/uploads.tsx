@@ -131,8 +131,8 @@ export function UploadsPage() {
   }, [referenceLibrary])
 
   const uploadSearchIndex = React.useMemo(
-    () => buildUploadSearchIndex(referenceLibrary, brands.brands),
-    [brands.brands, referenceLibrary],
+    () => buildUploadSearchIndex(referenceLibrary, brands.brands, folderItems),
+    [brands.brands, folderItems, referenceLibrary],
   )
 
   const folderCounts = React.useMemo(

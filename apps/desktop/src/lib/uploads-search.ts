@@ -1,4 +1,4 @@
-import type { Brand, ReferenceAsset } from "./higgsfield/types"
+import type { Brand, ReferenceAsset, UploadFolder } from "./higgsfield/types"
 
 export interface UploadSearchIndexItem {
   asset: ReferenceAsset
@@ -8,8 +8,10 @@ export interface UploadSearchIndexItem {
 export function buildUploadSearchIndex(
   references: ReferenceAsset[],
   brands: Brand[],
+  folders: UploadFolder[],
 ): UploadSearchIndexItem[] {
   const brandNames = new Map(brands.map((brand) => [brand.id, brand.name]))
+  const folderNames = new Map(folders.map((folder) => [folder.id, folder.name]))
 
   return references.map((asset) => ({
     asset,
@@ -19,6 +21,7 @@ export function buildUploadSearchIndex(
       asset.createdAt,
       asset.modifiedAt,
       brandSearchLabel(asset.brandId, brandNames),
+      folderSearchLabel(asset.folderId, folderNames),
     ]),
   }))
 }
@@ -41,6 +44,14 @@ function brandSearchLabel(
 ) {
   if (!brandId) return "Unsorted"
   return brandNames.get(brandId) ?? null
+}
+
+function folderSearchLabel(
+  folderId: string | null | undefined,
+  folderNames: ReadonlyMap<string, string>,
+) {
+  if (!folderId) return null
+  return folderNames.get(folderId) ?? null
 }
 
 function normalizeSearchQuery(value: string) {
