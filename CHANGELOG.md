@@ -7,6 +7,27 @@ and this project uses semantic version tags for desktop releases.
 
 ## [Unreleased]
 
+## [0.0.10] - 2026-07-03
+
+### Added
+
+- Added local folders to Uploads: create, rename, and delete folders, move uploads into them, and browse Drive-style with folder tiles and a breadcrumb.
+- Added drag and drop across Uploads: drop image files from the desktop to add them, and drag upload cards (including multi-selections, with a count badge) into folders.
+- Added right-click actions to the creative stage hero image and takes: copy image, download image, and reveal in folder.
+- Uploads added through Assetwell now keep their original filenames, making search useful.
+
+### Changed
+
+- Uploads now loads the full shared library automatically instead of stopping behind a "Load more" button, so folder counts, search, and brand filters cover everything.
+- Upload cards now show the file name and a real upload date on hover.
+- The app now notices a completed Higgsfield sign-in on its own instead of waiting for a manual refresh.
+- Error messages across the app no longer expose internal technical details.
+
+### Fixed
+
+- Dropping an image outside a drop zone no longer replaces the app window with the image.
+- Duplicate folder names are now reported inside the folder dialog instead of a technical toast.
+
 ## [0.0.9] - 2026-07-02
 
 ### Added
