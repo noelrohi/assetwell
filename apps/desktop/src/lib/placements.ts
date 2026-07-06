@@ -15,6 +15,7 @@ export {
   imagePlacementSpecs,
   imagePlacements,
   isAvailableImagePlacement,
+  isNarrowBannerPlacement,
   isUnavailableImagePlacement,
   placementSpecs,
   unavailableImagePlacementSpecs,

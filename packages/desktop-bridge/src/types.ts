@@ -236,6 +236,15 @@ export interface HiggsfieldOutputSize {
   height: number
 }
 
+/**
+ * How the host trims a generated image down to `outputSize`.
+ * - "center": center-crop the whole image to the target aspect ratio.
+ * - "band": first crop away flat letterbox filler above and below the
+ *   composed content band (used for narrow banner placements, where the
+ *   model letterboxes a slim strip inside a wider frame), then center-crop.
+ */
+export type HiggsfieldOutputCrop = "center" | "band"
+
 export interface HiggsfieldGenerateRequest {
   model: string
   prompt: string
@@ -249,6 +258,7 @@ export interface HiggsfieldGenerateRequest {
   outputDirectoryName?: string
   outputFileName?: string
   outputSize?: HiggsfieldOutputSize
+  outputCrop?: HiggsfieldOutputCrop
   waitForResult?: boolean
 }
 

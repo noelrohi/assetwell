@@ -63,11 +63,25 @@ export function CreativeStage({
       : null
 
   const hasFrame = previewState === "image" || previewState === "generating"
+  // Slim banner strips are too short to host the generating caption inside
+  // the shape, so it stacks below the shimmer instead.
+  const isSlimStrip = selectedRatio >= 3
 
   return (
     <div className="space-y-4">
       <div className="grid min-h-[18rem] place-items-center overflow-hidden rounded-2xl border border-border/70 bg-card/30 p-6">
-        {hasFrame ? (
+        {hasFrame && !previewImage && isSlimStrip ? (
+          <div className="w-full space-y-5">
+            <div
+              className="stage-shimmer mx-auto overflow-hidden rounded-xl bg-gradient-to-br from-muted/30 via-background/30 to-muted/20"
+              style={{
+                aspectRatio: selectedAspect,
+                width: previewWidth,
+              }}
+            />
+            <GeneratingCaption sizeLabel={sizeLabel} />
+          </div>
+        ) : hasFrame ? (
           <div
             className={cn(
               "relative mx-auto overflow-hidden rounded-xl bg-background/40",
@@ -227,28 +241,34 @@ function takeButtonClassName(selected: boolean) {
 function GeneratingState({ sizeLabel }: { sizeLabel: string }) {
   return (
     <div className="stage-shimmer relative grid size-full place-items-center overflow-hidden bg-gradient-to-br from-muted/30 via-background/30 to-muted/20 px-6 text-center">
-      <div className="relative flex flex-col items-center gap-3">
-        <span className="grid size-11 place-items-center rounded-full bg-ember/10 ring-1 ring-ember/25 ring-inset">
-          <IconLoader2 className="size-5 animate-spin text-ember" />
-        </span>
-        <div className="space-y-1">
-          <p className="text-sm font-medium text-foreground/90">
-            Generating {sizeLabel}
-          </p>
-          <p className="text-xs text-muted-foreground">
-            Hang tight — this might take a while.
-          </p>
-        </div>
-        <span className="flex items-center gap-1" aria-hidden>
-          {[0, 1, 2].map((i) => (
-            <span
-              key={i}
-              className="size-1.5 animate-pulse rounded-full bg-ember/70"
-              style={{ animationDelay: `${i * 180}ms` }}
-            />
-          ))}
-        </span>
+      <GeneratingCaption sizeLabel={sizeLabel} />
+    </div>
+  )
+}
+
+function GeneratingCaption({ sizeLabel }: { sizeLabel: string }) {
+  return (
+    <div className="relative flex flex-col items-center gap-3 text-center">
+      <span className="grid size-11 place-items-center rounded-full bg-ember/10 ring-1 ring-ember/25 ring-inset">
+        <IconLoader2 className="size-5 animate-spin text-ember" />
+      </span>
+      <div className="space-y-1">
+        <p className="text-sm font-medium text-foreground/90">
+          Generating {sizeLabel}
+        </p>
+        <p className="text-xs text-muted-foreground">
+          Hang tight — this might take a while.
+        </p>
       </div>
+      <span className="flex items-center gap-1" aria-hidden>
+        {[0, 1, 2].map((i) => (
+          <span
+            key={i}
+            className="size-1.5 animate-pulse rounded-full bg-ember/70"
+            style={{ animationDelay: `${i * 180}ms` }}
+          />
+        ))}
+      </span>
     </div>
   )
 }

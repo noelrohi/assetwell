@@ -7,6 +7,7 @@ import {
   availableImagePlacements,
   getImagePlacementUnavailableReason,
   imagePlacements,
+  unavailableImagePlacements,
   type ImagePlacement,
 } from "@/lib/placements"
 import { cn } from "@/lib/utils"
@@ -100,9 +101,11 @@ export function PlacementsPanel({
         {isGeneratingAll ? "Generating…" : "Generate available sizes"}
       </button>
 
-      <p className="px-0.5 text-xs leading-5 text-muted-foreground">
-        {IMAGE_PLACEMENT_AVAILABILITY_NOTE}
-      </p>
+      {unavailableImagePlacements.length > 0 && (
+        <p className="px-0.5 text-xs leading-5 text-muted-foreground">
+          {IMAGE_PLACEMENT_AVAILABILITY_NOTE}
+        </p>
+      )}
 
       {!canGenerate && (
         <p className="px-0.5 text-xs leading-5 text-muted-foreground">

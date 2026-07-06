@@ -10,13 +10,22 @@ import type {
 import {
   IMAGE_PLACEMENT_UNAVAILABLE_TOAST,
   availableImagePlacements,
+  isNarrowBannerPlacement,
   isUnavailableImagePlacement,
   placementSpecs,
   type ImagePlacement,
 } from "@/lib/placements"
 
-import { BILLING_URL, BASE_CREATIVE_TAKE_COUNT } from "./constants"
-import { buildPlacementPrompt } from "./generation-prompts"
+import {
+  BILLING_URL,
+  BASE_CREATIVE_TAKE_COUNT,
+  NARROW_BANNER_PLACEMENT_MODEL,
+  NARROW_BANNER_SOURCE_ASPECT_RATIO,
+} from "./constants"
+import {
+  buildNarrowBannerPlacementPrompt,
+  buildPlacementPrompt,
+} from "./generation-prompts"
 import { selectedTake, upsertPlacement } from "./local-state"
 import { nearestHiggsfieldRatio } from "./model-aspect-ratios"
 import { friendlyError, slug, titleFromPrompt } from "./text"
@@ -286,26 +295,38 @@ export function useHiggsfieldGenerationActions({
       sourcePath: string,
     ) => {
       const spec = placementSpecs[placement]
+      const isNarrowBanner = isNarrowBannerPlacement(placement)
 
       try {
         const outputDirectoryName =
           creative.outputDirectoryName ??
           `${creative.createdAt.slice(0, 10)}-${slug(creative.prompt)}`
-        const aspectRatios = await getModelAspectRatios(creative.model, "image")
-        const aspectRatio = nearestHiggsfieldRatio(
-          spec.width,
-          spec.height,
-          aspectRatios,
-        )
+        const aspectRatio = isNarrowBanner
+          ? NARROW_BANNER_SOURCE_ASPECT_RATIO
+          : nearestHiggsfieldRatio(
+              spec.width,
+              spec.height,
+              await getModelAspectRatios(creative.model, "image"),
+            )
+
+        console.log({ NARROW_BANNER_PLACEMENT_MODEL })
 
         const run = await startTrackedGeneration(
           {
-            model: creative.model,
-            prompt: buildPlacementPrompt({
-              originalPrompt: creative.prompt,
-              placement,
-              aspectRatio: spec.aspectRatio,
-            }),
+            model: isNarrowBanner
+              ? NARROW_BANNER_PLACEMENT_MODEL
+              : creative.model,
+            prompt: isNarrowBanner
+              ? buildNarrowBannerPlacementPrompt({
+                  originalPrompt: creative.prompt,
+                  placement,
+                  sourceAspectRatio: NARROW_BANNER_SOURCE_ASPECT_RATIO,
+                })
+              : buildPlacementPrompt({
+                  originalPrompt: creative.prompt,
+                  placement,
+                  aspectRatio: spec.aspectRatio,
+                }),
             mediaKind: "image",
             assetPath: sourcePath,
             assetMediaKind: "image",
@@ -314,6 +335,7 @@ export function useHiggsfieldGenerationActions({
             outputDirectoryName,
             outputFileName: `${placement}.png`,
             outputSize: { width: spec.width, height: spec.height },
+            outputCrop: isNarrowBanner ? "band" : undefined,
             waitForResult: true,
           },
           {

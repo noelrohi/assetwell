@@ -22,6 +22,7 @@ import type {
   HiggsfieldModelDetails,
   HiggsfieldModelDetailsRequest,
   HiggsfieldModelListRequest,
+  HiggsfieldOutputCrop,
   HiggsfieldOutputSize,
   HiggsfieldProductAction,
   HiggsfieldSetWorkspaceRequest,
@@ -34,6 +35,7 @@ import type {
   HiggsfieldWorkspaceStatus,
 } from "@assetwell/desktop-bridge"
 
+import { detectBannerContentBand } from "./banner-band"
 import {
   bestArtifactExtension,
   parseAccountStatus,
@@ -82,6 +84,7 @@ interface HiggsfieldActionCommand {
   outputDirectoryName?: string
   outputFileName?: string
   outputSize?: HiggsfieldOutputSize
+  outputCrop?: HiggsfieldOutputCrop
 }
 
 interface CollectedCommand {
@@ -419,6 +422,7 @@ export function startGenerateCommand(
       outputDirectoryName: request.outputDirectoryName,
       outputFileName: request.outputFileName,
       outputSize: request.outputSize,
+      outputCrop: request.outputCrop,
     },
     emit,
   )
@@ -760,7 +764,11 @@ async function postProcessArtifact(
   if (command.resultMediaKind === "image") {
     await writeFile(
       targetPath,
-      normalizeImageToExactSize(targetPath, command.outputSize),
+      normalizeImageToExactSize(
+        targetPath,
+        command.outputSize,
+        command.outputCrop,
+      ),
     )
     return
   }
@@ -773,11 +781,16 @@ async function postProcessArtifact(
 function normalizeImageToExactSize(
   imagePath: string,
   target: HiggsfieldOutputSize,
+  outputCrop: HiggsfieldOutputCrop = "center",
 ) {
-  const image = nativeImage.createFromPath(imagePath)
+  let image = nativeImage.createFromPath(imagePath)
 
   if (image.isEmpty()) {
     throw new Error("Generated image could not be opened for sizing.")
+  }
+
+  if (outputCrop === "band") {
+    image = cropToBannerContentBand(image)
   }
 
   const size = image.getSize()
@@ -806,6 +819,23 @@ function normalizeImageToExactSize(
       quality: "best",
     })
     .toPNG()
+}
+
+function cropToBannerContentBand(image: Electron.NativeImage) {
+  const size = image.getSize()
+  const band = detectBannerContentBand(
+    size.width,
+    size.height,
+    image.toBitmap(),
+  )
+  if (!band) return image
+
+  return image.crop({
+    x: 0,
+    y: band.top,
+    width: size.width,
+    height: band.bottom - band.top,
+  })
 }
 
 async function normalizeVideoToExactSize(

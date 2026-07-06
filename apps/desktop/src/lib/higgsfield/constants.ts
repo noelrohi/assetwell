@@ -10,6 +10,14 @@ export const BASE_CREATIVE_TAKE_COUNT = 1
 export const BILLING_URL = "https://higgsfield.ai/billing"
 export const HIGGSFIELD_UPLOADS_PAGE_SIZE = 24
 
+/**
+ * Narrow banner placements always generate through this model: it accepts a
+ * source image, supports 21:9 (the widest Higgsfield ratio), and follows the
+ * letterboxed-strip composition instructions reliably.
+ */
+export const NARROW_BANNER_PLACEMENT_MODEL = "gpt_image_2"
+export const NARROW_BANNER_SOURCE_ASPECT_RATIO = "16:9"
+
 export const seededReferences = seededReferenceLibrary as ReferenceAsset[]
 
 export const shippedImagePrompts = imagePromptLibrary.map((prompt) => ({

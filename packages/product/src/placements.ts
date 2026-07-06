@@ -56,9 +56,7 @@ export const imagePlacementSpecs = [
     height: 90,
     aspectRatio: "364:45",
     label: "Leaderboard",
-    availability: "coming-soon",
-    unavailableReason: IMAGE_PLACEMENT_UNAVAILABLE_REASON,
-    unavailableLabel: PLACEMENT_COMING_SOON_LABEL,
+    availability: "available",
   },
   {
     id: "320x50",
@@ -66,9 +64,7 @@ export const imagePlacementSpecs = [
     height: 50,
     aspectRatio: "32:5",
     label: "Mobile leaderboard",
-    availability: "coming-soon",
-    unavailableReason: IMAGE_PLACEMENT_UNAVAILABLE_REASON,
-    unavailableLabel: PLACEMENT_COMING_SOON_LABEL,
+    availability: "available",
   },
   {
     id: "300x250",
@@ -110,13 +106,13 @@ export type UnavailableImagePlacement = Extract<
 function isAvailableImagePlacementSpec(
   spec: ImagePlacementSpecEntry,
 ): spec is Extract<ImagePlacementSpecEntry, { availability: "available" }> {
-  return spec.availability === "available"
+  return (spec as ImagePlacementSpec).availability === "available"
 }
 
 function isUnavailableImagePlacementSpec(
   spec: ImagePlacementSpecEntry,
 ): spec is Extract<ImagePlacementSpecEntry, { availability: "coming-soon" }> {
-  return spec.availability === "coming-soon"
+  return (spec as ImagePlacementSpec).availability === "coming-soon"
 }
 
 export const imagePlacements = imagePlacementSpecs.map(
@@ -132,7 +128,7 @@ export const availableImagePlacements = availableImagePlacementSpecs.map(
   (spec) => spec.id,
 ) as ImagePlacement[]
 export const unavailableImagePlacements = unavailableImagePlacementSpecs.map(
-  (spec) => spec.id,
+  (spec: ImagePlacementSpec) => spec.id,
 ) as ImagePlacement[]
 
 export const videoPlacementSpecs = [
@@ -198,27 +194,42 @@ export function getImagePlacementSpec(placement: ImagePlacement) {
 }
 
 export function getImagePlacementUnavailableReason(placement: ImagePlacement) {
-  const spec = getImagePlacementSpec(placement)
+  const spec: ImagePlacementSpec = getImagePlacementSpec(placement)
   return spec.availability === "coming-soon"
     ? spec.unavailableReason
     : undefined
 }
 
 export function getImagePlacementUnavailableLabel(placement: ImagePlacement) {
-  const spec = getImagePlacementSpec(placement)
+  const spec: ImagePlacementSpec = getImagePlacementSpec(placement)
   return spec.availability === "coming-soon" ? spec.unavailableLabel : undefined
 }
 
 export function isUnavailableImagePlacement(
   placement: ImagePlacement,
 ): placement is UnavailableImagePlacement {
-  return getImagePlacementSpec(placement).availability === "coming-soon"
+  const spec: ImagePlacementSpec = getImagePlacementSpec(placement)
+  return spec.availability === "coming-soon"
 }
 
 export function isAvailableImagePlacement(
   placement: ImagePlacement,
 ): placement is AvailableImagePlacement {
-  return getImagePlacementSpec(placement).availability === "available"
+  const spec: ImagePlacementSpec = getImagePlacementSpec(placement)
+  return spec.availability === "available"
+}
+
+/**
+ * Placements at least this wide-per-tall cannot be generated at a native
+ * Higgsfield aspect ratio (the widest is 21:9); they go through the
+ * narrow-banner pipeline instead: the model composes a slim banner strip
+ * inside a 21:9 frame and the host crops to the detected strip.
+ */
+export const NARROW_BANNER_MIN_ASPECT = 3
+
+export function isNarrowBannerPlacement(placement: ImagePlacement) {
+  const spec = getImagePlacementSpec(placement)
+  return spec.width / spec.height >= NARROW_BANNER_MIN_ASPECT
 }
 
 export function formatPlacementSize(placement: Placement) {

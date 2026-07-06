@@ -3,6 +3,7 @@ import { describe, expect, test } from "bun:test"
 
 import {
   baseRatios,
+  isNarrowBannerPlacement,
   isUnavailableImagePlacement,
   nearestBaseRatio,
   supportedBaseRatios,
@@ -37,9 +38,16 @@ describe("base ratio helpers", () => {
     expect(nearestBaseRatio(current, options).id).toBe("3:4")
   })
 
-  test("marks narrow banners as temporarily unavailable", () => {
-    expect(isUnavailableImagePlacement("728x90")).toBe(true)
-    expect(isUnavailableImagePlacement("320x50")).toBe(true)
+  test("offers every image placement, including narrow banners", () => {
+    expect(isUnavailableImagePlacement("728x90")).toBe(false)
+    expect(isUnavailableImagePlacement("320x50")).toBe(false)
     expect(isUnavailableImagePlacement("1200x628")).toBe(false)
+  })
+
+  test("routes only leaderboard sizes through the narrow-banner pipeline", () => {
+    expect(isNarrowBannerPlacement("728x90")).toBe(true)
+    expect(isNarrowBannerPlacement("320x50")).toBe(true)
+    expect(isNarrowBannerPlacement("1200x628")).toBe(false)
+    expect(isNarrowBannerPlacement("600x300")).toBe(false)
   })
 })

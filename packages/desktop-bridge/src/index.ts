@@ -20,6 +20,7 @@ export type {
   HiggsfieldModelListRequest,
   HiggsfieldModelParam,
   HiggsfieldOpenOutputRequest,
+  HiggsfieldOutputCrop,
   HiggsfieldOutputSize,
   HiggsfieldProductAction,
   HiggsfieldSetWorkspaceRequest,
