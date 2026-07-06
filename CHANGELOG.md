@@ -7,6 +7,17 @@ and this project uses semantic version tags for desktop releases.
 
 ## [Unreleased]
 
+## [0.0.12] - 2026-07-06
+
+### Added
+
+- The titlebar now shows a circular progress ring around the download icon while an update downloads, switching to the restart button once it's ready to install.
+- Checking for updates from the menu now confirms when a new version is found and downloading, instead of downloading silently.
+
+### Fixed
+
+- A failed update download no longer leaves the progress indicator stuck in the titlebar.
+
 ## [0.0.11] - 2026-07-06
 
 ### Added
