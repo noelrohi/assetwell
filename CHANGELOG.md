@@ -7,6 +7,16 @@ and this project uses semantic version tags for desktop releases.
 
 ## [Unreleased]
 
+## [0.0.11] - 2026-07-06
+
+### Added
+
+- The 728x90 Leaderboard and 320x50 Mobile leaderboard sizes are now available instead of "coming soon". The banner is composed as a slim strip and trimmed to the exact size automatically.
+
+### Fixed
+
+- The "Generating…" message no longer gets cut off while a slim banner size is rendering.
+
 ## [0.0.10] - 2026-07-03
 
 ### Added
