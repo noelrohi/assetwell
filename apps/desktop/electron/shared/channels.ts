@@ -53,5 +53,6 @@ export const IPC_CHANNELS = {
     getDownloadedUpdate: "assetwell:updater:get-downloaded-update",
     installDownloadedUpdate: "assetwell:updater:install-downloaded-update",
     downloadedUpdate: "assetwell:updater:downloaded-update",
+    downloadProgress: "assetwell:updater:download-progress",
   },
 } as const

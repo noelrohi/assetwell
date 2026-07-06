@@ -66,6 +66,7 @@ export type {
   AssetwellSetActiveUploadWorkspaceRequest,
   AssetwellSettings,
   AssetwellUpdateBrandRequest,
+  AssetwellUpdateDownloadProgress,
   AssetwellUpdateInfo,
   AssetwellUpdateUploadFolderRequest,
   AssetwellUpdateUploadWorkspaceRequest,

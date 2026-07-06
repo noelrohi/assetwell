@@ -1,9 +1,13 @@
 import * as React from "react"
-import type { AssetwellUpdateInfo } from "@assetwell/desktop-bridge"
+import type {
+  AssetwellUpdateDownloadProgress,
+  AssetwellUpdateInfo,
+} from "@assetwell/desktop-bridge"
 import { toast } from "sonner"
 
 interface UpdaterContextValue {
   downloadedUpdate: AssetwellUpdateInfo | null
+  downloadProgress: AssetwellUpdateDownloadProgress | null
   installing: boolean
   installDownloadedUpdate: () => Promise<void>
 }
@@ -14,6 +18,8 @@ export function UpdaterProvider({ children }: { children: React.ReactNode }) {
   const bridge = getDesktopBridge()
   const [downloadedUpdate, setDownloadedUpdate] =
     React.useState<AssetwellUpdateInfo | null>(null)
+  const [downloadProgress, setDownloadProgress] =
+    React.useState<AssetwellUpdateDownloadProgress | null>(null)
   const [installing, setInstalling] = React.useState(false)
 
   React.useEffect(() => {
@@ -24,16 +30,39 @@ export function UpdaterProvider({ children }: { children: React.ReactNode }) {
       if (active && update) setDownloadedUpdate(update)
     })
 
-    const unsubscribe = bridge.updater.onDownloadedUpdate((update) => {
-      setDownloadedUpdate(update)
-      toast("Update ready", {
-        description: `Assetwell ${update.version} has downloaded. Restart to install it.`,
-      })
-    })
+    const unsubscribeDownloaded = bridge.updater.onDownloadedUpdate(
+      (update) => {
+        setDownloadedUpdate(update)
+        setDownloadProgress(null)
+        toast("Update ready", {
+          description: `Assetwell ${update.version} has downloaded. Restart to install it.`,
+        })
+      },
+    )
+
+    const unsubscribeProgress = bridge.updater.onUpdateDownloadProgress(
+      (progress) => {
+        if (!progress) {
+          setDownloadProgress(null)
+          return
+        }
+
+        // download-progress fires rapidly; only re-render when the rounded
+        // percent we display actually changes.
+        setDownloadProgress((previous) =>
+          previous &&
+          previous.version === progress.version &&
+          Math.round(previous.percent) === Math.round(progress.percent)
+            ? previous
+            : progress,
+        )
+      },
+    )
 
     return () => {
       active = false
-      unsubscribe()
+      unsubscribeDownloaded()
+      unsubscribeProgress()
     }
   }, [bridge])
 
@@ -56,8 +85,13 @@ export function UpdaterProvider({ children }: { children: React.ReactNode }) {
   }, [bridge, downloadedUpdate])
 
   const value = React.useMemo(
-    () => ({ downloadedUpdate, installing, installDownloadedUpdate }),
-    [downloadedUpdate, installDownloadedUpdate, installing],
+    () => ({
+      downloadedUpdate,
+      downloadProgress,
+      installing,
+      installDownloadedUpdate,
+    }),
+    [downloadedUpdate, downloadProgress, installDownloadedUpdate, installing],
   )
 
   return (

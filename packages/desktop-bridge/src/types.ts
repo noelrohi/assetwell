@@ -476,6 +476,13 @@ export interface AssetwellUpdateInfo {
   releaseNotes?: string
 }
 
+export interface AssetwellUpdateDownloadProgress {
+  /** Download completion percentage, 0–100. */
+  percent: number
+  /** Version being downloaded, or null if not yet known. */
+  version: string | null
+}
+
 export interface DesktopBridge {
   app: {
     getInfo(): Promise<HostAppInfo>
@@ -593,6 +600,9 @@ export interface DesktopBridge {
     installDownloadedUpdate(): Promise<boolean>
     onDownloadedUpdate(
       listener: (update: AssetwellUpdateInfo) => void,
+    ): () => void
+    onUpdateDownloadProgress(
+      listener: (progress: AssetwellUpdateDownloadProgress | null) => void,
     ): () => void
   }
 }

@@ -39,6 +39,15 @@ Website download platform availability and GitHub release asset selection live i
 
 The website deploys to Vercel through Nitro. Use `apps/www` as the Vercel Root Directory.
 
+## Simulating auto-updates
+
+The real updater only runs in a signed, packaged build, so set `ASSETWELL_SIMULATE_UPDATE` to exercise the update UI in dev. The flag only arms the simulation; it runs when you trigger "Check for Updates" from the app menu (the Assetwell menu on macOS, otherwise Help — see `electron/menu.ts`). Values:
+
+- `ASSETWELL_SIMULATE_UPDATE=1 bun run dev:desktop` (or `=ready`): fakes a download that streams progress to 100% and then offers the "restart to install" affordance (restart relaunches the dev app instead of installing).
+- `ASSETWELL_SIMULATE_UPDATE=error bun run dev:desktop`: fakes a download that fails part-way, exercising the progress-clearing path.
+
+The flag is ignored entirely in a packaged production runtime and never touches the real updater.
+
 ## Completion Checks
 
 For documentation-only changes:

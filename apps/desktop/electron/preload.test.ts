@@ -1,6 +1,7 @@
 import { beforeEach, describe, expect, test } from "bun:test"
 import type {
   AssetwellLibrarySnapshot,
+  AssetwellUpdateDownloadProgress,
   AssetwellUpdateInfo,
   DesktopBridge,
   HiggsfieldCommandOutputEvent,
@@ -32,7 +33,7 @@ type BridgeInvokePath =
   | `library.${Extract<keyof DesktopBridge["library"], string>}`
   | `updater.${Exclude<
       Extract<keyof DesktopBridge["updater"], string>,
-      "onDownloadedUpdate"
+      "onDownloadedUpdate" | "onUpdateDownloadProgress"
     >}`
 
 interface BridgeInvokeCase {
@@ -422,6 +423,36 @@ describe("preload desktop bridge", () => {
     ])
     expect(
       ipcRendererListeners.has(IPC_CHANNELS.updater.downloadedUpdate),
+    ).toBe(false)
+  })
+
+  test("subscribes and unsubscribes update download progress events", () => {
+    const bridge = exposedInMainWorld<DesktopBridge>("assetwell")
+    const received: (AssetwellUpdateDownloadProgress | null)[] = []
+    const progress: AssetwellUpdateDownloadProgress = {
+      percent: 42,
+      version: "0.0.3",
+    }
+
+    const unsubscribe = bridge.updater.onUpdateDownloadProgress((event) => {
+      received.push(event)
+    })
+    const handler = ipcRendererListeners.get(
+      IPC_CHANNELS.updater.downloadProgress,
+    )
+
+    if (!handler) throw new Error("Expected download progress listener.")
+    handler({} as IpcRendererEvent, progress)
+    // A null payload signals the download is no longer in progress.
+    handler({} as IpcRendererEvent, null)
+    expect(received).toEqual([progress, null])
+
+    unsubscribe()
+    expect(removedIpcRendererListeners).toEqual([
+      [IPC_CHANNELS.updater.downloadProgress, handler],
+    ])
+    expect(
+      ipcRendererListeners.has(IPC_CHANNELS.updater.downloadProgress),
     ).toBe(false)
   })
 })

@@ -1,5 +1,6 @@
 import { contextBridge, ipcRenderer, webUtils } from "electron"
 import type {
+  AssetwellUpdateDownloadProgress,
   AssetwellUpdateInfo,
   DesktopBridge,
   HiggsfieldCommandOutputEvent,
@@ -137,6 +138,23 @@ const bridge: DesktopBridge = {
       return () => {
         ipcRenderer.removeListener(
           IPC_CHANNELS.updater.downloadedUpdate,
+          handler,
+        )
+      }
+    },
+    onUpdateDownloadProgress: (listener) => {
+      const handler = (
+        _event: Electron.IpcRendererEvent,
+        progress: AssetwellUpdateDownloadProgress | null,
+      ) => {
+        listener(progress)
+      }
+
+      ipcRenderer.on(IPC_CHANNELS.updater.downloadProgress, handler)
+
+      return () => {
+        ipcRenderer.removeListener(
+          IPC_CHANNELS.updater.downloadProgress,
           handler,
         )
       }

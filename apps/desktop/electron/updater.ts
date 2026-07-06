@@ -1,6 +1,14 @@
 import { app, BrowserWindow, dialog, ipcMain } from "electron"
-import { autoUpdater, type UpdateDownloadedEvent } from "electron-updater"
-import type { AssetwellUpdateInfo } from "@assetwell/desktop-bridge"
+import {
+  autoUpdater,
+  type ProgressInfo,
+  type UpdateDownloadedEvent,
+  type UpdateInfo,
+} from "electron-updater"
+import type {
+  AssetwellUpdateDownloadProgress,
+  AssetwellUpdateInfo,
+} from "@assetwell/desktop-bridge"
 
 import { IPC_CHANNELS } from "./shared/channels"
 
@@ -11,9 +19,18 @@ const DOWNLOAD_NOTIFICATION = {
   body: "{appName} version {version} has downloaded and will install when you quit the app.",
 }
 
+// Dev-only knob so the progress UI can be exercised without a real signed
+// release. Honoured exclusively outside a packaged runtime (see simulationMode).
+const SIMULATE_UPDATE = process.env.ASSETWELL_SIMULATE_UPDATE ?? ""
+const SIMULATION_STEP_MS = 500
+const SIMULATION_ERROR_STOP_PERCENT = 40
+
 let hasConfigured = false
 let hasStarted = false
 let downloadedUpdate: AssetwellUpdateInfo | null = null
+let downloadedUpdateIsSimulated = false
+let downloadingVersion: string | null = null
+let simulationTimer: ReturnType<typeof setInterval> | null = null
 
 export function registerUpdaterIpc() {
   ipcMain.handle(IPC_CHANNELS.updater.getDownloadedUpdate, () => {
@@ -23,7 +40,7 @@ export function registerUpdaterIpc() {
   ipcMain.handle(IPC_CHANNELS.updater.installDownloadedUpdate, () => {
     if (!downloadedUpdate) return false
 
-    autoUpdater.quitAndInstall()
+    installDownloadedUpdateNow()
     return true
   })
 }
@@ -52,7 +69,7 @@ export async function checkForUpdatesFromMenu() {
       ["Restart and Install", "Later"],
     )
 
-    if (response === 0) autoUpdater.quitAndInstall()
+    if (response === 0) installDownloadedUpdateNow()
     return
   }
 
@@ -66,6 +83,16 @@ export async function checkForUpdatesFromMenu() {
   }
 
   if (!app.isPackaged || isDevRuntime()) {
+    if (simulationMode()) {
+      startUpdateSimulation()
+      await showUpdateDialog(
+        owner,
+        "Update available",
+        `Assetwell ${downloadingVersion} is downloading in the background. You can keep working — we'll let you know when it's ready to install.`,
+      )
+      return
+    }
+
     await showUpdateDialog(
       owner,
       "Updates are available in packaged builds",
@@ -86,6 +113,12 @@ export async function checkForUpdatesFromMenu() {
         owner,
         "Assetwell is up to date",
         `You're running Assetwell ${app.getVersion()}.`,
+      )
+    } else if (result?.isUpdateAvailable) {
+      await showUpdateDialog(
+        owner,
+        "Update available",
+        `Assetwell ${result.updateInfo.version} is downloading in the background. You can keep working — we'll let you know when it's ready to install.`,
       )
     }
   } catch (error) {
@@ -112,13 +145,48 @@ function configureAutoUpdater() {
   hasConfigured = true
   autoUpdater.autoDownload = true
   autoUpdater.autoInstallOnAppQuit = true
-  autoUpdater.on("error", logUpdaterError)
+  autoUpdater.on("error", handleUpdaterError)
+  autoUpdater.on("update-available", handleUpdateAvailable)
+  autoUpdater.on("download-progress", handleDownloadProgress)
   autoUpdater.on("update-downloaded", handleUpdateDownloaded)
+}
+
+function handleUpdateAvailable(info: UpdateInfo) {
+  downloadingVersion = info.version
+}
+
+function handleDownloadProgress(progress: ProgressInfo) {
+  broadcastDownloadProgress({
+    percent: progress.percent,
+    version: downloadingVersion,
+  })
+}
+
+function handleUpdaterError(error: unknown) {
+  logUpdaterError(error)
+
+  // A mid-download failure (e.g. a dropped connection) leaves the renderer
+  // showing progress forever; clear it so the indicator disappears.
+  downloadingVersion = null
+  broadcastDownloadProgress(null)
+}
+
+function broadcastDownloadProgress(
+  payload: AssetwellUpdateDownloadProgress | null,
+) {
+  for (const window of BrowserWindow.getAllWindows()) {
+    window.webContents.send(IPC_CHANNELS.updater.downloadProgress, payload)
+  }
 }
 
 function handleUpdateDownloaded(event: UpdateDownloadedEvent) {
   downloadedUpdate = updateDownloadedEventToBridgeInfo(event)
+  downloadedUpdateIsSimulated = false
+  downloadingVersion = null
+  broadcastDownloadedUpdate()
+}
 
+function broadcastDownloadedUpdate() {
   for (const window of BrowserWindow.getAllWindows()) {
     window.webContents.send(
       IPC_CHANNELS.updater.downloadedUpdate,
@@ -136,6 +204,85 @@ function updateDownloadedEventToBridgeInfo(
     releaseDate: event.releaseDate,
     releaseNotes: event.releaseNotes?.toString(),
   }
+}
+
+function installDownloadedUpdateNow() {
+  if (downloadedUpdateIsSimulated) {
+    // No real installer exists in dev; relaunch is the closest honest analog.
+    app.relaunch()
+    app.quit()
+    return
+  }
+
+  autoUpdater.quitAndInstall()
+}
+
+// Returns the active dev simulation mode, or null when simulation is off. The
+// hard guard here is the only thing that keeps the flag from ever touching a
+// real packaged runtime.
+function simulationMode(): "ready" | "error" | null {
+  if (app.isPackaged && !isDevRuntime()) return null
+  if (SIMULATE_UPDATE === "1" || SIMULATE_UPDATE === "ready") return "ready"
+  if (SIMULATE_UPDATE === "error") return "error"
+  return null
+}
+
+function startUpdateSimulation() {
+  const mode = simulationMode()
+  if (!mode) return
+  // Don't stack simulations or re-run once one has already "downloaded".
+  if (simulationTimer || downloadedUpdate) return
+
+  const version = bumpPatch(app.getVersion())
+  downloadingVersion = version
+
+  let percent = 0
+  broadcastDownloadProgress({ percent, version })
+
+  simulationTimer = setInterval(() => {
+    percent += 10
+
+    if (mode === "error" && percent >= SIMULATION_ERROR_STOP_PERCENT) {
+      stopSimulationTimer()
+      downloadingVersion = null
+      broadcastDownloadProgress(null)
+      return
+    }
+
+    if (percent >= 100) {
+      stopSimulationTimer()
+      broadcastDownloadProgress({ percent: 100, version })
+      completeSimulatedDownload(version)
+      return
+    }
+
+    broadcastDownloadProgress({ percent, version })
+  }, SIMULATION_STEP_MS)
+}
+
+function completeSimulatedDownload(version: string) {
+  downloadedUpdate = {
+    version,
+    currentVersion: app.getVersion(),
+    releaseDate: new Date().toISOString(),
+    releaseNotes: "Simulated update (ASSETWELL_SIMULATE_UPDATE) — dev only.",
+  }
+  downloadedUpdateIsSimulated = true
+  downloadingVersion = null
+  broadcastDownloadedUpdate()
+}
+
+function stopSimulationTimer() {
+  if (!simulationTimer) return
+
+  clearInterval(simulationTimer)
+  simulationTimer = null
+}
+
+function bumpPatch(version: string): string {
+  const [major = "0", minor = "0", patch = "0"] = version.split(".")
+  const nextPatch = Number.parseInt(patch, 10)
+  return `${major}.${minor}.${Number.isFinite(nextPatch) ? nextPatch + 1 : 1}`
 }
 
 async function showUpdateDialog(

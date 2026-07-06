@@ -92,6 +92,11 @@ function JobsIndicator() {
   )
 }
 
+// Ring drawn in a 24-unit viewBox with a 2px stroke; radius 10 leaves a 1px
+// margin to the control bounds so the round cap never clips.
+const UPDATE_RING_RADIUS = 10
+const UPDATE_RING_CIRCUMFERENCE = 2 * Math.PI * UPDATE_RING_RADIUS
+
 const titlebarControlClassName =
   "no-drag size-[var(--titlebar-control-size)] rounded-md border border-transparent shadow-none transition-[background-color,color,border-color] duration-150 ease-out focus-visible:ring-2 focus-visible:ring-ring/50 [&>svg]:size-3.5"
 
@@ -111,9 +116,66 @@ function TitlebarSidebarTrigger({ className }: { className?: string }) {
 }
 
 function TitlebarUpdateButton({ className }: { className?: string }) {
-  const { downloadedUpdate, installing, installDownloadedUpdate } = useUpdater()
+  const {
+    downloadedUpdate,
+    downloadProgress,
+    installing,
+    installDownloadedUpdate,
+  } = useUpdater()
 
-  if (!downloadedUpdate) return null
+  if (!downloadedUpdate) {
+    if (!downloadProgress) return null
+
+    const percent = Math.min(
+      Math.max(Math.round(downloadProgress.percent), 0),
+      100,
+    )
+    const dashoffset = UPDATE_RING_CIRCUMFERENCE * (1 - percent / 100)
+    const label = downloadProgress.version
+      ? `Downloading Assetwell ${downloadProgress.version} — ${percent}%`
+      : `Downloading update — ${percent}%`
+
+    return (
+      <div
+        role="status"
+        aria-label={label}
+        title={label}
+        className={cn(
+          "no-drag relative flex size-[var(--titlebar-control-size)] items-center justify-center text-ember",
+          className,
+        )}
+      >
+        <svg
+          viewBox="0 0 24 24"
+          aria-hidden="true"
+          className="absolute inset-0 size-full -rotate-90"
+        >
+          <circle
+            cx="12"
+            cy="12"
+            r={UPDATE_RING_RADIUS}
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="2"
+            className="opacity-20"
+          />
+          <circle
+            cx="12"
+            cy="12"
+            r={UPDATE_RING_RADIUS}
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="2"
+            strokeLinecap="round"
+            strokeDasharray={UPDATE_RING_CIRCUMFERENCE}
+            strokeDashoffset={dashoffset}
+            className="transition-[stroke-dashoffset] duration-500 ease-out"
+          />
+        </svg>
+        <IconDownload className="relative size-3" />
+      </div>
+    )
+  }
 
   return (
     <Button
