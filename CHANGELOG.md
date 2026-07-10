@@ -7,6 +7,12 @@ and this project uses semantic version tags for desktop releases.
 
 ## [Unreleased]
 
+## [0.0.13] - 2026-07-10
+
+### Changed
+
+- Updated the new-model highlight to Seedream 5.0 Pro and retired last week's Nano Banana 2 Lite and Gemini Omni Flash highlights.
+
 ## [0.0.12] - 2026-07-06
 
 ### Added
