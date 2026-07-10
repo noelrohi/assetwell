@@ -6,8 +6,8 @@ import type {
 import type { ModelOption } from "./types"
 
 const hardcodedNewModelIds: Record<HiggsfieldMediaKind, Set<string>> = {
-  image: new Set(["nano_banana_2_lite"]),
-  video: new Set(["gemini_omni"]),
+  image: new Set(["seedream_v5_pro"]),
+  video: new Set(),
   audio: new Set(),
   text: new Set(),
 }

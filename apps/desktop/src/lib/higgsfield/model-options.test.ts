@@ -33,58 +33,47 @@ describe("model options", () => {
     ])
   })
 
-  test("marks hardcoded launch models as new", () => {
-    expect(
-      toModelOptions(
-        [
-          {
-            id: "nano_banana_2_lite",
-            label: "Nano Banana 2 Lite",
-            mediaKind: "image",
-            hint: null,
-          },
-          {
-            id: "gemini_omni",
-            label: "Gemini Omni Flash",
-            mediaKind: "video",
-            hint: null,
-          },
-        ],
-        "image",
-      ),
-    ).toEqual([
+  test("marks only current launch models as new", () => {
+    const models = [
+      {
+        id: "seedream_v5_pro",
+        label: "Seedream 5.0 Pro",
+        mediaKind: "image" as const,
+        hint: null,
+      },
+      {
+        id: "nano_banana_2_lite",
+        label: "Nano Banana 2 Lite",
+        mediaKind: "image" as const,
+        hint: null,
+      },
+      {
+        id: "gemini_omni",
+        label: "Gemini Omni Flash",
+        mediaKind: "video" as const,
+        hint: null,
+      },
+    ]
+
+    expect(toModelOptions(models, "image")).toEqual([
+      {
+        id: "seedream_v5_pro",
+        label: "Seedream 5.0 Pro",
+        hint: null,
+        badges: ["new"],
+      },
       {
         id: "nano_banana_2_lite",
         label: "Nano Banana 2 Lite",
         hint: null,
-        badges: ["new"],
       },
     ])
 
-    expect(
-      toModelOptions(
-        [
-          {
-            id: "nano_banana_2_lite",
-            label: "Nano Banana 2 Lite",
-            mediaKind: "image",
-            hint: null,
-          },
-          {
-            id: "gemini_omni",
-            label: "Gemini Omni Flash",
-            mediaKind: "video",
-            hint: null,
-          },
-        ],
-        "video",
-      ),
-    ).toEqual([
+    expect(toModelOptions(models, "video")).toEqual([
       {
         id: "gemini_omni",
         label: "Gemini Omni Flash",
         hint: null,
-        badges: ["new"],
       },
     ])
   })
