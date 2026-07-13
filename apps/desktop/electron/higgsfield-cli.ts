@@ -806,7 +806,10 @@ function normalizeImageToExactSize(
         }
       : {
           x: 0,
-          y: Math.floor((size.height - size.width / targetRatio) / 2),
+          y:
+            outputCrop === "top"
+              ? 0
+              : Math.floor((size.height - size.width / targetRatio) / 2),
           width: size.width,
           height: Math.floor(size.width / targetRatio),
         }

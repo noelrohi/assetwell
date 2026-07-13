@@ -234,6 +234,11 @@
     }
   }
 
+  .stage-shimmer {
+    position: relative;
+    overflow: hidden;
+  }
+
   .stage-shimmer::after {
     content: "";
     position: absolute;

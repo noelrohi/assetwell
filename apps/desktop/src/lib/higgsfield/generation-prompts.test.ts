@@ -22,7 +22,7 @@ describe("placement prompt builder", () => {
 })
 
 describe("narrow banner prompt builder", () => {
-  test("asks for a letterboxed slim strip the host can detect and crop", () => {
+  test("asks for a top-aligned strip occupying 15% of the working frame", () => {
     const prompt = buildNarrowBannerPlacementPrompt({
       originalPrompt: "A clean headphones product shot",
       placement: "728x90",
@@ -31,36 +31,10 @@ describe("narrow banner prompt builder", () => {
 
     expect(prompt).toContain("728x90 web leaderboard")
     expect(prompt).toContain("Use only the supplied source image")
-    expect(prompt).toContain("flat, uniform, pure magenta")
-    expect(prompt).toContain("Everything must stay inside the stripe")
-    expect(prompt).toContain("Keep a safe margin inside the stripe")
+    expect(prompt).toContain("16:9 frame")
+    expect(prompt).toContain("only fill the top 15%")
+    expect(prompt).toContain("flush against the top edge")
     expect(prompt).toContain("Do not add new logos")
     expect(prompt).toContain("Original brief: A clean headphones product shot")
-  })
-
-  test("sizes the stripe so it always ends up taller than the target ratio", () => {
-    // 16:9 frame over 8.09:1 target needs ≥22% before margin; 6.4:1 needs ≥28%.
-    expect(
-      buildNarrowBannerPlacementPrompt({
-        originalPrompt: "brief",
-        placement: "728x90",
-        sourceAspectRatio: "16:9",
-      }),
-    ).toContain("about 30% of the image height")
-    expect(
-      buildNarrowBannerPlacementPrompt({
-        originalPrompt: "brief",
-        placement: "320x50",
-        sourceAspectRatio: "16:9",
-      }),
-    ).toContain("about 35% of the image height")
-    // The wider 21:9 frame needs a proportionally taller stripe.
-    expect(
-      buildNarrowBannerPlacementPrompt({
-        originalPrompt: "brief",
-        placement: "728x90",
-        sourceAspectRatio: "21:9",
-      }),
-    ).toContain("about 40% of the image height")
   })
 })

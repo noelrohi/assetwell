@@ -335,7 +335,7 @@ export function useHiggsfieldGenerationActions({
             outputDirectoryName,
             outputFileName: `${placement}.png`,
             outputSize: { width: spec.width, height: spec.height },
-            outputCrop: isNarrowBanner ? "band" : undefined,
+            outputCrop: isNarrowBanner ? "top" : undefined,
             waitForResult: true,
           },
           {

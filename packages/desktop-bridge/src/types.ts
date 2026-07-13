@@ -240,10 +240,10 @@ export interface HiggsfieldOutputSize {
  * How the host trims a generated image down to `outputSize`.
  * - "center": center-crop the whole image to the target aspect ratio.
  * - "band": first crop away flat letterbox filler above and below the
- *   composed content band (used for narrow banner placements, where the
- *   model letterboxes a slim strip inside a wider frame), then center-crop.
+ *   composed content band, then center-crop.
+ * - "top": anchor the aspect-ratio crop to the image's top edge.
  */
-export type HiggsfieldOutputCrop = "center" | "band"
+export type HiggsfieldOutputCrop = "center" | "band" | "top"
 
 export interface HiggsfieldGenerateRequest {
   model: string
