@@ -28,6 +28,13 @@ export interface VideoResult {
   prompt: string
   sourceCreativeId?: string
   sourceTitle?: string
+  sourceFilePath?: string
+  model?: string
+  groupId?: string
+  nativeAspectRatio?: string
+  sourceCompositionProtected?: boolean
+  sourceWidth?: number
+  sourceHeight?: number
   createdAt: string
   durationSeconds?: number
 }
@@ -57,8 +64,16 @@ export const imageModels = [
 ]
 
 export const videoModels = [
-  { id: "motion-v2", label: "Motion v2", hint: "Smooth image-to-video" },
-  { id: "motion-cine", label: "Motion Cine", hint: "Cinematic camera moves" },
+  {
+    id: "kling3_0",
+    label: "Kling v3.0",
+    hint: "Frontier quality · efficient short-form video",
+  },
+  {
+    id: "seedance_2_0",
+    label: "Seedance 2.0",
+    hint: "Premium cinematic motion and multi-shot video",
+  },
 ]
 
 export const imagePromptLibrary = [

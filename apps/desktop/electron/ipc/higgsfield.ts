@@ -6,6 +6,7 @@ import {
   BrowserWindow,
   dialog,
   ipcMain,
+  nativeImage,
   shell,
   type IpcMainInvokeEvent,
   type OpenDialogOptions,
@@ -176,14 +177,25 @@ async function chooseAssetFiles(
 
   return result.filePaths.map((filePath) => {
     const stat = statSync(filePath, { throwIfNoEntry: false })
+    const dimensions =
+      mediaKind === "image" ? localImageDimensions(filePath) : undefined
 
     return {
       filePath,
       fileName: path.basename(filePath),
       mediaKind,
       sizeBytes: stat?.isFile() ? stat.size : null,
+      ...dimensions,
     }
   })
+}
+
+function localImageDimensions(filePath: string) {
+  const image = nativeImage.createFromPath(filePath)
+  if (image.isEmpty()) return undefined
+
+  const { width, height } = image.getSize()
+  return width > 0 && height > 0 ? { width, height } : undefined
 }
 
 async function openOutput(request: HiggsfieldOpenOutputRequest) {

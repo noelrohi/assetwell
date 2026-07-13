@@ -9,6 +9,8 @@ import type { PromptPreset, ReferenceAsset } from "./types"
 export const BASE_CREATIVE_TAKE_COUNT = 1
 export const BILLING_URL = "https://higgsfield.ai/billing"
 export const HIGGSFIELD_UPLOADS_PAGE_SIZE = 24
+export const DEFAULT_VIDEO_MODEL = "kling3_0"
+export const DEFAULT_VIDEO_DURATION_SECONDS = 5
 
 /** Narrow banners use GPT Image 2's widest supported frame and crop from its top edge. */
 export const NARROW_BANNER_PLACEMENT_MODEL = "gpt_image_2"

@@ -17,6 +17,7 @@ export {
   isAvailableImagePlacement,
   isNarrowBannerPlacement,
   isUnavailableImagePlacement,
+  nearestVideoPlacement,
   placementSpecs,
   unavailableImagePlacementSpecs,
   unavailableImagePlacements,

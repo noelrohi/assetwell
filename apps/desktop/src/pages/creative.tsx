@@ -105,6 +105,8 @@ export function CreativePage() {
         ? `${creative.title} · ${selectedSize}`
         : creative.title,
       creativeId: creative.id,
+      width: selectedStageSize.width,
+      height: selectedStageSize.height,
     })
     toast("Image attached — animate it in the Video composer")
     navigate({ to: "/videos" })

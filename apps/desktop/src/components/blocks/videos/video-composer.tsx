@@ -22,11 +22,31 @@ import {
 } from "@/components/ui/popover"
 import { Textarea } from "@/components/ui/textarea"
 import { useHiggsfieldApp } from "@/lib/higgsfield"
-import { videoPlacements, type VideoPlacement } from "@/lib/placements"
+import { DEFAULT_VIDEO_DURATION_SECONDS } from "@/lib/higgsfield/constants"
+import { matchesHiggsfieldRatio } from "@/lib/higgsfield/model-aspect-ratios"
+import {
+  nearestVideoPlacement,
+  placementSpecs,
+  videoPlacements,
+  type VideoPlacement,
+} from "@/lib/placements"
 import { videoPlacementSelectionParser } from "@/lib/query-state"
 import { cn } from "@/lib/utils"
 
-const defaultVideoModelMatch = [
+const klingVideoModelMatch = [
+  "kling v3.0",
+  "kling v3",
+  "klingv3.0",
+  "kling_v3",
+  "klingv3",
+]
+const klingVideoModelExclude = [
+  "turbo",
+  "motion control",
+  "motion_control",
+  "motioncontrol",
+]
+const seedanceVideoModelMatch = [
   "seedance 2.0",
   "seedance2.0",
   "seedance2_0",
@@ -36,13 +56,12 @@ const defaultVideoModelMatch = [
 const recommendedVideoModels: ModelRecommendation[] = [
   {
     key: "kling-3-0",
-    match: ["kling v3.0", "kling v3", "klingv3.0", "kling_v3", "klingv3"],
-    exclude: ["turbo", "motion control", "motion_control", "motioncontrol"],
+    match: klingVideoModelMatch,
+    exclude: klingVideoModelExclude,
   },
-  { key: "seedance-2-0", match: defaultVideoModelMatch },
+  { key: "seedance-2-0", match: seedanceVideoModelMatch },
 ]
 
-const DEFAULT_VIDEO_DURATION_SECONDS = 8
 const MIN_VIDEO_DURATION_SECONDS = 1
 const MAX_VIDEO_DURATION_SECONDS = 60
 const DURATION_PRESETS = [3, 5, 8, 10, 15]
@@ -85,7 +104,12 @@ export function VideoComposer() {
   const [prompt, setPrompt] = React.useState("")
   const durationInputId = React.useId()
   const defaultModelId = React.useMemo(
-    () => pickDefaultModelId(videoModels, defaultVideoModelMatch),
+    () =>
+      pickDefaultModelId(
+        videoModels,
+        klingVideoModelMatch,
+        klingVideoModelExclude,
+      ),
     [videoModels],
   )
   const [model, setModel] = React.useState(defaultModelId)
@@ -99,6 +123,10 @@ export function VideoComposer() {
   const [sizes, setSizes] = useQueryState(
     "sizes",
     videoPlacementSelectionParser,
+  )
+  const sizesWereExplicitlyChosen = React.useRef(
+    typeof window !== "undefined" &&
+      new URLSearchParams(window.location.search).has("sizes"),
   )
   const [durationPickerOpen, setDurationPickerOpen] = React.useState(false)
 
@@ -115,7 +143,22 @@ export function VideoComposer() {
     }
   }, [defaultModelId, model, videoModels])
 
+  React.useEffect(() => {
+    if (
+      sizesWereExplicitlyChosen.current ||
+      !videoDraftSource?.width ||
+      !videoDraftSource.height
+    ) {
+      return
+    }
+
+    void setSizes([
+      nearestVideoPlacement(videoDraftSource.width, videoDraftSource.height),
+    ])
+  }, [setSizes, videoDraftSource])
+
   function toggleSize(size: VideoPlacement) {
+    sizesWereExplicitlyChosen.current = true
     void setSizes((current) =>
       current.includes(size)
         ? current.filter((item) => item !== size)
@@ -141,7 +184,12 @@ export function VideoComposer() {
                 alt="source frame"
                 className="size-5 rounded-full object-cover"
               />
-              <span className="max-w-32 truncate">source frame</span>
+              <span className="max-w-40 truncate">
+                source frame
+                {videoDraftSource.width && videoDraftSource.height
+                  ? ` · ${videoDraftSource.width}×${videoDraftSource.height}`
+                  : ""}
+              </span>
               <button
                 onClick={() => setVideoDraftSource(null)}
                 className="text-muted-foreground/70 transition-colors hover:text-foreground"
@@ -279,6 +327,16 @@ export function VideoComposer() {
                 <div className="grid gap-1">
                   {videoPlacements.map((size) => {
                     const selected = sizes.includes(size)
+                    const spec = placementSpecs[size]
+                    const autoFramed = Boolean(
+                      videoDraftSource?.width &&
+                      videoDraftSource.height &&
+                      !matchesHiggsfieldRatio(
+                        videoDraftSource.width,
+                        videoDraftSource.height,
+                        spec.aspectRatio,
+                      ),
+                    )
                     return (
                       <button
                         key={size}
@@ -294,6 +352,11 @@ export function VideoComposer() {
                         <span className="min-w-0 flex-1 font-mono text-xs leading-none">
                           {size}
                         </span>
+                        {autoFramed && (
+                          <span className="shrink-0 rounded-full bg-ember/10 px-1.5 py-0.5 text-[0.55rem] font-medium text-ember">
+                            auto-frame
+                          </span>
+                        )}
                         {selected && (
                           <IconCheck className="size-3.5 shrink-0 text-ember" />
                         )}

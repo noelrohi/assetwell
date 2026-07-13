@@ -72,6 +72,8 @@ export interface HiggsfieldAssetSelection {
   fileName: string
   mediaKind: HiggsfieldUploadMediaKind
   sizeBytes: number | null
+  width?: number
+  height?: number
 }
 
 export interface HiggsfieldUploadedAsset {
@@ -254,11 +256,16 @@ export interface HiggsfieldGenerateRequest {
   assetMediaKind?: Exclude<HiggsfieldMediaKind, "text">
   aspectRatio?: string
   durationSeconds?: number
+  videoQuality?: "standard" | "pro" | "4k"
+  videoSound?: boolean
   uploadWorkspaceId?: string
   outputDirectoryName?: string
   outputFileName?: string
   outputSize?: HiggsfieldOutputSize
   outputCrop?: HiggsfieldOutputCrop
+  /** Places the source image inside a protected target-ratio region before
+   * generation when the model only supports a different native ratio. */
+  protectSourceComposition?: boolean
   waitForResult?: boolean
 }
 
@@ -341,6 +348,13 @@ export interface AssetwellPersistedVideo {
   prompt: string
   sourceCreativeId?: string
   sourceTitle?: string
+  sourceFilePath?: string
+  model?: string
+  groupId?: string
+  nativeAspectRatio?: string
+  sourceCompositionProtected?: boolean
+  sourceWidth?: number
+  sourceHeight?: number
   createdAt: string
   durationSeconds?: number
   uploadWorkspaceId?: string

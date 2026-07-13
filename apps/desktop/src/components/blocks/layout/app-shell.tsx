@@ -27,11 +27,15 @@ import { cn } from "@/lib/utils"
 
 function PageBreadcrumb() {
   const pathname = useRouterState({ select: (s) => s.location.pathname })
-  const { creativeById, videos } = useHiggsfieldApp()
+  const { creativeById, videos, videoModels } = useHiggsfieldApp()
 
   // Main nav pages already show their location in the sidebar, so the header
   // breadcrumb is reserved for nested pages that need a path back.
   const nestedId = pathname.split("/")[2] ?? ""
+  const nestedVideo = videos.find((video) => video.id === nestedId)
+  const nestedVideoModel = videoModels.find(
+    (model) => model.id === nestedVideo?.model,
+  )
   const trail: { label: string; to?: string }[] | null = pathname.startsWith(
     "/creative/",
   )
@@ -43,8 +47,9 @@ function PageBreadcrumb() {
       ? [
           { label: "Videos", to: "/videos" },
           {
-            label:
-              videos.find((video) => video.id === nestedId)?.prompt ?? "Video",
+            label: nestedVideoModel
+              ? `${nestedVideoModel.label} Video`
+              : "Video",
           },
         ]
       : null

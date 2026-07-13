@@ -2,6 +2,7 @@ import { describe, expect, test } from "bun:test"
 
 import {
   fallbackAspectRatios,
+  matchesHiggsfieldRatio,
   nearestHiggsfieldRatio,
 } from "./model-aspect-ratios"
 
@@ -11,6 +12,12 @@ describe("model aspect ratio helpers", () => {
       "300:157",
     )
     expect(nearestHiggsfieldRatio(720, 1280, ["16:9", "9:16"])).toBe("9:16")
+  })
+
+  test("distinguishes native ratios from adapted output ratios", () => {
+    expect(matchesHiggsfieldRatio(1280, 720, "16:9")).toBe(true)
+    expect(matchesHiggsfieldRatio(1080, 1080, "1:1")).toBe(true)
+    expect(matchesHiggsfieldRatio(300, 250, "4:3")).toBe(false)
   })
 
   test("ignores auto and invalid ratio IDs before falling back", () => {

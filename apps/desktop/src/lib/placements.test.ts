@@ -6,6 +6,7 @@ import {
   isNarrowBannerPlacement,
   isUnavailableImagePlacement,
   nearestBaseRatio,
+  nearestVideoPlacement,
   supportedBaseRatios,
 } from "./placements"
 
@@ -36,6 +37,13 @@ describe("base ratio helpers", () => {
     const options = supportedBaseRatios(["1:1", "3:4", "16:9"])
 
     expect(nearestBaseRatio(current, options).id).toBe("3:4")
+  })
+
+  test("chooses a video size close to the attached source ratio", () => {
+    expect(nearestVideoPlacement(1024, 1024)).toBe("1080x1080")
+    expect(nearestVideoPlacement(1920, 1080)).toBe("1280x720")
+    expect(nearestVideoPlacement(1080, 1920)).toBe("720x1280")
+    expect(nearestVideoPlacement(300, 250)).toBe("300x250")
   })
 
   test("offers every image placement, including narrow banners", () => {

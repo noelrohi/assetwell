@@ -9,4 +9,5 @@ Maintained docs:
 - [Development](./development.md): local toolchain, commands, and completion checks.
 - [CI/CD](./ci.md): desktop release workflow, signing, and updater notes.
 - [Creative Sizes](./creative-sizes.md): canonical target placement sizes and aspect ratios.
+- [Video Size Flow](./video-size-flow.html): interactive native-versus-protected video delivery walkthrough.
 - [Architecture Gap From Dilag](./architecture-gap-from-dilag.md): planning matrix used to decide which gaps are worth closing.

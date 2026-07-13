@@ -7,6 +7,7 @@ import type { HiggsfieldCommandOutputEvent } from "@assetwell/desktop-bridge"
 import {
   resetElectronMock,
   setElectronUserDataRoot,
+  setNextNativeImageSize,
 } from "./test-support/electron-mock"
 import {
   completeLastSpawn,
@@ -33,6 +34,15 @@ async function waitForSpawnCount(count: number) {
   throw new Error(
     `Expected ${count} spawned processes, got ${spawnCalls.length}.`,
   )
+}
+
+async function waitForExitEvent(events: HiggsfieldCommandOutputEvent[]) {
+  for (let attempt = 0; attempt < 50; attempt += 1) {
+    const event = events.find((candidate) => candidate.kind === "exit")
+    if (event) return event
+    await Bun.sleep(1)
+  }
+  throw new Error("Expected an exit event.")
 }
 
 describe("Higgsfield CLI commands", () => {
@@ -107,6 +117,174 @@ describe("Higgsfield CLI commands", () => {
         },
       ],
     })
+  })
+
+  test("maps the economical Kling defaults to explicit CLI options", async () => {
+    cli.startGenerateCommand(
+      {
+        model: "kling3_0",
+        prompt: "Animate the product",
+        mediaKind: "video",
+        durationSeconds: 5,
+        videoQuality: "standard",
+        videoSound: false,
+      },
+      () => undefined,
+    )
+
+    expect(spawnCalls[0].args).toEqual([
+      "--json",
+      "generate",
+      "create",
+      "kling3_0",
+      "--prompt",
+      "Animate the product",
+      "--duration",
+      "5",
+      "--mode",
+      "std",
+      "--sound",
+      "off",
+      "--wait",
+    ])
+    await completeLastSpawn()
+  })
+
+  test("sends a matching source directly to the model", async () => {
+    const source = await makeFile("wide.png")
+    setNextNativeImageSize({ width: 1280, height: 720 })
+
+    cli.startGenerateCommand(
+      {
+        model: "kling3_0",
+        prompt: "Animate the source",
+        mediaKind: "video",
+        assetPath: source,
+        assetMediaKind: "image",
+        aspectRatio: "16:9",
+        outputSize: { width: 1280, height: 720 },
+        protectSourceComposition: true,
+      },
+      () => undefined,
+    )
+
+    expect(spawnCalls).toHaveLength(1)
+    expect(spawnCalls[0].args[0]).toBe("--json")
+    expect(spawnCalls[0].args).toContain(source)
+    await completeSpawn(spawnCalls[0])
+  })
+
+  test("protects a square source even when the wide output is model-native", async () => {
+    const source = await makeFile("square.png")
+    setNextNativeImageSize({ width: 1024, height: 1024 })
+
+    cli.startGenerateCommand(
+      {
+        model: "kling3_0",
+        prompt: "Animate the source",
+        mediaKind: "video",
+        assetPath: source,
+        assetMediaKind: "image",
+        aspectRatio: "16:9",
+        outputSize: { width: 1280, height: 720 },
+        protectSourceComposition: true,
+      },
+      () => undefined,
+    )
+
+    expect(spawnCalls).toHaveLength(1)
+    expect(spawnCalls[0].args.join(" ")).toContain("gblur=sigma=24")
+    expect(spawnCalls[0].args.join(" ")).toContain(
+      "scale=1280:720:force_original_aspect_ratio=decrease",
+    )
+    await completeSpawn(spawnCalls[0])
+
+    await waitForSpawnCount(2)
+    expect(spawnCalls[1].args).toContain("--image")
+    expect(spawnCalls[1].args.join(" ")).toContain(
+      "assetwell-protected-source-",
+    )
+    await completeSpawn(spawnCalls[1])
+  })
+
+  test("cancels generation while its source framing is being prepared", async () => {
+    const source = await makeFile("square.png")
+    const events: HiggsfieldCommandOutputEvent[] = []
+    setNextNativeImageSize({ width: 1024, height: 1024 })
+
+    const run = cli.startGenerateCommand(
+      {
+        model: "kling3_0",
+        prompt: "Animate the source",
+        mediaKind: "video",
+        assetPath: source,
+        assetMediaKind: "image",
+        aspectRatio: "16:9",
+        outputSize: { width: 1280, height: 720 },
+        protectSourceComposition: true,
+      },
+      (event) => events.push(event),
+    )
+
+    expect(spawnCalls).toHaveLength(1)
+    expect(cli.cancelHiggsfieldCommand(run.runId)).toBe(true)
+    expect(spawnCalls[0].child.kill).toHaveBeenCalledTimes(1)
+
+    const exit = await waitForExitEvent(events)
+    expect(spawnCalls).toHaveLength(1)
+    expect(exit).toMatchObject({ exitCode: null, signal: "SIGTERM" })
+  })
+
+  test("protects source framing before generating an adapted video ratio", async () => {
+    const source = await makeFile("source.png")
+    const events: HiggsfieldCommandOutputEvent[] = []
+
+    cli.startGenerateCommand(
+      {
+        model: "seedance_2_0",
+        prompt: "Animate the source",
+        mediaKind: "video",
+        assetPath: source,
+        assetMediaKind: "image",
+        aspectRatio: "4:3",
+        durationSeconds: 8,
+        outputSize: { width: 300, height: 250 },
+        protectSourceComposition: true,
+      },
+      (event) => events.push(event),
+    )
+
+    expect(spawnCalls).toHaveLength(1)
+    expect(spawnCalls[0].args).toContain("-filter_complex")
+    expect(spawnCalls[0].args.join(" ")).toContain("gblur=sigma=24")
+    expect(spawnCalls[0].args.join(" ")).toContain(
+      "scale=1152:960:force_original_aspect_ratio=decrease",
+    )
+    await completeSpawn(spawnCalls[0])
+
+    await waitForSpawnCount(2)
+    expect(spawnCalls[1].args).toEqual([
+      "--json",
+      "generate",
+      "create",
+      "seedance_2_0",
+      "--prompt",
+      "Animate the source",
+      "--aspect_ratio",
+      "4:3",
+      "--duration",
+      "8",
+      "--image",
+      expect.stringContaining("assetwell-protected-source-"),
+      "--wait",
+    ])
+    await completeSpawn(spawnCalls[1])
+
+    expect(events.map((event) => event.kind)).toEqual([
+      "system",
+      "system",
+      "exit",
+    ])
   })
 
   test("treats a logged-out auth token check as unauthenticated", async () => {

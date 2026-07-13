@@ -83,6 +83,17 @@ export function useModelAspectRatios(bridge?: HiggsfieldBridge) {
   )
 }
 
+export function matchesHiggsfieldRatio(
+  width: number,
+  height: number,
+  aspectRatio: string,
+) {
+  const value = ratioValue(aspectRatio)
+  if (!value) return false
+
+  return Math.abs(Math.log(width / height / value)) < 0.005
+}
+
 export function nearestHiggsfieldRatio(
   width: number,
   height: number,

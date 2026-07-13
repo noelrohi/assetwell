@@ -19,6 +19,7 @@ import {
 import {
   BILLING_URL,
   BASE_CREATIVE_TAKE_COUNT,
+  DEFAULT_VIDEO_MODEL,
   NARROW_BANNER_PLACEMENT_MODEL,
   NARROW_BANNER_SOURCE_ASPECT_RATIO,
 } from "./constants"
@@ -27,7 +28,10 @@ import {
   buildPlacementPrompt,
 } from "./generation-prompts"
 import { selectedTake, upsertPlacement } from "./local-state"
-import { nearestHiggsfieldRatio } from "./model-aspect-ratios"
+import {
+  matchesHiggsfieldRatio,
+  nearestHiggsfieldRatio,
+} from "./model-aspect-ratios"
 import { friendlyError, slug, titleFromPrompt } from "./text"
 import type {
   Creative,
@@ -542,19 +546,53 @@ export function useHiggsfieldGenerationActions({
 
       const createdAt = new Date().toISOString()
       const outputDirectoryName = `${createdAt.slice(0, 10)}-${slug(request.prompt)}`
-      const queuedVideos = request.sizes.map((size) => ({
-        id: `video-${Date.now()}-${size}-${Math.random().toString(36).slice(2, 8)}`,
-        size,
-        status: "pending" as JobStatus,
-        posterUrl: request.source.url,
-        prompt: request.prompt,
-        sourceCreativeId: request.source.creativeId,
-        sourceTitle: request.source.label,
-        createdAt,
-        durationSeconds: request.durationSeconds,
-        uploadWorkspaceId: activeUploadWorkspaceId,
-      }))
+      const groupId =
+        request.groupId ??
+        `video-group-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`
       const aspectRatios = await getModelAspectRatios(request.model, "video")
+      const queuedVideos = request.sizes.map((size) => {
+        const spec = placementSpecs[size]
+        const nativeAspectRatio = nearestHiggsfieldRatio(
+          spec.width,
+          spec.height,
+          aspectRatios,
+        )
+        const modelNeedsProtection = !matchesHiggsfieldRatio(
+          spec.width,
+          spec.height,
+          nativeAspectRatio,
+        )
+        const sourceMatchesTarget =
+          request.source.width && request.source.height
+            ? matchesHiggsfieldRatio(
+                request.source.width,
+                request.source.height,
+                spec.aspectRatio,
+              )
+            : false
+        const sourceCompositionProtected =
+          modelNeedsProtection || !sourceMatchesTarget
+
+        return {
+          id: `video-${Date.now()}-${size}-${Math.random().toString(36).slice(2, 8)}`,
+          size,
+          status: "pending" as JobStatus,
+          posterUrl: request.source.url,
+          prompt: request.prompt,
+          sourceCreativeId: request.source.creativeId,
+          sourceTitle: request.source.label,
+          sourceFilePath: sourcePath,
+          model: request.model,
+          groupId,
+          nativeAspectRatio,
+          sourceCompositionProtected,
+          sourceWidth: request.source.width,
+          sourceHeight: request.source.height,
+          createdAt,
+          durationSeconds: request.durationSeconds,
+          uploadWorkspaceId: activeUploadWorkspaceId,
+        }
+      })
 
       setVideos((current) => [...queuedVideos, ...current])
 
@@ -572,16 +610,19 @@ export function useHiggsfieldGenerationActions({
                 mediaKind: "video",
                 assetPath: sourcePath,
                 assetMediaKind: "image",
-                aspectRatio: nearestHiggsfieldRatio(
-                  spec.width,
-                  spec.height,
-                  aspectRatios,
-                ),
+                aspectRatio: video.nativeAspectRatio,
                 durationSeconds: request.durationSeconds,
+                videoQuality:
+                  request.model === DEFAULT_VIDEO_MODEL
+                    ? "standard"
+                    : undefined,
+                videoSound:
+                  request.model === DEFAULT_VIDEO_MODEL ? false : undefined,
                 uploadWorkspaceId: activeUploadWorkspaceId,
                 outputDirectoryName,
                 outputFileName: `${size}.mp4`,
                 outputSize: { width: spec.width, height: spec.height },
+                protectSourceComposition: video.sourceCompositionProtected,
                 waitForResult: true,
               },
               { kind: "video", videoId },

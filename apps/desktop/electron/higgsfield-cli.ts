@@ -59,6 +59,8 @@ const VENDORED_HIGGSFIELD_EXECUTABLE =
   process.platform === "win32" ? "hf.exe" : "hf"
 const requireFromHere = createRequire(import.meta.url)
 const activeRuns = new Map<string, ChildProcessWithoutNullStreams>()
+const preparingRuns = new Map<string, ChildProcessWithoutNullStreams>()
+const cancelledPreparingRuns = new Set<string>()
 const queuedRuns: QueuedHiggsfieldCommand[] = []
 
 interface ResolvedHiggsfieldExecutable {
@@ -74,6 +76,13 @@ interface BundledCliCandidate {
   detail: string | null
 }
 
+interface ProtectedSourceComposition {
+  argIndex: number
+  sourcePath: string
+  nativeAspectRatio: string
+  target: HiggsfieldOutputSize
+}
+
 interface HiggsfieldActionCommand {
   action: HiggsfieldProductAction
   title: string
@@ -85,6 +94,8 @@ interface HiggsfieldActionCommand {
   outputFileName?: string
   outputSize?: HiggsfieldOutputSize
   outputCrop?: HiggsfieldOutputCrop
+  protectedSource?: ProtectedSourceComposition
+  temporarySourcePath?: string
 }
 
 interface CollectedCommand {
@@ -387,24 +398,58 @@ export function startGenerateCommand(
   const mediaKind = request.mediaKind
   const args = ["--json", "generate", "create", model, "--prompt", prompt]
 
-  if (request.aspectRatio?.trim()) {
-    args.push("--aspect_ratio", normalizeAspectRatio(request.aspectRatio))
+  const aspectRatio = request.aspectRatio?.trim()
+    ? normalizeAspectRatio(request.aspectRatio)
+    : undefined
+  if (aspectRatio) {
+    args.push("--aspect_ratio", aspectRatio)
   }
 
   if (mediaKind === "video" && request.durationSeconds !== undefined) {
     args.push("--duration", normalizeDurationSeconds(request.durationSeconds))
+  }
+  if (mediaKind === "video" && request.videoQuality !== undefined) {
+    args.push("--mode", normalizeVideoQuality(request.videoQuality))
+  }
+  if (mediaKind === "video" && request.videoSound !== undefined) {
+    args.push("--sound", normalizeVideoSound(request.videoSound))
   }
 
   const assetPaths = [
     ...(request.assetPaths ?? []),
     ...(request.assetPath ? [request.assetPath] : []),
   ]
+  let protectedSource: ProtectedSourceComposition | undefined
   for (const assetPath of assetPaths) {
     if (!assetPath.trim()) continue
+    const mediaReference = normalizeMediaReference(assetPath)
+    const argIndex = args.length + 1
     args.push(
       mediaFlagForKind(request.assetMediaKind ?? mediaKind),
-      normalizeMediaReference(assetPath),
+      mediaReference,
     )
+
+    if (
+      !protectedSource &&
+      request.protectSourceComposition &&
+      mediaKind === "video" &&
+      request.assetMediaKind === "image" &&
+      aspectRatio &&
+      request.outputSize &&
+      existsSync(mediaReference) &&
+      needsProtectedSourceComposition(
+        mediaReference,
+        aspectRatio,
+        request.outputSize,
+      )
+    ) {
+      protectedSource = {
+        argIndex,
+        sourcePath: mediaReference,
+        nativeAspectRatio: aspectRatio,
+        target: request.outputSize,
+      }
+    }
   }
 
   if (request.waitForResult !== false) {
@@ -423,6 +468,7 @@ export function startGenerateCommand(
       outputFileName: request.outputFileName,
       outputSize: request.outputSize,
       outputCrop: request.outputCrop,
+      protectedSource,
     },
     emit,
   )
@@ -433,6 +479,13 @@ export function cancelHiggsfieldCommand(runId: string): boolean {
 
   if (child) {
     child.kill()
+    return true
+  }
+
+  const preparingChild = preparingRuns.get(runId)
+  if (preparingChild) {
+    cancelledPreparingRuns.add(runId)
+    preparingChild.kill()
     return true
   }
 
@@ -489,17 +542,22 @@ function startHiggsfieldCommand(
   return queued.run
 }
 
+function runningHiggsfieldRunCount() {
+  return activeRuns.size + preparingRuns.size
+}
+
 function shouldQueueCommand(command: HiggsfieldActionCommand) {
   return (
     command.action === "generate" &&
-    (queuedRuns.length > 0 || activeRuns.size >= maxConcurrentHiggsfieldRuns())
+    (queuedRuns.length > 0 ||
+      runningHiggsfieldRunCount() >= maxConcurrentHiggsfieldRuns())
   )
 }
 
 function drainHiggsfieldQueue() {
   while (
     queuedRuns.length > 0 &&
-    activeRuns.size < maxConcurrentHiggsfieldRuns()
+    runningHiggsfieldRunCount() < maxConcurrentHiggsfieldRuns()
   ) {
     const queued = queuedRuns.shift()
     if (queued) startQueuedHiggsfieldCommand(queued)
@@ -507,9 +565,80 @@ function drainHiggsfieldQueue() {
 }
 
 function startQueuedHiggsfieldCommand(queued: QueuedHiggsfieldCommand) {
-  const { command, emit, executable, run } = queued
+  const { command, emit, run } = queued
   emitCommandOutput(emit, run.runId, "system", `${command.startMessage}\n`)
 
+  if (command.protectedSource) {
+    void prepareAndStartHiggsfieldCommand(queued)
+    return
+  }
+
+  spawnQueuedHiggsfieldCommand(queued)
+}
+
+async function prepareAndStartHiggsfieldCommand(
+  queued: QueuedHiggsfieldCommand,
+) {
+  const { command, emit, run } = queued
+
+  try {
+    emitCommandOutput(
+      emit,
+      run.runId,
+      "system",
+      "Protecting the source framing for this size.\n",
+    )
+    const temporarySourcePath = await prepareProtectedSourceComposition(
+      command.protectedSource!,
+      run.runId,
+      (child) => preparingRuns.set(run.runId, child),
+    )
+    preparingRuns.delete(run.runId)
+
+    if (cancelledPreparingRuns.delete(run.runId)) {
+      await unlink(temporarySourcePath).catch(() => undefined)
+      emitCommandOutput(emit, run.runId, "system", "Stopped.\n")
+      emitCommandOutput(emit, run.runId, "exit", "Stopped.\n", {
+        exitCode: null,
+        signal: "SIGTERM",
+      })
+      drainHiggsfieldQueue()
+      return
+    }
+
+    const args = [...command.args]
+    args[command.protectedSource!.argIndex] = temporarySourcePath
+    command.args = args
+    command.temporarySourcePath = temporarySourcePath
+    command.protectedSource = undefined
+    spawnQueuedHiggsfieldCommand(queued)
+  } catch {
+    preparingRuns.delete(run.runId)
+    const wasCancelled = cancelledPreparingRuns.delete(run.runId)
+    emitCommandOutput(
+      emit,
+      run.runId,
+      "system",
+      wasCancelled
+        ? "Stopped.\n"
+        : "The source image could not be prepared for protected framing.\n",
+    )
+    emitCommandOutput(
+      emit,
+      run.runId,
+      "exit",
+      wasCancelled ? "Stopped.\n" : "Generation failed.\n",
+      {
+        exitCode: wasCancelled ? null : 1,
+        signal: wasCancelled ? "SIGTERM" : null,
+      },
+    )
+    drainHiggsfieldQueue()
+  }
+}
+
+function spawnQueuedHiggsfieldCommand(queued: QueuedHiggsfieldCommand) {
+  const { command, emit, executable, run } = queued
   const child = spawn(executable.command, command.args, {
     env: higgsfieldEnvironment(executable),
     windowsHide: true,
@@ -540,6 +669,9 @@ function startQueuedHiggsfieldCommand(queued: QueuedHiggsfieldCommand) {
     activeRuns.delete(run.runId)
     if (!signal && exitCode === 0 && command.resultMediaKind) {
       await emitGenerationResult(run.runId, command, stdout, emit)
+    }
+    if (command.temporarySourcePath) {
+      await unlink(command.temporarySourcePath).catch(() => undefined)
     }
 
     emitCommandOutput(emit, run.runId, "exit", exitText(exitCode, signal), {
@@ -621,12 +753,14 @@ function collectProcessOutput(
   args: readonly string[],
   timeoutMs: number,
   env = process.env,
+  onSpawn?: (child: ChildProcessWithoutNullStreams) => void,
 ) {
   return new Promise<CollectedCommand>((resolve) => {
     const child = spawn(command, args, {
       env,
       windowsHide: true,
     })
+    onSpawn?.(child)
     let stdout = ""
     let stderr = ""
     let resolved = false
@@ -753,6 +887,111 @@ async function saveArtifactToPath(
   await writeFile(targetPath, buffer)
   await postProcessArtifact(targetPath, command)
   return targetPath
+}
+
+function needsProtectedSourceComposition(
+  sourcePath: string,
+  nativeAspectRatio: string,
+  target: HiggsfieldOutputSize,
+) {
+  const image = nativeImage.createFromPath(sourcePath)
+  if (image.isEmpty()) return true
+
+  const size = image.getSize()
+  if (size.width <= 0 || size.height <= 0) return true
+
+  const sourceRatio = size.width / size.height
+  const targetRatio = target.width / target.height
+  const nativeRatio = aspectRatioValue(nativeAspectRatio)
+  return (
+    Math.abs(Math.log(sourceRatio / targetRatio)) >= 0.005 ||
+    Math.abs(Math.log(targetRatio / nativeRatio)) >= 0.005
+  )
+}
+
+async function prepareProtectedSourceComposition(
+  source: ProtectedSourceComposition,
+  runId: string,
+  onSpawn: (child: ChildProcessWithoutNullStreams) => void,
+) {
+  const nativeRatio = aspectRatioValue(source.nativeAspectRatio)
+  const targetRatio = source.target.width / source.target.height
+  const canvas = protectedSourceCanvas(nativeRatio, targetRatio)
+  const ffmpegPath = resolveFfmpegExecutable()
+  const outputPath = path.join(
+    os.tmpdir(),
+    `assetwell-protected-source-${runId}.png`,
+  )
+  const filter =
+    `[0:v]scale=${canvas.width}:${canvas.height}:force_original_aspect_ratio=increase,` +
+    `crop=${canvas.width}:${canvas.height},gblur=sigma=24[bg];` +
+    `[0:v]scale=${canvas.safeWidth}:${canvas.safeHeight}:force_original_aspect_ratio=decrease[fg];` +
+    `[bg][fg]overlay=(W-w)/2:(H-h)/2:format=auto[out]`
+  const result = await collectProcessOutput(
+    ffmpegPath,
+    [
+      "-y",
+      "-i",
+      source.sourcePath,
+      "-filter_complex",
+      filter,
+      "-map",
+      "[out]",
+      "-frames:v",
+      "1",
+      outputPath,
+    ],
+    60_000,
+    process.env,
+    onSpawn,
+  )
+
+  if (result.exitCode !== 0) {
+    await unlink(outputPath).catch(() => undefined)
+    throw new Error("The source image could not be prepared.")
+  }
+
+  return outputPath
+}
+
+function protectedSourceCanvas(nativeRatio: number, targetRatio: number) {
+  const maxEdge = 1280
+  const width = evenDimension(
+    nativeRatio >= 1 ? maxEdge : maxEdge * nativeRatio,
+  )
+  const height = evenDimension(
+    nativeRatio >= 1 ? maxEdge / nativeRatio : maxEdge,
+  )
+  const safeWidth = evenDimension(
+    targetRatio >= nativeRatio ? width : height * targetRatio,
+  )
+  const safeHeight = evenDimension(
+    targetRatio >= nativeRatio ? width / targetRatio : height,
+  )
+
+  return {
+    width,
+    height,
+    safeWidth: Math.min(width, safeWidth),
+    safeHeight: Math.min(height, safeHeight),
+  }
+}
+
+function evenDimension(value: number) {
+  return Math.max(2, Math.round(value / 2) * 2)
+}
+
+function aspectRatioValue(aspectRatio: string) {
+  const match = aspectRatio.match(/^(\d+(?:\.\d+)?):(\d+(?:\.\d+)?)$/)
+  if (!match) throw new Error("The model returned an invalid aspect ratio.")
+
+  const width = Number(match[1])
+  const height = Number(match[2])
+  if (!Number.isFinite(width) || !Number.isFinite(height) || height <= 0) {
+    throw new Error("The model returned an invalid aspect ratio.")
+  }
+
+  return width / height
 }
 
 async function postProcessArtifact(
@@ -1105,6 +1344,28 @@ function normalizeDurationSeconds(value: unknown) {
   }
 
   return `${value}`
+}
+
+function normalizeVideoQuality(value: unknown) {
+  const values = {
+    standard: "std",
+    pro: "pro",
+    "4k": "4k",
+  } as const
+
+  if (typeof value !== "string" || !(value in values)) {
+    throw new Error("Use a supported video quality before generating.")
+  }
+
+  return values[value as keyof typeof values]
+}
+
+function normalizeVideoSound(value: unknown) {
+  if (typeof value !== "boolean") {
+    throw new Error("Choose whether the generated video should include sound.")
+  }
+
+  return value ? "on" : "off"
 }
 
 function normalizeFilePath(value: string) {

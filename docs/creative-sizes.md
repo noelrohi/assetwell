@@ -1,15 +1,43 @@
 # Creative Sizes
 
-Supported video and image sizes with their aspect ratios. Canonical machine-readable specs live in `packages/product/src/placements.ts`.
+Supported video and image sizes with their aspect ratios. Canonical machine-readable specs live in `packages/product/src/placements.ts`. See the [interactive video size flow](./video-size-flow.html) for a visual walkthrough of native and protected outputs.
 
-## Video sizes
+## Video output sizes
 
-| Size (px)   | Aspect ratio    |
-| ----------- | --------------- |
-| 1280 × 720  | 16:9 (≈ 1.78:1) |
-| 720 × 1280  | 9:16 (≈ 0.56:1) |
-| 1080 × 1080 | 1:1             |
-| 300 × 250   | 6:5 (≈ 1.20:1)  |
+Assetwell defaults new video jobs to **Kling 3.0 Standard, sound off, 5
+seconds**. These are Assetwell output targets, not a claim that every Higgsfield
+video model generates every aspect ratio natively. Verified against the live
+Higgsfield model schemas on 2026-07-13:
+
+| Size (px)   | Aspect ratio    | Higgsfield native support |
+| ----------- | --------------- | ------------------------- |
+| 1280 × 720  | 16:9 (≈ 1.78:1) | Broadly supported         |
+| 720 × 1280  | 9:16 (≈ 0.56:1) | Broadly supported         |
+| 1080 × 1080 | 1:1             | Model-dependent           |
+| 300 × 250   | 6:5 (≈ 1.20:1)  | Adapted output only       |
+
+Seedance 2.0 and Kling 3.0 advertise native `16:9`, `9:16`, and `1:1`.
+Veo 3/3.1 and Gemini Omni advertise `16:9` and `9:16`, but not `1:1`. No
+current Higgsfield video model advertises native `6:5`.
+
+Assetwell compares both the attached source ratio and the selected model's
+live schema with the requested output. A newly attached source automatically
+selects the closest video size unless the URL already carries an explicit size
+selection. When framing is needed, Assetwell places the entire source inside a
+target-ratio region over a softly blurred extension of the same image.
+
+If the model natively supports the requested output, that extension remains as
+the designed background of the final frame (for example, square source → wide
+video). If the model itself needs a different native canvas, the host
+center-crops and resizes after generation so the discarded area is the
+protective extension rather than the intended composition. This makes `300 ×
+250` an Assetwell-supported deliverable rather than a native Higgsfield
+generation size; `1080 × 1080` is handled the same way when the chosen model
+does not support `1:1`.
+
+Recheck changing model support with `higgsfield model list --video` and
+`higgsfield model get <model>`, or consult the
+[Higgsfield CLI model catalog](https://github.com/higgsfield-ai/cli/blob/main/MODELS.md).
 
 ## Image sizes
 

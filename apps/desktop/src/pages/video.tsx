@@ -14,6 +14,7 @@ import { toast } from "sonner"
 import { ActionButton } from "@/components/blocks/creative/action-button"
 import { StatusPill } from "@/components/blocks/creative/status-pill"
 import { PageHeaderActions } from "@/components/blocks/layout/page-header-actions"
+import { VideoPlacementsPanel } from "@/components/blocks/videos/video-placements-panel"
 import {
   useHiggsfieldApp,
   type Creative,
@@ -78,8 +79,9 @@ export function VideoPage() {
 
       <VideoSourceSummary video={video} sourceCreative={sourceCreative} />
 
-      <div className="mt-6">
+      <div className="mt-6 grid gap-8 lg:grid-cols-[minmax(0,1fr)_300px]">
         <VideoStage video={video} spec={spec} />
+        <VideoPlacementsPanel video={video} sourceCreative={sourceCreative} />
       </div>
     </div>
   )

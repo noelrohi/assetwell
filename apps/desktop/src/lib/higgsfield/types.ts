@@ -86,6 +86,8 @@ export interface VideoSource {
   filePath?: string
   label: string
   creativeId?: string
+  width?: number
+  height?: number
 }
 
 export interface PendingRun {
@@ -111,6 +113,7 @@ export interface MakeVideosRequest {
   sizes: VideoPlacement[]
   source: VideoSource
   durationSeconds: number
+  groupId?: string
 }
 
 export interface BrandsDomain {

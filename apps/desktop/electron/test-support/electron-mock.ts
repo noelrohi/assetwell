@@ -27,6 +27,7 @@ let nextOpenDialogResult: OpenDialogReturnValue = defaultOpenDialogResult
 let nextSaveDialogResult: SaveDialogReturnValue = defaultSaveDialogResult
 let nextGetPathForFile: (file: File) => string = (file) =>
   `/mock-path/${file.name}`
+let nextNativeImageSize: { width: number; height: number } | null = null
 
 export const exposedWorlds: ExposedWorlds = {}
 export const getPathForFileCalls: File[] = []
@@ -52,6 +53,7 @@ export function resetElectronMock() {
   openedPaths.length = 0
   getPathForFileCalls.length = 0
   nextGetPathForFile = (file) => `/mock-path/${file.name}`
+  nextNativeImageSize = null
 }
 
 export function setElectronUserDataRoot(root: string) {
@@ -68,6 +70,12 @@ export function setNextSaveDialogResult(result: SaveDialogReturnValue) {
 
 export function setNextGetPathForFile(impl: (file: File) => string) {
   nextGetPathForFile = impl
+}
+
+export function setNextNativeImageSize(
+  size: { width: number; height: number } | null,
+) {
+  nextNativeImageSize = size
 }
 
 export function exposedInMainWorld<T>(name: string) {
@@ -100,8 +108,8 @@ mock.module("electron", () => ({
   },
   nativeImage: {
     createFromPath: () => ({
-      isEmpty: () => true,
-      getSize: () => ({ width: 1, height: 1 }),
+      isEmpty: () => nextNativeImageSize === null,
+      getSize: () => nextNativeImageSize ?? { width: 1, height: 1 },
       crop: () => ({ resize: () => ({ toPNG: () => Buffer.from([]) }) }),
     }),
   },

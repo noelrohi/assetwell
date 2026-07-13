@@ -170,6 +170,29 @@ export const videoPlacements = videoPlacementSpecs.map(
   (spec) => spec.id,
 ) as VideoPlacement[]
 
+export function nearestVideoPlacement(width: number, height: number) {
+  if (
+    !Number.isFinite(width) ||
+    !Number.isFinite(height) ||
+    width <= 0 ||
+    height <= 0
+  ) {
+    return videoPlacementSpecs[0].id
+  }
+
+  const targetRatio = width / height
+
+  return videoPlacementSpecs.reduce((best, next) => {
+    const bestDistance = Math.abs(
+      Math.log(targetRatio / (best.width / best.height)),
+    )
+    const nextDistance = Math.abs(
+      Math.log(targetRatio / (next.width / next.height)),
+    )
+    return nextDistance < bestDistance ? next : best
+  }).id
+}
+
 const imagePlacementSpecsById = Object.fromEntries(
   imagePlacementSpecs.map((spec) => [spec.id, spec]),
 ) as Record<ImagePlacement, ImagePlacementSpecEntry>

@@ -754,6 +754,8 @@ export function HiggsfieldProvider({
       url: fileUrl(asset.filePath),
       filePath: asset.filePath,
       label: asset.fileName,
+      width: asset.width,
+      height: asset.height,
     }
     setVideoDraftSource(source)
     return source
