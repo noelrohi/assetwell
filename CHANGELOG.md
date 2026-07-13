@@ -7,6 +7,16 @@ and this project uses semantic version tags for desktop releases.
 
 ## [Unreleased]
 
+## [0.0.14] - 2026-07-13
+
+### Changed
+
+- Ultra-wide leaderboard generations now use a top-aligned composition and top crop with GPT Image 2.
+
+### Fixed
+
+- The placement loading shimmer is now contained within its preview instead of sweeping across the page.
+
 ## [0.0.13] - 2026-07-10
 
 ### Changed
