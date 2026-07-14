@@ -7,6 +7,13 @@ and this project uses semantic version tags for desktop releases.
 
 ## [Unreleased]
 
+## [0.0.15] - 2026-07-14
+
+### Added
+
+- Added four video output sizes with protected framing, including native landscape, portrait, and square outputs plus an adapted 300 × 250 deliverable.
+- Completed videos can now generate, track, retry, and open the remaining size variants as a grouped set.
+
 ## [0.0.14] - 2026-07-13
 
 ### Changed
