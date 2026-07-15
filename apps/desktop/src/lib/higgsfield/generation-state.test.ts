@@ -146,4 +146,62 @@ describe("generation state reducers", () => {
       )[0],
     ).toMatchObject({ status: "failed", error: "Render failed" })
   })
+
+  test("advances a completed video frame to animation", () => {
+    const videos: VideoResult[] = [
+      {
+        id: "video-1",
+        size: "720x1280",
+        status: "pending",
+        stage: "framing",
+        posterUrl: "source.png",
+        prompt: "Slow push in",
+        createdAt: "2026-06-24T00:00:00.000Z",
+      },
+      {
+        id: "video-2",
+        size: "1080x1080",
+        status: "pending",
+        posterUrl: "other.png",
+        prompt: "Slow push in",
+        createdAt: "2026-06-24T00:00:00.000Z",
+      },
+    ]
+
+    const updated = applyGenerationResultToVideos(
+      videos,
+      { kind: "video-frame", videoId: "video-1" },
+      { url: "frame.png", filePath: "/tmp/frame.png" },
+    )
+
+    expect(updated[0]).toMatchObject({
+      status: "pending",
+      stage: "animating",
+      posterUrl: "frame.png",
+      framePath: "/tmp/frame.png",
+    })
+    expect(updated[1]).toBe(videos[1])
+  })
+
+  test("leaves a video pending when frame generation fails", () => {
+    const videos: VideoResult[] = [
+      {
+        id: "video-1",
+        size: "720x1280",
+        status: "pending",
+        stage: "framing",
+        posterUrl: "source.png",
+        prompt: "Slow push in",
+        createdAt: "2026-06-24T00:00:00.000Z",
+      },
+    ]
+
+    expect(
+      markRunFailedInVideos(
+        videos,
+        { kind: "video-frame", videoId: "video-1" },
+        "Frame failed",
+      ),
+    ).toBe(videos)
+  })
 })

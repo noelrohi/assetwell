@@ -54,6 +54,10 @@ export interface VideoResult extends SeedVideoResult {
   filePath?: string
   runId?: string
   error?: string
+  /** Two-step pipeline stage: composing the target frame vs animating it. */
+  stage?: "framing" | "animating"
+  /** Local path of the generated placement-correct frame, when one was made. */
+  framePath?: string
 }
 
 export interface ReferenceAsset extends SeedReferenceAsset {
@@ -91,11 +95,15 @@ export interface VideoSource {
 }
 
 export interface PendingRun {
-  kind: "take" | "placement" | "video"
+  kind: "take" | "placement" | "video" | "video-frame"
   creativeId?: string
   takeId?: string
   placement?: ImagePlacement
   videoId?: string
+  /** Called once when the run produces a ready artifact. */
+  onReady?: (result: { url: string; filePath?: string }) => void
+  /** Called once when the run fails (spawn error or bad exit). */
+  onFailed?: (error: string) => void
 }
 
 export interface MakeCreativeRequest {

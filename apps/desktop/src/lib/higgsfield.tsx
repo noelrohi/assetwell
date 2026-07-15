@@ -697,6 +697,7 @@ export function HiggsfieldProvider({
       setVideos((current) =>
         applyGenerationResultToVideos(current, pending, result),
       )
+      pending.onReady?.(result)
     },
     [],
   )
@@ -707,6 +708,7 @@ export function HiggsfieldProvider({
         markRunFailedInCreatives(current, pending, error),
       )
       setVideos((current) => markRunFailedInVideos(current, pending, error))
+      pending.onFailed?.(error)
     },
     [],
   )

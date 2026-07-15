@@ -69,6 +69,19 @@ export function applyGenerationResultToVideos(
   pending: PendingRun,
   result: ReadyGenerationResult,
 ): VideoResult[] {
+  if (pending.kind === "video-frame" && pending.videoId) {
+    return videos.map((video) =>
+      video.id === pending.videoId
+        ? {
+            ...video,
+            posterUrl: result.url,
+            framePath: result.filePath,
+            stage: "animating" as const,
+          }
+        : video,
+    )
+  }
+
   if (pending.kind !== "video" || !pending.videoId) return videos
 
   return videos.map((video) =>

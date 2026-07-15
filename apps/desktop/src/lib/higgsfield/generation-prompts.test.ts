@@ -3,6 +3,7 @@ import { describe, expect, test } from "bun:test"
 import {
   buildNarrowBannerPlacementPrompt,
   buildPlacementPrompt,
+  buildVideoFramePrompt,
 } from "./generation-prompts"
 
 describe("placement prompt builder", () => {
@@ -18,6 +19,29 @@ describe("placement prompt builder", () => {
     expect(prompt).toContain("Aspect ratio: 6:5")
     expect(prompt).toContain("Do not add new logos")
     expect(prompt).toContain("Original brief: A clean headphones product shot")
+  })
+})
+
+describe("video frame prompt builder", () => {
+  test("includes the placement, aspect ratio, and optional original brief", () => {
+    const prompt = buildVideoFramePrompt({
+      originalPrompt: "A clean headphones product shot",
+      placement: "720x1280",
+      aspectRatio: "9:16",
+    })
+
+    expect(prompt).toContain("Target size: 720x1280")
+    expect(prompt).toContain("Aspect ratio: 9:16")
+    expect(prompt).toContain("Original brief: A clean headphones product shot")
+  })
+
+  test("omits the original brief when none is available", () => {
+    const prompt = buildVideoFramePrompt({
+      placement: "1080x1080",
+      aspectRatio: "1:1",
+    })
+
+    expect(prompt).not.toContain("Original brief:")
   })
 })
 

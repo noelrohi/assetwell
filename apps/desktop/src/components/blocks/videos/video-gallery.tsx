@@ -101,7 +101,9 @@ function VideoCard({ video, index }: { video: VideoResult; index: number }) {
                   <div className="absolute inset-0 flex flex-col items-center justify-center gap-2 bg-muted/30">
                     <IconLoader2 className="size-5 animate-spin text-ember" />
                     <span className="font-mono text-[0.65rem] tracking-wide text-muted-foreground">
-                      generating
+                      {video.stage === "framing"
+                        ? "preparing frame"
+                        : "generating"}
                     </span>
                   </div>
                 ) : failed ? (

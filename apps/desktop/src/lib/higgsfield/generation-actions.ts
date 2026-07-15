@@ -22,10 +22,12 @@ import {
   DEFAULT_VIDEO_MODEL,
   NARROW_BANNER_PLACEMENT_MODEL,
   NARROW_BANNER_SOURCE_ASPECT_RATIO,
+  VIDEO_FRAME_PLACEMENT_MODEL,
 } from "./constants"
 import {
   buildNarrowBannerPlacementPrompt,
   buildPlacementPrompt,
+  buildVideoFramePrompt,
 } from "./generation-prompts"
 import { selectedTake, upsertPlacement } from "./local-state"
 import {
@@ -44,6 +46,7 @@ import type {
   VideoResult,
 } from "./types"
 import type { JobStatus } from "./types"
+import { needsVideoReframe, videoFrameOutputSize } from "./video-frame"
 
 export type CreativeReferenceAssetSnapshot = Pick<
   ReferenceAsset,
@@ -562,16 +565,8 @@ export function useHiggsfieldGenerationActions({
           spec.height,
           nativeAspectRatio,
         )
-        const sourceMatchesTarget =
-          request.source.width && request.source.height
-            ? matchesHiggsfieldRatio(
-                request.source.width,
-                request.source.height,
-                spec.aspectRatio,
-              )
-            : false
-        const sourceCompositionProtected =
-          modelNeedsProtection || !sourceMatchesTarget
+        const reframe = needsVideoReframe(request.source, spec)
+        const sourceCompositionProtected = modelNeedsProtection || reframe
 
         return {
           id: `video-${Date.now()}-${size}-${Math.random().toString(36).slice(2, 8)}`,
@@ -591,50 +586,142 @@ export function useHiggsfieldGenerationActions({
           createdAt,
           durationSeconds: request.durationSeconds,
           uploadWorkspaceId: activeUploadWorkspaceId,
+          stage: reframe ? ("framing" as const) : ("animating" as const),
         }
       })
 
       setVideos((current) => [...queuedVideos, ...current])
 
+      async function startVideoRun(
+        video: (typeof queuedVideos)[number],
+        assetPath: string,
+        protectSourceComposition: boolean,
+      ) {
+        const size = video.size
+        const videoId = video.id
+        const spec = placementSpecs[size]
+
+        try {
+          const run = await startTrackedGeneration(
+            {
+              model: request.model,
+              prompt: request.prompt,
+              mediaKind: "video",
+              assetPath,
+              assetMediaKind: "image",
+              aspectRatio: video.nativeAspectRatio,
+              durationSeconds: request.durationSeconds,
+              videoQuality:
+                request.model === DEFAULT_VIDEO_MODEL ? "standard" : undefined,
+              videoSound:
+                request.model === DEFAULT_VIDEO_MODEL ? false : undefined,
+              uploadWorkspaceId: activeUploadWorkspaceId,
+              outputDirectoryName,
+              outputFileName: `${size}.mp4`,
+              outputSize: { width: spec.width, height: spec.height },
+              protectSourceComposition,
+              waitForResult: true,
+            },
+            { kind: "video", videoId },
+          )
+
+          setVideos((current) =>
+            current.map((video) =>
+              video.id === videoId ? { ...video, runId: run.runId } : video,
+            ),
+          )
+        } catch (error) {
+          markRunFailed({ kind: "video", videoId }, friendlyError(error))
+        }
+      }
+
       void Promise.all(
         queuedVideos.map(async (video) => {
-          const size = video.size
-          const videoId = video.id
-          const spec = placementSpecs[size]
+          const spec = placementSpecs[video.size]
+          if (video.stage !== "framing") {
+            await startVideoRun(
+              video,
+              sourcePath,
+              video.sourceCompositionProtected,
+            )
+            return
+          }
+
+          const sourceCreative = request.source.creativeId
+            ? creatives.find((item) => item.id === request.source.creativeId)
+            : undefined
+          const frameModel =
+            sourceCreative?.model ?? VIDEO_FRAME_PLACEMENT_MODEL
+          // After reframing, the frame already matches the target ratio; blur-fill is
+          // only still needed when the video model has no native ratio for the target.
+          const frameStillNeedsProtection = !matchesHiggsfieldRatio(
+            spec.width,
+            spec.height,
+            video.nativeAspectRatio,
+          )
+          // A result followed by a non-zero exit fires both callbacks, so only the first wins.
+          let frameSettled = false
+          const fallbackToDirectRun = () =>
+            void startVideoRun(
+              video,
+              sourcePath,
+              video.sourceCompositionProtected,
+            )
 
           try {
+            const frameRatios = await getModelAspectRatios(frameModel, "image")
             const run = await startTrackedGeneration(
               {
-                model: request.model,
-                prompt: request.prompt,
-                mediaKind: "video",
+                model: frameModel,
+                prompt: buildVideoFramePrompt({
+                  originalPrompt: sourceCreative?.prompt,
+                  placement: video.size,
+                  aspectRatio: spec.aspectRatio,
+                }),
+                mediaKind: "image",
                 assetPath: sourcePath,
                 assetMediaKind: "image",
-                aspectRatio: video.nativeAspectRatio,
-                durationSeconds: request.durationSeconds,
-                videoQuality:
-                  request.model === DEFAULT_VIDEO_MODEL
-                    ? "standard"
-                    : undefined,
-                videoSound:
-                  request.model === DEFAULT_VIDEO_MODEL ? false : undefined,
+                aspectRatio: nearestHiggsfieldRatio(
+                  spec.width,
+                  spec.height,
+                  frameRatios,
+                ),
                 uploadWorkspaceId: activeUploadWorkspaceId,
                 outputDirectoryName,
-                outputFileName: `${size}.mp4`,
-                outputSize: { width: spec.width, height: spec.height },
-                protectSourceComposition: video.sourceCompositionProtected,
+                outputFileName: `${video.size}-frame.png`,
+                outputSize: videoFrameOutputSize(spec),
                 waitForResult: true,
               },
-              { kind: "video", videoId },
+              {
+                kind: "video-frame",
+                videoId: video.id,
+                onReady: (result) => {
+                  if (frameSettled) return
+                  frameSettled = true
+                  if (result.filePath) {
+                    void startVideoRun(
+                      video,
+                      result.filePath,
+                      frameStillNeedsProtection,
+                    )
+                  } else {
+                    fallbackToDirectRun()
+                  }
+                },
+                onFailed: () => {
+                  if (frameSettled) return
+                  frameSettled = true
+                  fallbackToDirectRun()
+                },
+              },
             )
-
             setVideos((current) =>
-              current.map((video) =>
-                video.id === videoId ? { ...video, runId: run.runId } : video,
+              current.map((item) =>
+                item.id === video.id ? { ...item, runId: run.runId } : item,
               ),
             )
-          } catch (error) {
-            markRunFailed({ kind: "video", videoId }, friendlyError(error))
+          } catch {
+            fallbackToDirectRun()
           }
         }),
       )
@@ -643,6 +730,7 @@ export function useHiggsfieldGenerationActions({
       activeUploadWorkspaceId,
       bridge,
       canGenerate,
+      creatives,
       getModelAspectRatios,
       markRunFailed,
       setVideos,
