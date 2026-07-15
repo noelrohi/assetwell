@@ -82,7 +82,10 @@ export function defaultVideoSizes(
 export type BaseRatio = (typeof baseRatios)[number]
 export type BaseRatioId = BaseRatio["id"]
 
-export function supportedBaseRatios(supportedRatioIds: readonly string[]) {
+export function isNativeBaseRatio(
+  ratio: BaseRatio,
+  supportedRatioIds: readonly string[],
+): boolean {
   const supportedValues = supportedRatioIds.flatMap((id) => {
     const value = ratioIdNumber(id)
     return value ? [value] : []
@@ -90,40 +93,13 @@ export function supportedBaseRatios(supportedRatioIds: readonly string[]) {
   const supported = new Set(
     supportedRatioIds.filter((id) => id.trim().length > 0 && id !== "auto"),
   )
-  const matches = baseRatios.filter((ratio) => {
-    if (CROP_BACKED_BASE_RATIO_IDS.has(ratio.id)) return false
-    if (supported.has(ratio.id)) return true
-    const value = ratioNumber(ratio.width, ratio.height)
-    return supportedValues.some(
-      (supportedValue) => Math.abs(Math.log(value / supportedValue)) < 0.005,
-    )
-  })
 
-  if (matches.length === 0) return [...baseRatios]
+  if (supported.has(ratio.id)) return true
 
-  return baseRatios.filter(
-    (ratio) =>
-      matches.includes(ratio) || CROP_BACKED_BASE_RATIO_IDS.has(ratio.id),
+  const value = ratioNumber(ratio.width, ratio.height)
+  return supportedValues.some(
+    (supportedValue) => Math.abs(Math.log(value / supportedValue)) < 0.005,
   )
-}
-
-export function nearestBaseRatio(
-  target: BaseRatio,
-  options: readonly BaseRatio[] = baseRatios,
-) {
-  if (options.length === 0) return baseRatios[0]
-
-  const targetValue = ratioNumber(target.width, target.height)
-  return options.reduce((best, next) => {
-    const bestDistance = Math.abs(
-      Math.log(targetValue / ratioNumber(best.width, best.height)),
-    )
-    const nextDistance = Math.abs(
-      Math.log(targetValue / ratioNumber(next.width, next.height)),
-    )
-
-    return nextDistance < bestDistance ? next : best
-  })
 }
 
 export function ratioNumber(width: number, height: number) {

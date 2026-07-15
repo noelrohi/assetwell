@@ -3,6 +3,7 @@ import { useNavigate } from "@tanstack/react-router"
 import {
   IconArrowRight,
   IconCheck,
+  IconInfoCircle,
   IconPaperclip,
   IconPlus,
   IconSelector,
@@ -21,13 +22,17 @@ import {
   PopoverTrigger,
 } from "@/components/ui/popover"
 import { Textarea } from "@/components/ui/textarea"
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipTrigger,
+} from "@/components/ui/tooltip"
 import { useHiggsfieldApp } from "@/lib/higgsfield"
 import {
-  baseRatios,
-  nearestBaseRatio,
-  supportedBaseRatios,
-  type BaseRatio,
-} from "@/lib/placements"
+  fallbackAspectRatios,
+  nearestHiggsfieldRatio,
+} from "@/lib/higgsfield/model-aspect-ratios"
+import { baseRatios, isNativeBaseRatio, type BaseRatio } from "@/lib/placements"
 import { cn } from "@/lib/utils"
 
 const defaultImageModelMatch = ["gpt image 2", "gpt_image_2"]
@@ -58,28 +63,13 @@ export function ImageComposer() {
   const [model, setModel] = React.useState(defaultModelId)
   const [refs, setRefs] = React.useState<string[]>([])
   const [ratioPickerOpen, setRatioPickerOpen] = React.useState(false)
-  const fallbackRatioIds = React.useMemo(
-    () => baseRatios.map((ratio) => ratio.id),
-    [],
+  const [modelRatios, setModelRatios] = React.useState<string[]>(() =>
+    fallbackAspectRatios("image"),
   )
-  const [modelRatios, setModelRatios] =
-    React.useState<string[]>(fallbackRatioIds)
 
   const referenceLibrary = uploads.references
-  const selectedModel = imageModels.find((item) => item.id === model)
-  const selectedRatio =
-    baseRatios.find((item) => item.id === ratioId) ?? baseRatios[0]
-  const ratioOptions = React.useMemo(
-    () => supportedBaseRatios(modelRatios),
-    [modelRatios],
-  )
-  const ratio =
-    ratioOptions.find((item) => item.id === ratioId) ??
-    nearestBaseRatio(selectedRatio, ratioOptions)
-  const ratioSupportCopy =
-    ratioOptions.length < baseRatios.length
-      ? `${ratioOptions.length} size${ratioOptions.length === 1 ? "" : "s"} for ${selectedModel?.label ?? "this model"}`
-      : "Common Higgsfield sizes"
+  const ratioOptions = baseRatios
+  const ratio = baseRatios.find((item) => item.id === ratioId) ?? baseRatios[0]
   const activeBrandName = brands.activeLabel
   const canMake = prompt.trim().length > 0 && model.length > 0
 
@@ -91,31 +81,25 @@ export function ImageComposer() {
 
   React.useEffect(() => {
     if (!model) {
-      setModelRatios(fallbackRatioIds)
+      setModelRatios(fallbackAspectRatios("image"))
       return
     }
 
-    setModelRatios(fallbackRatioIds)
+    setModelRatios(fallbackAspectRatios("image"))
 
     let cancelled = false
     void getModelAspectRatios(model, "image")
       .then((ratios) => {
         if (cancelled) return
-        setModelRatios(ratios.length ? ratios : fallbackRatioIds)
+        setModelRatios(ratios.length ? ratios : fallbackAspectRatios("image"))
       })
       .catch(() => {
-        if (!cancelled) setModelRatios(fallbackRatioIds)
+        if (!cancelled) setModelRatios(fallbackAspectRatios("image"))
       })
     return () => {
       cancelled = true
     }
-  }, [fallbackRatioIds, getModelAspectRatios, model])
-
-  React.useEffect(() => {
-    if (!ratioOptions.some((r) => r.id === ratioId)) {
-      setRatioId(nearestBaseRatio(selectedRatio, ratioOptions).id)
-    }
-  }, [ratioId, ratioOptions, selectedRatio])
+  }, [getModelAspectRatios, model])
 
   React.useEffect(() => {
     const referenceIds = new Set(referenceLibrary.map((asset) => asset.id))
@@ -198,13 +182,28 @@ export function ImageComposer() {
               </span>
               <IconSelector className="ml-auto size-3.5 shrink-0 text-muted-foreground" />
             </PopoverTrigger>
-            <PopoverContent align="start" sideOffset={6} className="w-72 p-2">
-              <div className="px-2 pt-1 pb-2">
+            <PopoverContent
+              align="start"
+              sideOffset={6}
+              className="max-h-[var(--radix-popover-content-available-height)] w-72 overflow-y-auto overscroll-contain p-2"
+            >
+              <div className="flex items-center gap-1.5 px-2 pt-1 pb-2">
                 <p className="text-xs font-medium text-foreground">Base size</p>
-                <p className="mt-0.5 text-[0.68rem] leading-4 text-muted-foreground/75">
-                  {ratioSupportCopy}. Options update per model, and switching
-                  back is instant.
-                </p>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <button
+                      type="button"
+                      aria-label="How base sizes work"
+                      className="rounded-full text-muted-foreground/70 outline-none transition-colors hover:text-foreground focus-visible:ring-2 focus-visible:ring-ring/50"
+                    >
+                      <IconInfoCircle className="size-3.5" />
+                    </button>
+                  </TooltipTrigger>
+                  <TooltipContent side="top" sideOffset={6} className="max-w-64">
+                    Every size is available for every model. Sizes outside the
+                    model&apos;s native frames are cropped from its nearest frame.
+                  </TooltipContent>
+                </Tooltip>
               </div>
               <div className="grid gap-1">
                 {ratioOptions.map((r) => {
@@ -233,6 +232,16 @@ export function ImageComposer() {
                           {r.label}
                         </span>
                       </span>
+                      {!isNativeBaseRatio(r, modelRatios) && (
+                        <span className="shrink-0 font-mono text-[0.6rem] text-muted-foreground/70">
+                          crops from{" "}
+                          {nearestHiggsfieldRatio(
+                            r.width,
+                            r.height,
+                            modelRatios,
+                          )}
+                        </span>
+                      )}
                       {selected && (
                         <IconCheck className="size-3.5 shrink-0 text-ember" />
                       )}
