@@ -1,3 +1,8 @@
+import {
+  nearestVideoPlacement,
+  type VideoPlacement,
+} from "@assetwell/product/placements"
+
 export {
   IMAGE_PLACEMENT_AVAILABILITY_NOTE,
   IMAGE_PLACEMENT_UNAVAILABLE_REASON,
@@ -64,6 +69,15 @@ export const CROP_BACKED_BASE_RATIO_IDS: ReadonlySet<string> = new Set([
   "2:1",
   "6:5",
 ])
+
+/** Initial size selection for the video composer: the placement nearest the source, else wide. */
+export function defaultVideoSizes(
+  width?: number,
+  height?: number,
+): VideoPlacement[] {
+  if (!width || !height) return ["1280x720"]
+  return [nearestVideoPlacement(width, height)]
+}
 
 export type BaseRatio = (typeof baseRatios)[number]
 export type BaseRatioId = BaseRatio["id"]

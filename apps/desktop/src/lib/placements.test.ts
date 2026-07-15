@@ -3,12 +3,27 @@ import { describe, expect, test } from "bun:test"
 
 import {
   baseRatios,
+  defaultVideoSizes,
   isNarrowBannerPlacement,
   isUnavailableImagePlacement,
   nearestBaseRatio,
   nearestVideoPlacement,
   supportedBaseRatios,
 } from "./placements"
+
+describe("default video sizes", () => {
+  test("defaults to wide without a source", () => {
+    expect(defaultVideoSizes()).toEqual(["1280x720"])
+  })
+
+  test("defaults to portrait for a portrait source", () => {
+    expect(defaultVideoSizes(720, 1280)).toEqual(["720x1280"])
+  })
+
+  test("defaults to square for a square source", () => {
+    expect(defaultVideoSizes(1080, 1080)).toEqual(["1080x1080"])
+  })
+})
 
 describe("base ratio helpers", () => {
   test("falls back to the full base ratio set when a model has no explicit sizes", () => {
