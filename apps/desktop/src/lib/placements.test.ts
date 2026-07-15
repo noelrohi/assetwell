@@ -20,15 +20,41 @@ describe("base ratio helpers", () => {
     )
   })
 
-  test("filters base ratios to model-supported sizes", () => {
+  test("filters base ratios to model-supported and crop-backed sizes", () => {
     expect(
       supportedBaseRatios(["1:1", "16:9", "9:16"]).map((ratio) => ratio.id),
-    ).toEqual(["1:1", "16:9", "9:16"])
+    ).toEqual(["1:1", "16:9", "9:16", "2:1", "6:5"])
+  })
+
+  test("always offers crop-backed sizes for a recognized model ratio", () => {
+    expect(supportedBaseRatios(["1:1"]).map((ratio) => ratio.id)).toEqual([
+      "1:1",
+      "2:1",
+      "6:5",
+    ])
+  })
+
+  test("falls back to every base ratio when model metadata is unrecognized", () => {
+    expect(supportedBaseRatios(["not-a-ratio"])).toHaveLength(baseRatios.length)
+  })
+
+  test("keeps crop-backed sizes in base-ratio declaration order", () => {
+    const cropBackedIds = ["2:1", "6:5"]
+    const resultOrder = supportedBaseRatios(["1:1"])
+      .map((ratio) => ratio.id)
+      .filter((id) => cropBackedIds.includes(id))
+    const declarationOrder = baseRatios
+      .map((ratio) => ratio.id)
+      .filter((id) => cropBackedIds.includes(id))
+
+    expect(resultOrder).toEqual(declarationOrder)
   })
 
   test("matches equivalent ratio labels from model metadata", () => {
     expect(supportedBaseRatios(["300:157"]).map((ratio) => ratio.id)).toEqual([
       "1.91:1",
+      "2:1",
+      "6:5",
     ])
   })
 

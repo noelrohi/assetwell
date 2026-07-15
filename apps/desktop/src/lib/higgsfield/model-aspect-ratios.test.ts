@@ -27,8 +27,13 @@ describe("model aspect ratio helpers", () => {
   })
 
   test("exposes sensible media-specific fallback ratios", () => {
-    expect(fallbackAspectRatios("image")).toContain("1:1")
-    expect(fallbackAspectRatios("image")).not.toContain("1.91:1")
+    const imageRatios = fallbackAspectRatios("image")
+
+    expect(imageRatios).toContain("1:1")
+    expect(imageRatios).toContain("16:9")
+    expect(imageRatios).not.toContain("1.91:1")
+    expect(imageRatios).not.toContain("2:1")
+    expect(imageRatios).not.toContain("6:5")
     expect(fallbackAspectRatios("video")).toEqual([
       "16:9",
       "9:16",
@@ -36,5 +41,12 @@ describe("model aspect ratio helpers", () => {
       "4:3",
       "3:4",
     ])
+  })
+
+  test("chooses native source ratios for crop-backed base sizes", () => {
+    const imageRatios = fallbackAspectRatios("image")
+
+    expect(nearestHiggsfieldRatio(1080, 900, imageRatios)).toBe("5:4")
+    expect(nearestHiggsfieldRatio(1200, 600, imageRatios)).toBe("16:9")
   })
 })

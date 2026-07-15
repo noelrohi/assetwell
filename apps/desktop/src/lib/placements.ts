@@ -50,7 +50,20 @@ export const baseRatios = [
   { id: "21:9", label: "Cinema wide", width: 1344, height: 576 },
   { id: "9:21", label: "Cinema vertical", width: 576, height: 1344 },
   { id: "1.91:1", label: "Social landscape", width: 1200, height: 628 },
+  { id: "2:1", label: "Half banner", width: 1200, height: 600 },
+  { id: "6:5", label: "Rectangle", width: 1080, height: 900 },
 ] as const
+
+/**
+ * Base sizes no Higgsfield model renders natively. The model generates at its
+ * nearest native ratio and the Electron Host center-crops to the exact size
+ * (`outputSize` post-processing), so these are always offered regardless of
+ * the model's advertised ratios — and must never be sent as `--aspect_ratio`.
+ */
+export const CROP_BACKED_BASE_RATIO_IDS: ReadonlySet<string> = new Set([
+  "2:1",
+  "6:5",
+])
 
 export type BaseRatio = (typeof baseRatios)[number]
 export type BaseRatioId = BaseRatio["id"]
@@ -64,6 +77,7 @@ export function supportedBaseRatios(supportedRatioIds: readonly string[]) {
     supportedRatioIds.filter((id) => id.trim().length > 0 && id !== "auto"),
   )
   const matches = baseRatios.filter((ratio) => {
+    if (CROP_BACKED_BASE_RATIO_IDS.has(ratio.id)) return false
     if (supported.has(ratio.id)) return true
     const value = ratioNumber(ratio.width, ratio.height)
     return supportedValues.some(
@@ -71,7 +85,12 @@ export function supportedBaseRatios(supportedRatioIds: readonly string[]) {
     )
   })
 
-  return matches.length ? matches : [...baseRatios]
+  if (matches.length === 0) return [...baseRatios]
+
+  return baseRatios.filter(
+    (ratio) =>
+      matches.includes(ratio) || CROP_BACKED_BASE_RATIO_IDS.has(ratio.id),
+  )
 }
 
 export function nearestBaseRatio(
