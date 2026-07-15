@@ -7,6 +7,23 @@ and this project uses semantic version tags for desktop releases.
 
 ## [Unreleased]
 
+## [0.0.16] - 2026-07-15
+
+### Added
+
+- Added crop-backed 2:1 and 6:5 base sizes, with every canonical size now available across image models.
+- Videos now reframe mismatched source images for the selected output size before animation, with blur-fill retained as a fallback.
+- Video galleries now use a masonry layout for mixed aspect ratios.
+
+### Changed
+
+- Model lists are cached across launches and refreshed in the background for faster composer startup.
+- Video size selection now resets to the nearest placement whenever a new source is attached.
+
+### Fixed
+
+- Prevented duplicate video generations when frame generation returns a result before exiting with an error.
+
 ## [0.0.15] - 2026-07-14
 
 ### Added
