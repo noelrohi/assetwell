@@ -185,69 +185,78 @@ export function ImageComposer() {
             <PopoverContent
               align="start"
               sideOffset={6}
-              className="max-h-[var(--radix-popover-content-available-height)] w-72 overflow-y-auto overscroll-contain p-2"
+              className="w-72 overflow-hidden p-0"
             >
-              <div className="flex items-center gap-1.5 px-2 pt-1 pb-2">
-                <p className="text-xs font-medium text-foreground">Base size</p>
-                <Tooltip>
-                  <TooltipTrigger asChild>
-                    <button
-                      type="button"
-                      aria-label="How base sizes work"
-                      className="rounded-full text-muted-foreground/70 outline-none transition-colors hover:text-foreground focus-visible:ring-2 focus-visible:ring-ring/50"
+              <div className="scroll-fade-y scroll-fade-4 max-h-[calc(var(--radix-popover-content-available-height)/2)] overflow-y-auto overscroll-contain p-2">
+                <div className="flex items-center gap-1.5 px-2 pt-1 pb-2">
+                  <p className="text-xs font-medium text-foreground">
+                    Base size
+                  </p>
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <button
+                        type="button"
+                        aria-label="How base sizes work"
+                        className="rounded-full text-muted-foreground/70 outline-none transition-colors hover:text-foreground focus-visible:ring-2 focus-visible:ring-ring/50"
+                      >
+                        <IconInfoCircle className="size-3.5" />
+                      </button>
+                    </TooltipTrigger>
+                    <TooltipContent
+                      side="top"
+                      sideOffset={6}
+                      className="max-w-64"
                     >
-                      <IconInfoCircle className="size-3.5" />
-                    </button>
-                  </TooltipTrigger>
-                  <TooltipContent side="top" sideOffset={6} className="max-w-64">
-                    Every size is available for every model. Sizes outside the
-                    model&apos;s native frames are cropped from its nearest frame.
-                  </TooltipContent>
-                </Tooltip>
-              </div>
-              <div className="grid gap-1">
-                {ratioOptions.map((r) => {
-                  const selected = r.id === ratio.id
-                  return (
-                    <button
-                      key={r.id}
-                      type="button"
-                      onClick={() => {
-                        setRatioId(r.id)
-                        setRatioPickerOpen(false)
-                      }}
-                      className={cn(
-                        "flex w-full items-center gap-3 rounded-lg px-2.5 py-2 text-left transition-colors",
-                        selected
-                          ? "bg-ember/10 text-foreground"
-                          : "text-muted-foreground hover:bg-accent hover:text-foreground",
-                      )}
-                    >
-                      <RatioSwatch ratio={r} />
-                      <span className="min-w-0 flex-1">
-                        <span className="block font-mono text-xs leading-none">
-                          {r.id}
+                      Every size is available for every model. Sizes outside the
+                      model&apos;s native frames are cropped from its nearest
+                      frame.
+                    </TooltipContent>
+                  </Tooltip>
+                </div>
+                <div className="grid gap-1">
+                  {ratioOptions.map((r) => {
+                    const selected = r.id === ratio.id
+                    return (
+                      <button
+                        key={r.id}
+                        type="button"
+                        onClick={() => {
+                          setRatioId(r.id)
+                          setRatioPickerOpen(false)
+                        }}
+                        className={cn(
+                          "flex w-full items-center gap-3 rounded-lg px-2.5 py-2 text-left transition-colors",
+                          selected
+                            ? "bg-ember/10 text-foreground"
+                            : "text-muted-foreground hover:bg-accent hover:text-foreground",
+                        )}
+                      >
+                        <RatioSwatch ratio={r} />
+                        <span className="min-w-0 flex-1">
+                          <span className="block font-mono text-xs leading-none">
+                            {r.id}
+                          </span>
+                          <span className="mt-1 block truncate text-[0.68rem] leading-none text-muted-foreground">
+                            {r.label}
+                          </span>
                         </span>
-                        <span className="mt-1 block text-[0.68rem] leading-none text-muted-foreground">
-                          {r.label}
-                        </span>
-                      </span>
-                      {!isNativeBaseRatio(r, modelRatios) && (
-                        <span className="shrink-0 font-mono text-[0.6rem] text-muted-foreground/70">
-                          crops from{" "}
-                          {nearestHiggsfieldRatio(
-                            r.width,
-                            r.height,
-                            modelRatios,
-                          )}
-                        </span>
-                      )}
-                      {selected && (
-                        <IconCheck className="size-3.5 shrink-0 text-ember" />
-                      )}
-                    </button>
-                  )
-                })}
+                        {!isNativeBaseRatio(r, modelRatios) && (
+                          <span className="shrink-0 font-mono text-[0.6rem] text-muted-foreground/70">
+                            crops from{" "}
+                            {nearestHiggsfieldRatio(
+                              r.width,
+                              r.height,
+                              modelRatios,
+                            )}
+                          </span>
+                        )}
+                        {selected && (
+                          <IconCheck className="size-3.5 shrink-0 text-ember" />
+                        )}
+                      </button>
+                    )
+                  })}
+                </div>
               </div>
             </PopoverContent>
           </Popover>
@@ -406,14 +415,20 @@ export function ImageComposer() {
 
 function RatioSwatch({ ratio }: { ratio: BaseRatio }) {
   return (
-    <span
-      className="shrink-0 rounded-[3px] border border-current/55 text-foreground"
-      style={{
-        width:
-          ratio.width >= ratio.height ? 14 : (14 * ratio.width) / ratio.height,
-        height:
-          ratio.height >= ratio.width ? 14 : (14 * ratio.height) / ratio.width,
-      }}
-    />
+    <span className="flex size-3.5 shrink-0 items-center justify-center">
+      <span
+        className="rounded-[3px] border border-current/55 text-foreground"
+        style={{
+          width:
+            ratio.width >= ratio.height
+              ? 14
+              : (14 * ratio.width) / ratio.height,
+          height:
+            ratio.height >= ratio.width
+              ? 14
+              : (14 * ratio.height) / ratio.width,
+        }}
+      />
+    </span>
   )
 }
