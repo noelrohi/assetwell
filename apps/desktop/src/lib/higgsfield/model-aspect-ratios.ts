@@ -128,6 +128,16 @@ export function fallbackAspectRatios(mediaKind: HiggsfieldMediaKind) {
     )
 }
 
+export function clearStoredModelAspectRatios(): void {
+  if (typeof window === "undefined") return
+
+  try {
+    window.localStorage.removeItem(MODEL_ASPECT_RATIOS_STORAGE_KEY)
+  } catch {
+    // A warm cache is a nicety; generation should never depend on localStorage.
+  }
+}
+
 function modelAspectRatioCacheKey(
   model: string,
   mediaKind: HiggsfieldMediaKind,

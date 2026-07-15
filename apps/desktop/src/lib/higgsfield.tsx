@@ -38,7 +38,15 @@ import {
   normalizeCreativeUrls,
   normalizeVideoUrls,
 } from "./higgsfield/local-state"
-import { useModelAspectRatios } from "./higgsfield/model-aspect-ratios"
+import {
+  clearStoredModelAspectRatios,
+  useModelAspectRatios,
+} from "./higgsfield/model-aspect-ratios"
+import {
+  clearCachedModelOptions,
+  readCachedModelOptions,
+  writeCachedModelOptions,
+} from "./higgsfield/model-options-cache"
 import { isHiggsfieldSessionReady } from "./higgsfield/session-readiness"
 import {
   UNSORTED_BRAND_SCOPE_ID,
@@ -114,10 +122,10 @@ export function HiggsfieldProvider({
   const [workspace, setWorkspace] =
     React.useState<HiggsfieldWorkspaceContext | null>(null)
   const [imageModels, setImageModels] = React.useState<ModelOption[]>(() =>
-    bridge ? [] : fallbackImageModels,
+    bridge ? (readCachedModelOptions("image") ?? []) : fallbackImageModels,
   )
   const [videoModels, setVideoModels] = React.useState<ModelOption[]>(() =>
-    bridge ? [] : fallbackVideoModels,
+    bridge ? (readCachedModelOptions("video") ?? []) : fallbackVideoModels,
   )
   const [creatives, setCreatives] = React.useState<Creative[]>([])
   const [videos, setVideos] = React.useState<VideoResult[]>([])
@@ -176,6 +184,8 @@ export function HiggsfieldProvider({
   const getModelAspectRatios = useModelAspectRatios(bridge)
 
   const markSignedOut = React.useCallback(() => {
+    clearCachedModelOptions()
+    clearStoredModelAspectRatios()
     setAccount(null)
     setWorkspace(null)
     setCliStatus((current) =>
@@ -228,10 +238,14 @@ export function HiggsfieldProvider({
         setWorkspace(workspaceContext.value)
       }
       if (imageModelRows.status === "fulfilled") {
-        setImageModels(toModelOptions(imageModelRows.value, "image"))
+        const options = toModelOptions(imageModelRows.value, "image")
+        setImageModels(options)
+        writeCachedModelOptions("image", options)
       }
       if (videoModelRows.status === "fulfilled") {
-        setVideoModels(toModelOptions(videoModelRows.value, "video"))
+        const options = toModelOptions(videoModelRows.value, "video")
+        setVideoModels(options)
+        writeCachedModelOptions("video", options)
       }
     } catch {
       setAccount(null)
