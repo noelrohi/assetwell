@@ -49,7 +49,7 @@ export function VideoGallery() {
           newest first
         </p>
       </div>
-      <div className="mt-4 grid grid-cols-2 gap-5 md:grid-cols-3 lg:grid-cols-4">
+      <div className="mt-4 columns-2 gap-5 md:columns-3 lg:columns-4">
         {videos.map((video, index) => (
           <VideoCard key={video.id} video={video} index={index} />
         ))}
@@ -77,7 +77,7 @@ function VideoCard({ video, index }: { video: VideoResult; index: number }) {
       <ContextMenu>
         <ContextMenuTrigger asChild>
           <div
-            className="group animate-in fade-in slide-in-from-bottom-2 fill-mode-both relative overflow-hidden rounded-xl border border-border/70 bg-card/40 transition-all duration-300 hover:border-border hover:shadow-[0_8px_40px_-12px_rgba(0,0,0,0.6)]"
+            className="group animate-in fade-in slide-in-from-bottom-2 fill-mode-both relative mb-5 break-inside-avoid overflow-hidden rounded-xl border border-border/70 bg-card/40 transition-all duration-300 hover:border-border hover:shadow-[0_8px_40px_-12px_rgba(0,0,0,0.6)]"
             style={{ animationDelay: `${index * 60}ms` }}
           >
             <Link
@@ -101,7 +101,9 @@ function VideoCard({ video, index }: { video: VideoResult; index: number }) {
                   <div className="absolute inset-0 flex flex-col items-center justify-center gap-2 bg-muted/30">
                     <IconLoader2 className="size-5 animate-spin text-ember" />
                     <span className="font-mono text-[0.65rem] tracking-wide text-muted-foreground">
-                      generating
+                      {video.stage === "framing"
+                        ? "preparing frame"
+                        : "generating"}
                     </span>
                   </div>
                 ) : failed ? (

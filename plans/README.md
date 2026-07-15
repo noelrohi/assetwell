@@ -6,12 +6,15 @@ honor its STOP conditions, and update your row when done.
 
 ## Execution order & status
 
-| Plan | Title                                             | Priority | Effort | Depends on | Status |
-| ---- | ------------------------------------------------- | -------- | ------ | ---------- | ------ |
-| 001  | In-app "What's New" after an update               | P2       | M      | —          | DONE   |
-| 002  | Support 728×90 / 320×50 via AI "strip" path       | P1       | M      | —          | TODO   |
-| 003  | Pad / edge-extend fallback for ultra-wide banners | P2       | M      | 002        | TODO   |
-| 004  | Local folders on the Uploads page (drill-in UI)   | P1       | L      | —          | DONE   |
+| Plan | Title                                               | Priority | Effort | Depends on | Status |
+| ---- | --------------------------------------------------- | -------- | ------ | ---------- | ------ |
+| 001  | In-app "What's New" after an update                 | P2       | M      | —          | DONE   |
+| 002  | Support 728×90 / 320×50 via AI "strip" path         | P1       | M      | —          | TODO   |
+| 003  | Pad / edge-extend fallback for ultra-wide banners   | P2       | M      | 002        | TODO   |
+| 004  | Local folders on the Uploads page (drill-in UI)     | P1       | L      | —          | DONE   |
+| 005  | 2:1 and 6:5 crop-backed base sizes (image composer) | P2       | S      | —          | DONE   |
+| 006  | Re-frame mismatched video sources before animating  | P1       | M      | —          | DONE   |
+| 007  | Tighten video composer size selection               | P2       | S      | 006        | DONE   |
 
 Status values: TODO | IN PROGRESS | DONE | BLOCKED (with one-line reason) | REJECTED (with one-line rationale)
 
@@ -21,6 +24,9 @@ Status values: TODO | IN PROGRESS | DONE | BLOCKED (with one-line reason) | REJE
 - **003 requires 002**: 002 introduces the `adaptation: "strip"` placements and the
   strip-generation path that 003's pad fallback operates on. Land 002 first; 003 is
   optional polish that only matters if 002's center-crop clips content in practice.
+- **007 requires 006**: 007 rewrites the size-selector copy to say "sizes that
+  don't match your source get a matching frame generated first", which is only
+  true once 006's re-frame pipeline exists. 005 is independent of both.
 
 ## Context for this batch
 
@@ -66,6 +72,30 @@ and lists them as STOP conditions:
 If the maintainer wants per-brand nesting or chips instead, plan 004 needs a
 revision pass before execution — note it here.
 
+## Context for plans 005–007 (maintainer TODO batch, 2026-07-15)
+
+Not an audit batch — three TODOs planned directly from the maintainer, with
+three decisions confirmed interactively on 2026-07-15:
+
+- **005**: the "missing sizes" in the image composer are **both 2:1 and 6:5**
+  (the only placement ratios with no base-size equivalent). They are
+  crop-backed: no Higgsfield model renders them natively, so the model
+  generates at its nearest native ratio and the Electron Host's existing
+  `outputSize` center-crop delivers the exact size. Renderer-data-only change.
+- **006**: when a selected video size doesn't match the attached source, the
+  app now **automatically** generates a placement-correct frame (image-model
+  pass, mirroring the image placement pipeline) and animates that, instead of
+  animating a blur-filled pad. Blur-fill survives only as a fallback when the
+  frame generation fails, and as the host-side finisher for target ratios no
+  video model supports natively (e.g. 6:5).
+- **007**: the video composer **keeps multi-size selection** (multi-placement
+  video is core to create→resize→video) but drops the `?sizes=` URL state and
+  the never-resetting "explicitly chosen" ref; selection re-defaults to the
+  source's nearest size on every attach.
+- **Post-006 hardening**: video-frame completion callbacks are mutually
+  exclusive, preventing a result followed by a non-zero exit from starting
+  duplicate video runs.
+
 ## Findings considered and rejected
 
 - **AI-generate a native 8:1/6.4:1 frame** (any model, incl. `outpaint`, edit models):
@@ -96,3 +126,14 @@ revision pass before execution — note it here.
   not rejected, but out of scope for 001 — that surfaces notes for an update that
   has _downloaded but not yet installed_, a different moment than this plan targets.
   Listed as a deferred follow-up in 001's maintenance notes.
+
+- **Delete the video composer's size selector** (or make it single-select):
+  rejected by maintainer decision 2026-07-15 — multi-placement video output is
+  core to the create→resize→video loop; the fix is tightening (007) plus
+  quality (006), not removal.
+- **Per-generate "Fast (blur fill) / Best (re-frame)" toggle**: rejected by
+  maintainer decision 2026-07-15 — the re-frame step runs automatically; a
+  toggle would keep shipping the bad blur-fill output and add UI surface.
+- **Reuse an existing ready image placement as the video frame** when the
+  source creative has one at a matching ratio: deferred, not rejected — noted
+  in 006's maintenance notes as a credit-saving follow-up.

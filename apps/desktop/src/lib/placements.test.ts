@@ -3,40 +3,56 @@ import { describe, expect, test } from "bun:test"
 
 import {
   baseRatios,
+  defaultVideoSizes,
   isNarrowBannerPlacement,
+  isNativeBaseRatio,
   isUnavailableImagePlacement,
-  nearestBaseRatio,
   nearestVideoPlacement,
-  supportedBaseRatios,
 } from "./placements"
 
+describe("default video sizes", () => {
+  test("defaults to wide without a source", () => {
+    expect(defaultVideoSizes()).toEqual(["1280x720"])
+  })
+
+  test("defaults to portrait for a portrait source", () => {
+    expect(defaultVideoSizes(720, 1280)).toEqual(["720x1280"])
+  })
+
+  test("defaults to square for a square source", () => {
+    expect(defaultVideoSizes(1080, 1080)).toEqual(["1080x1080"])
+  })
+})
+
 describe("base ratio helpers", () => {
-  test("falls back to the full base ratio set when a model has no explicit sizes", () => {
-    expect(supportedBaseRatios([]).map((ratio) => ratio.id)).toEqual(
-      baseRatios.map((ratio) => ratio.id),
-    )
-    expect(supportedBaseRatios(["auto"]).map((ratio) => ratio.id)).toEqual(
-      baseRatios.map((ratio) => ratio.id),
-    )
+  test("recognizes a native ratio by exact id", () => {
+    const ratio = baseRatios.find((item) => item.id === "1:1")!
+
+    expect(isNativeBaseRatio(ratio, ["1:1"])).toBe(true)
   })
 
-  test("filters base ratios to model-supported sizes", () => {
-    expect(
-      supportedBaseRatios(["1:1", "16:9", "9:16"]).map((ratio) => ratio.id),
-    ).toEqual(["1:1", "16:9", "9:16"])
+  test("recognizes a native ratio by numeric equivalence", () => {
+    const ratio = baseRatios.find((item) => item.id === "1.91:1")!
+
+    expect(isNativeBaseRatio(ratio, ["300:157"])).toBe(true)
   })
 
-  test("matches equivalent ratio labels from model metadata", () => {
-    expect(supportedBaseRatios(["300:157"]).map((ratio) => ratio.id)).toEqual([
-      "1.91:1",
-    ])
+  test("rejects a ratio the model does not support", () => {
+    const ratio = baseRatios.find((item) => item.id === "2:1")!
+
+    expect(isNativeBaseRatio(ratio, ["1:1", "16:9"])).toBe(false)
   })
 
-  test("chooses the closest available ratio instead of snapping to the first option", () => {
-    const current = baseRatios.find((ratio) => ratio.id === "4:5")!
-    const options = supportedBaseRatios(["1:1", "3:4", "16:9"])
+  test("rejects a ratio when the supported list is empty", () => {
+    const ratio = baseRatios.find((item) => item.id === "1:1")!
 
-    expect(nearestBaseRatio(current, options).id).toBe("3:4")
+    expect(isNativeBaseRatio(ratio, [])).toBe(false)
+  })
+
+  test("ignores auto and blank ratio ids", () => {
+    const ratio = baseRatios.find((item) => item.id === "1:1")!
+
+    expect(isNativeBaseRatio(ratio, ["auto", "", " "])).toBe(false)
   })
 
   test("chooses a video size close to the attached source ratio", () => {

@@ -7,7 +7,6 @@ import {
   IconSelector,
   IconX,
 } from "@tabler/icons-react"
-import { useQueryState } from "nuqs"
 import { toast } from "sonner"
 
 import {
@@ -25,12 +24,11 @@ import { useHiggsfieldApp } from "@/lib/higgsfield"
 import { DEFAULT_VIDEO_DURATION_SECONDS } from "@/lib/higgsfield/constants"
 import { matchesHiggsfieldRatio } from "@/lib/higgsfield/model-aspect-ratios"
 import {
-  nearestVideoPlacement,
+  defaultVideoSizes,
   placementSpecs,
   videoPlacements,
   type VideoPlacement,
 } from "@/lib/placements"
-import { videoPlacementSelectionParser } from "@/lib/query-state"
 import { cn } from "@/lib/utils"
 
 const klingVideoModelMatch = [
@@ -120,14 +118,10 @@ export function VideoComposer() {
     () => parseVideoDurationSeconds(durationInput),
     [durationInput],
   )
-  const [sizes, setSizes] = useQueryState(
-    "sizes",
-    videoPlacementSelectionParser,
+  const [sizes, setSizes] = React.useState<VideoPlacement[]>(() =>
+    defaultVideoSizes(videoDraftSource?.width, videoDraftSource?.height),
   )
-  const sizesWereExplicitlyChosen = React.useRef(
-    typeof window !== "undefined" &&
-      new URLSearchParams(window.location.search).has("sizes"),
-  )
+  const lastDraftSource = React.useRef(videoDraftSource)
   const [durationPickerOpen, setDurationPickerOpen] = React.useState(false)
 
   const canMake =
@@ -144,22 +138,14 @@ export function VideoComposer() {
   }, [defaultModelId, model, videoModels])
 
   React.useEffect(() => {
-    if (
-      sizesWereExplicitlyChosen.current ||
-      !videoDraftSource?.width ||
-      !videoDraftSource.height
-    ) {
-      return
-    }
-
-    void setSizes([
-      nearestVideoPlacement(videoDraftSource.width, videoDraftSource.height),
-    ])
-  }, [setSizes, videoDraftSource])
+    if (videoDraftSource === lastDraftSource.current) return
+    lastDraftSource.current = videoDraftSource
+    if (!videoDraftSource) return
+    setSizes(defaultVideoSizes(videoDraftSource.width, videoDraftSource.height))
+  }, [videoDraftSource])
 
   function toggleSize(size: VideoPlacement) {
-    sizesWereExplicitlyChosen.current = true
-    void setSizes((current) =>
+    setSizes((current) =>
       current.includes(size)
         ? current.filter((item) => item !== size)
         : [...current, size],
@@ -321,7 +307,8 @@ export function VideoComposer() {
                 <div className="px-2 pt-1 pb-2">
                   <p className="text-xs font-medium text-foreground">Sizes</p>
                   <p className="mt-0.5 text-[0.68rem] leading-4 text-muted-foreground/75">
-                    Render one clip per selected size.
+                    Render one clip per selected size. Sizes that don’t match
+                    your source get a matching frame generated first.
                   </p>
                 </div>
                 <div className="grid gap-1">
@@ -354,7 +341,7 @@ export function VideoComposer() {
                         </span>
                         {autoFramed && (
                           <span className="shrink-0 rounded-full bg-ember/10 px-1.5 py-0.5 text-[0.55rem] font-medium text-ember">
-                            auto-frame
+                            re-frame
                           </span>
                         )}
                         {selected && (

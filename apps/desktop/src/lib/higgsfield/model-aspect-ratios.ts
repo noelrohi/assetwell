@@ -1,7 +1,7 @@
 import * as React from "react"
 import type { HiggsfieldMediaKind } from "@assetwell/desktop-bridge"
 
-import { baseRatios } from "@/lib/placements"
+import { baseRatios, CROP_BACKED_BASE_RATIO_IDS } from "@/lib/placements"
 
 import type { HiggsfieldBridge } from "./types"
 
@@ -123,7 +123,19 @@ export function fallbackAspectRatios(mediaKind: HiggsfieldMediaKind) {
   if (mediaKind === "video") return ["16:9", "9:16", "1:1", "4:3", "3:4"]
   return baseRatios
     .map((ratio) => ratio.id)
-    .filter((ratio) => ratio !== "1.91:1")
+    .filter(
+      (ratio) => ratio !== "1.91:1" && !CROP_BACKED_BASE_RATIO_IDS.has(ratio),
+    )
+}
+
+export function clearStoredModelAspectRatios(): void {
+  if (typeof window === "undefined") return
+
+  try {
+    window.localStorage.removeItem(MODEL_ASPECT_RATIOS_STORAGE_KEY)
+  } catch {
+    // A warm cache is a nicety; generation should never depend on localStorage.
+  }
 }
 
 function modelAspectRatioCacheKey(

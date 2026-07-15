@@ -235,7 +235,7 @@ export async function getHiggsfieldModels(
       ? ["--json", "model", "list", "--text"]
       : ["--json", "model", "list", `--${mediaKind}`]
   const executable = resolveHiggsfieldExecutable()
-  const result = await collectHiggsfieldOutput(executable, args, 15_000)
+  const result = await collectHiggsfieldOutput(executable, args, 30_000)
 
   ensureCommandSucceeded(result, "Load models")
   return parseModelList(result.stdout, mediaKind)
@@ -1414,12 +1414,12 @@ function ensureCommandSucceeded(result: CollectedCommand, title: string) {
 
   if (result.exitCode === 0) return
 
-  if (looksUnauthenticated(`${result.stdout}\n${result.stderr}`)) {
-    throw new Error("Sign in to Higgsfield before continuing.")
-  }
-
   if (result.timedOut) {
     throw new Error(`${title} timed out. Try again in a moment.`)
+  }
+
+  if (looksUnauthenticated(`${result.stdout}\n${result.stderr}`)) {
+    throw new Error("Sign in to Higgsfield before continuing.")
   }
 
   const detail = firstMeaningfulLine(result.stderr, result.stdout)

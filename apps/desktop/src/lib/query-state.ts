@@ -1,6 +1,6 @@
-import { parseAsArrayOf, parseAsString, parseAsStringLiteral } from "nuqs"
+import { parseAsString, parseAsStringLiteral } from "nuqs"
 
-import { imagePlacements, videoPlacements } from "@/lib/placements"
+import { imagePlacements } from "@/lib/placements"
 
 export const promptFilterValues = ["all", "image", "video"] as const
 
@@ -13,7 +13,3 @@ export const creativePreviewSelectionParsers = {
   take: parseAsString,
   placement: parseAsStringLiteral(imagePlacements),
 }
-
-export const videoPlacementSelectionParser = parseAsArrayOf(
-  parseAsStringLiteral(videoPlacements),
-).withDefault(["1280x720"])

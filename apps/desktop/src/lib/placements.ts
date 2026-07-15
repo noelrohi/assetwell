@@ -1,3 +1,8 @@
+import {
+  nearestVideoPlacement,
+  type VideoPlacement,
+} from "@assetwell/product/placements"
+
 export {
   IMAGE_PLACEMENT_AVAILABILITY_NOTE,
   IMAGE_PLACEMENT_UNAVAILABLE_REASON,
@@ -50,12 +55,37 @@ export const baseRatios = [
   { id: "21:9", label: "Cinema wide", width: 1344, height: 576 },
   { id: "9:21", label: "Cinema vertical", width: 576, height: 1344 },
   { id: "1.91:1", label: "Social landscape", width: 1200, height: 628 },
+  { id: "2:1", label: "Half banner", width: 1200, height: 600 },
+  { id: "6:5", label: "Rectangle", width: 1080, height: 900 },
 ] as const
+
+/**
+ * Base sizes no Higgsfield model renders natively. The model generates at its
+ * nearest native ratio and the Electron Host center-crops to the exact size
+ * (`outputSize` post-processing), so these are always offered regardless of
+ * the model's advertised ratios — and must never be sent as `--aspect_ratio`.
+ */
+export const CROP_BACKED_BASE_RATIO_IDS: ReadonlySet<string> = new Set([
+  "2:1",
+  "6:5",
+])
+
+/** Initial size selection for the video composer: the placement nearest the source, else wide. */
+export function defaultVideoSizes(
+  width?: number,
+  height?: number,
+): VideoPlacement[] {
+  if (!width || !height) return ["1280x720"]
+  return [nearestVideoPlacement(width, height)]
+}
 
 export type BaseRatio = (typeof baseRatios)[number]
 export type BaseRatioId = BaseRatio["id"]
 
-export function supportedBaseRatios(supportedRatioIds: readonly string[]) {
+export function isNativeBaseRatio(
+  ratio: BaseRatio,
+  supportedRatioIds: readonly string[],
+): boolean {
   const supportedValues = supportedRatioIds.flatMap((id) => {
     const value = ratioIdNumber(id)
     return value ? [value] : []
@@ -63,34 +93,13 @@ export function supportedBaseRatios(supportedRatioIds: readonly string[]) {
   const supported = new Set(
     supportedRatioIds.filter((id) => id.trim().length > 0 && id !== "auto"),
   )
-  const matches = baseRatios.filter((ratio) => {
-    if (supported.has(ratio.id)) return true
-    const value = ratioNumber(ratio.width, ratio.height)
-    return supportedValues.some(
-      (supportedValue) => Math.abs(Math.log(value / supportedValue)) < 0.005,
-    )
-  })
 
-  return matches.length ? matches : [...baseRatios]
-}
+  if (supported.has(ratio.id)) return true
 
-export function nearestBaseRatio(
-  target: BaseRatio,
-  options: readonly BaseRatio[] = baseRatios,
-) {
-  if (options.length === 0) return baseRatios[0]
-
-  const targetValue = ratioNumber(target.width, target.height)
-  return options.reduce((best, next) => {
-    const bestDistance = Math.abs(
-      Math.log(targetValue / ratioNumber(best.width, best.height)),
-    )
-    const nextDistance = Math.abs(
-      Math.log(targetValue / ratioNumber(next.width, next.height)),
-    )
-
-    return nextDistance < bestDistance ? next : best
-  })
+  const value = ratioNumber(ratio.width, ratio.height)
+  return supportedValues.some(
+    (supportedValue) => Math.abs(Math.log(value / supportedValue)) < 0.005,
+  )
 }
 
 export function ratioNumber(width: number, height: number) {

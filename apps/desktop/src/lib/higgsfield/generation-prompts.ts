@@ -1,4 +1,4 @@
-import type { ImagePlacement } from "@/lib/placements"
+import type { ImagePlacement, VideoPlacement } from "@/lib/placements"
 
 export function buildPlacementPrompt({
   originalPrompt,
@@ -16,6 +16,24 @@ export function buildPlacementPrompt({
     `Target export aspect ratio is ${aspectRatio}. Keep important content inside the full safe area for that crop.`,
     "Keep the same brand, subject, message, and overall concept. Reflow layout, typography, product cards, and whitespace so it feels native to the target placement.",
     `Original brief: ${originalPrompt}`,
+  ].join("\n\n")
+}
+
+export function buildVideoFramePrompt({
+  originalPrompt,
+  placement,
+  aspectRatio,
+}: {
+  originalPrompt?: string
+  placement: VideoPlacement
+  aspectRatio: string
+}) {
+  return [
+    "Recompose this ad creative onto a new canvas. Use only the supplied source image as the visual reference.",
+    "Do not add new logos, badges, watermarks, or text. Keep the same brand, subject, message, and overall concept.",
+    `Target size: ${placement}. Aspect ratio: ${aspectRatio}. Compose for this exact aspect ratio, extending backgrounds and reflowing the layout so nothing looks cropped, padded, or letterboxed.`,
+    "This frame will be animated into a video afterwards, so keep the main subject fully visible with breathing room around it.",
+    ...(originalPrompt ? [`Original brief: ${originalPrompt}`] : []),
   ].join("\n\n")
 }
 
