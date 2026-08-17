@@ -7,6 +7,12 @@ and this project uses semantic version tags for desktop releases.
 
 ## [Unreleased]
 
+## [0.0.17] - 2026-08-17
+
+### Added
+
+- Anonymous usage analytics: app opens and feature usage, never your content. On by default; switch it off any time via "Share anonymous usage analytics" in the account menu.
+
 ## [0.0.16] - 2026-07-15
 
 ### Added
