@@ -69,6 +69,8 @@ const bridge: DesktopBridge = {
     saveSnapshot: (snapshot) =>
       ipcRenderer.invoke(IPC_CHANNELS.library.saveSnapshot, snapshot),
     getSettings: () => ipcRenderer.invoke(IPC_CHANNELS.library.getSettings),
+    setAnalyticsEnabled: (request) =>
+      ipcRenderer.invoke(IPC_CHANNELS.library.setAnalyticsEnabled, request),
     chooseOutputRoot: () =>
       ipcRenderer.invoke(IPC_CHANNELS.library.chooseOutputRoot),
     revealOutputRoot: () =>

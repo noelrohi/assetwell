@@ -26,6 +26,7 @@ export const IPC_CHANNELS = {
     loadSnapshot: "assetwell:library:load-snapshot",
     saveSnapshot: "assetwell:library:save-snapshot",
     getSettings: "assetwell:library:get-settings",
+    setAnalyticsEnabled: "assetwell:library:set-analytics-enabled",
     chooseOutputRoot: "assetwell:library:choose-output-root",
     revealOutputRoot: "assetwell:library:reveal-output-root",
     loadBrandState: "assetwell:library:load-brand-state",

@@ -50,4 +50,58 @@ describe("settings store", () => {
     expect(JSON.parse(await readFile(first, "utf8"))).toEqual({ file: "a" })
     expect(JSON.parse(await readFile(second, "utf8"))).toEqual({ file: "b" })
   })
+
+  test("defaults anonymous analytics on when the setting is absent", () => {
+    expect(settingsStore.readAssetwellSettingsSync().analyticsEnabled).toBe(
+      true,
+    )
+    expect(settingsStore.settingsAnalyticsEnabled({})).toBe(true)
+  })
+
+  test("round-trips the analytics preference", async () => {
+    await settingsStore.writeSettingsFile({ analyticsEnabled: false })
+    expect(settingsStore.readAssetwellSettingsSync().analyticsEnabled).toBe(
+      false,
+    )
+
+    await settingsStore.writeSettingsFile({ analyticsEnabled: true })
+    expect(settingsStore.readAssetwellSettingsSync().analyticsEnabled).toBe(
+      true,
+    )
+  })
+
+  test("defaults malformed analytics values back on", async () => {
+    for (const analyticsEnabled of ["false", 0, null, {}]) {
+      await settingsStore.writeSettingsFile({ analyticsEnabled })
+      expect(settingsStore.readAssetwellSettingsSync().analyticsEnabled).toBe(
+        true,
+      )
+    }
+  })
+
+  test("keeps unrelated settings fields when the preference is written", async () => {
+    const outputRoot = path.join(tempDir, "Library")
+    await settingsStore.writeSettingsFile({
+      outputRoot,
+      activeUploadWorkspaceId: "brand-a",
+      uploadWorkspaces: [{ id: "brand-a", name: "Brand A" }],
+    })
+
+    const stored = settingsStore.readSettingsFileSync()
+    await settingsStore.writeSettingsFile({
+      ...stored,
+      analyticsEnabled: false,
+    })
+
+    expect(settingsStore.readSettingsFileSync()).toEqual({
+      outputRoot,
+      activeUploadWorkspaceId: "brand-a",
+      uploadWorkspaces: [{ id: "brand-a", name: "Brand A" }],
+      analyticsEnabled: false,
+    })
+    expect(settingsStore.readAssetwellSettingsSync()).toEqual({
+      outputRoot,
+      analyticsEnabled: false,
+    })
+  })
 })

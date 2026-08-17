@@ -451,6 +451,16 @@ export interface AssetwellLibrarySnapshot {
 
 export interface AssetwellSettings {
   outputRoot: string
+  /**
+   * Whether the renderer may send anonymous product analytics. Defaults to
+   * true when the setting has never been written; the app never sends creative
+   * content or Higgsfield-owned identifiers either way.
+   */
+  analyticsEnabled: boolean
+}
+
+export interface AssetwellSetAnalyticsEnabledRequest {
+  enabled: boolean
 }
 
 export interface AssetwellChooseOutputRootResult {
@@ -556,6 +566,14 @@ export interface DesktopBridge {
     loadSnapshot(): Promise<AssetwellLibrarySnapshot | null>
     saveSnapshot(snapshot: AssetwellLibrarySnapshot): Promise<boolean>
     getSettings(): Promise<AssetwellSettings>
+    /**
+     * Persists the anonymous-analytics preference and returns the normalized
+     * settings. Merges into the existing settings file so unrelated fields
+     * (library folder, upload workspaces) survive.
+     */
+    setAnalyticsEnabled(
+      request: AssetwellSetAnalyticsEnabledRequest,
+    ): Promise<AssetwellSettings>
     chooseOutputRoot(): Promise<AssetwellChooseOutputRootResult | null>
     revealOutputRoot(): Promise<boolean>
     loadBrandState(): Promise<AssetwellBrandState>

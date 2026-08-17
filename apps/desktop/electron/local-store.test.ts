@@ -95,10 +95,33 @@ describe("local store", () => {
     })
     await expect(localStore.getAssetwellSettings()).resolves.toEqual({
       outputRoot,
+      analyticsEnabled: true,
     })
     expect(openDialogCalls[0]?.[0]).toMatchObject({
       title: "Choose Assetwell library folder",
       properties: ["openDirectory", "createDirectory"],
+    })
+  })
+
+  test("persists the analytics preference without losing the output root", async () => {
+    const outputRoot = path.join(userDataRoot, "Library")
+    setNextOpenDialogResult({ canceled: false, filePaths: [outputRoot] })
+    await localStore.chooseAssetwellOutputRoot()
+
+    await expect(
+      localStore.setAssetwellAnalyticsEnabled({ enabled: false }),
+    ).resolves.toEqual({ outputRoot, analyticsEnabled: false })
+    await expect(localStore.getAssetwellSettings()).resolves.toEqual({
+      outputRoot,
+      analyticsEnabled: false,
+    })
+
+    await expect(
+      localStore.setAssetwellAnalyticsEnabled({ enabled: true }),
+    ).resolves.toEqual({ outputRoot, analyticsEnabled: true })
+    await expect(localStore.getAssetwellSettings()).resolves.toEqual({
+      outputRoot,
+      analyticsEnabled: true,
     })
   })
 

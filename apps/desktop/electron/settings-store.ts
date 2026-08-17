@@ -9,10 +9,15 @@ export interface SettingsFile {
   outputRoot?: unknown
   activeUploadWorkspaceId?: unknown
   uploadWorkspaces?: unknown
+  analyticsEnabled?: unknown
 }
 
 export function readAssetwellSettingsSync(): AssetwellSettings {
-  return { outputRoot: settingsOutputRoot(readSettingsFileSync()) }
+  const settings = readSettingsFileSync()
+  return {
+    outputRoot: settingsOutputRoot(settings),
+    analyticsEnabled: settingsAnalyticsEnabled(settings),
+  }
 }
 
 export function getAssetwellOutputRootSync() {
@@ -29,6 +34,15 @@ export function settingsOutputRoot(settings: SettingsFile) {
   return typeof settings.outputRoot === "string" && settings.outputRoot.trim()
     ? settings.outputRoot.trim()
     : defaultOutputRoot()
+}
+
+/**
+ * Anonymous analytics are on unless the file says otherwise. Only a literal
+ * `false` opts out, so a malformed or hand-edited value falls back to the
+ * documented default rather than silently disabling measurement.
+ */
+export function settingsAnalyticsEnabled(settings: SettingsFile) {
+  return settings.analyticsEnabled !== false
 }
 
 export async function writeSettingsFile(settings: SettingsFile) {

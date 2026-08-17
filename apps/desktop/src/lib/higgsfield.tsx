@@ -14,6 +14,7 @@ import type {
   HiggsfieldWorkspaceContext,
 } from "@assetwell/desktop-bridge"
 
+import { analytics, completedGenerationOutcome } from "@/lib/analytics"
 import {
   imageModels as fallbackImageModels,
   videoModels as fallbackVideoModels,
@@ -112,6 +113,7 @@ export function HiggsfieldProvider({
   const signInRun = React.useRef<string | null>(null)
   const signOutRun = React.useRef<string | null>(null)
   const booted = React.useRef(false)
+  const analyticsBooted = React.useRef(false)
 
   const [account, setAccount] = React.useState<HiggsfieldAccountStatus | null>(
     null,
@@ -781,12 +783,34 @@ export function HiggsfieldProvider({
     if (!libraryBridge) return
     const result = await libraryBridge.chooseOutputRoot()
     if (!result) return
-    setSettings({ outputRoot: result.outputRoot })
+    setSettings((current) => ({
+      analyticsEnabled: current?.analyticsEnabled ?? true,
+      outputRoot: result.outputRoot,
+    }))
     await refreshUploads()
     toast("Assetwell library folder updated", {
       description: result.outputRoot,
     })
   }, [libraryBridge, refreshUploads])
+
+  const setAnalyticsEnabled = React.useCallback(
+    async (enabled: boolean) => {
+      if (!libraryBridge) return false
+
+      try {
+        const next = await libraryBridge.setAnalyticsEnabled({ enabled })
+        setSettings(next)
+        void analytics.setEnabled(next.analyticsEnabled)
+        return true
+      } catch {
+        toast("Could not save your analytics choice", {
+          description: "Try again in a moment.",
+        })
+        return false
+      }
+    },
+    [libraryBridge],
+  )
 
   const revealOutputRoot = React.useCallback(async () => {
     if (!libraryBridge) return
@@ -894,6 +918,30 @@ export function HiggsfieldProvider({
     restoreSnapshot,
   ])
 
+  // Anonymous analytics need both host app info and the persisted preference,
+  // so they start after the boot load rather than at module import. A renderer
+  // without the Desktop Bridge (web preview) is never tracked.
+  React.useEffect(() => {
+    const appBridge = desktopBridge?.app
+    if (!appBridge || !settings || analyticsBooted.current) return
+    analyticsBooted.current = true
+    const enabled = settings.analyticsEnabled
+
+    void (async () => {
+      try {
+        const info = await appBridge.getInfo()
+        await analytics.start({
+          enabled,
+          appVersion: info.version,
+          platform: info.platform,
+          isPackaged: info.isPackaged,
+        })
+      } catch {
+        // Analytics never surface to the product.
+      }
+    })()
+  }, [desktopBridge, settings])
+
   React.useEffect(() => {
     if (!hasRemoteUploads) {
       setRemoteUploadReferences([])
@@ -937,6 +985,12 @@ export function HiggsfieldProvider({
         const succeeded =
           event.exitCode === 0 && completedRuns.current.has(event.runId)
         if (!succeeded) markRunFailed(pending, friendlyExit(event))
+        // `pendingRuns` is keyed by run id and deleted below, so a run reports
+        // its terminal outcome exactly once.
+        analytics.trackGenerationCompleted(
+          pending.kind === "video" ? "video" : "image",
+          completedGenerationOutcome({ succeeded, signal: event.signal }),
+        )
         pendingRuns.current.delete(event.runId)
         completedRuns.current.delete(event.runId)
         syncRunningJobs()
@@ -997,6 +1051,7 @@ export function HiggsfieldProvider({
         ...shippedVideoPrompts,
       ],
       settings,
+      analyticsEnabled: settings?.analyticsEnabled ?? true,
       runningJobs,
       videoDraftSource,
       refreshAccount,
@@ -1006,6 +1061,7 @@ export function HiggsfieldProvider({
       chooseVideoSource,
       chooseOutputRoot,
       revealOutputRoot,
+      setAnalyticsEnabled,
       savePromptPreset,
       deletePromptPreset,
       getModelAspectRatios,
@@ -1044,6 +1100,7 @@ export function HiggsfieldProvider({
       chooseVideoSource,
       chooseOutputRoot,
       revealOutputRoot,
+      setAnalyticsEnabled,
       savePromptPreset,
       deletePromptPreset,
       getModelAspectRatios,

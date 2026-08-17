@@ -13,6 +13,7 @@ import type {
   AssetwellLibrarySnapshot,
   AssetwellSetActiveBrandRequest,
   AssetwellSetActiveUploadWorkspaceRequest,
+  AssetwellSetAnalyticsEnabledRequest,
   AssetwellUpdateBrandRequest,
   AssetwellUpdateUploadFolderRequest,
   AssetwellUpdateUploadWorkspaceRequest,
@@ -41,6 +42,7 @@ import {
   saveLibrarySnapshot,
   setActiveBrand,
   setActiveUploadWorkspace,
+  setAssetwellAnalyticsEnabled,
   updateBrand,
   updateUploadFolder,
   updateUploadWorkspace,
@@ -62,6 +64,13 @@ export function registerLibraryIpc() {
   ipcMain.handle(IPC_CHANNELS.library.getSettings, () => {
     return getAssetwellSettings()
   })
+
+  ipcMain.handle(
+    IPC_CHANNELS.library.setAnalyticsEnabled,
+    (_event, request: AssetwellSetAnalyticsEnabledRequest) => {
+      return setAssetwellAnalyticsEnabled(request)
+    },
+  )
 
   ipcMain.handle(IPC_CHANNELS.library.chooseOutputRoot, (event) => {
     return chooseAssetwellOutputRoot(ownerWindow(event))
