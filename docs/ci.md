@@ -75,6 +75,15 @@ Analytics are optional for users too: **Share anonymous usage analytics** in the
 3. **Version adoption**: `app opened` broken down by the `app_version` property.
 4. **Core funnel**: `app opened` → `generation requested` → `generation completed` (filtered to `outcome = success`) → `export completed`.
 
+## Website environment variables
+
+`apps/www` deploys to Vercel. Set these as **server** environment variables there (never commit values):
+
+- `POSTHOG_PROJECT_KEY`: enables the anonymous `download redirected` event on `/api/download`. Leave it unset to disable download analytics; downloads keep working either way.
+- `POSTHOG_HOST`: PostHog ingestion host, defaults to `https://us.i.posthog.com`. Use the same PostHog project as desktop analytics.
+
+Download reporting uses two independent metrics: PostHog `download redirected` counts website download attempts, and GitHub release-asset `download_count` for `.dmg`/`.exe`/`.AppImage` counts primary installer requests. Neither is an installed-user count, and updater `.zip`/`.blockmap`/`latest*.yml` counts must not be summed into download totals. See `apps/www/README.md` for the dashboard query and the read-only `gh api` command.
+
 ## Auto-updates
 
 Assetwell uses `electron-updater` with the GitHub provider configured in `apps/desktop/package.json`. Packaged apps check for updates shortly after launch, expose **Check for Updates…** in the app menu, download updates in the background, notify the user when an update is ready, show a titlebar Update button once the download is ready, and install on app quit or when the user restarts from the button.
