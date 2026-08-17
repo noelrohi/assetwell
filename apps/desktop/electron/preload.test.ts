@@ -170,6 +170,10 @@ const bridgeInvocationCases = {
     call: (bridge) => bridge.library.getSettings(),
     expected: [IPC_CHANNELS.library.getSettings],
   },
+  "library.setAnalyticsEnabled": {
+    call: (bridge) => bridge.library.setAnalyticsEnabled({ enabled: false }),
+    expected: [IPC_CHANNELS.library.setAnalyticsEnabled, { enabled: false }],
+  },
   "library.chooseOutputRoot": {
     call: (bridge) => bridge.library.chooseOutputRoot(),
     expected: [IPC_CHANNELS.library.chooseOutputRoot],

@@ -62,6 +62,7 @@ export type {
   AssetwellPromptPreset,
   AssetwellReferenceAsset,
   AssetwellReleaseNotes,
+  AssetwellSetAnalyticsEnabledRequest,
   AssetwellSetActiveBrandRequest,
   AssetwellSetActiveUploadWorkspaceRequest,
   AssetwellSettings,

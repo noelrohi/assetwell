@@ -7,6 +7,7 @@ import type {
   HiggsfieldMediaKind,
 } from "@assetwell/desktop-bridge"
 
+import { analytics, analyticsMediaKind } from "@/lib/analytics"
 import {
   IMAGE_PLACEMENT_UNAVAILABLE_TOAST,
   availableImagePlacements,
@@ -162,6 +163,8 @@ export function useHiggsfieldGenerationActions({
       const run = await bridge.generate(request)
       pendingRuns.current.set(run.runId, pending)
       syncRunningJobs()
+      const mediaKind = analyticsMediaKind(request.mediaKind)
+      if (mediaKind) analytics.trackGenerationRequested(mediaKind)
       return run
     },
     [bridge, pendingRuns, syncRunningJobs],
@@ -504,6 +507,7 @@ export function useHiggsfieldGenerationActions({
       })
 
       if (result) {
+        analytics.trackExportCompleted("image")
         toast("ZIP exported", { description: result.filePath })
       }
     },
@@ -532,6 +536,7 @@ export function useHiggsfieldGenerationActions({
       })
 
       if (result) {
+        analytics.trackExportCompleted("video")
         toast("Video downloaded", { description: result.filePath })
       }
     },

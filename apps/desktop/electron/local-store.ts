@@ -9,6 +9,7 @@ import type {
   AssetwellExportCreativeZipResult,
   AssetwellExportVideoRequest,
   AssetwellExportVideoResult,
+  AssetwellSetAnalyticsEnabledRequest,
   AssetwellSettings,
 } from "@assetwell/desktop-bridge"
 
@@ -66,6 +67,17 @@ export async function getAssetwellSettings(): Promise<AssetwellSettings> {
   const settings = readAssetwellSettingsSync()
   await mkdir(settings.outputRoot, { recursive: true })
   return settings
+}
+
+export async function setAssetwellAnalyticsEnabled(
+  request: AssetwellSetAnalyticsEnabledRequest,
+): Promise<AssetwellSettings> {
+  const settings = readSettingsFileSync()
+  await writeSettingsFile({ ...settings, analyticsEnabled: request.enabled })
+  return {
+    outputRoot: settingsOutputRoot(settings),
+    analyticsEnabled: request.enabled,
+  }
 }
 
 export async function chooseAssetwellOutputRoot(

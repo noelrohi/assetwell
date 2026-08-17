@@ -2,6 +2,7 @@ import { IconFolderCog, IconLogin2, IconLogout } from "@tabler/icons-react"
 
 import {
   DropdownMenu,
+  DropdownMenuCheckboxItem,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuLabel,
@@ -29,10 +30,12 @@ export function NavUser() {
   const {
     account,
     settings,
+    analyticsEnabled,
     signIn,
     signOut,
     chooseOutputRoot,
     revealOutputRoot,
+    setAnalyticsEnabled,
   } = useHiggsfieldApp()
 
   const isSignedIn = Boolean(account?.email)
@@ -88,6 +91,23 @@ export function NavUser() {
               <DropdownMenuLabel className="truncate px-2 py-1 text-[11px] font-normal text-muted-foreground">
                 {settings.outputRoot}
               </DropdownMenuLabel>
+            ) : null}
+            {settings ? (
+              <>
+                <DropdownMenuSeparator />
+                <DropdownMenuCheckboxItem
+                  checked={analyticsEnabled}
+                  onSelect={(event) => event.preventDefault()}
+                  onCheckedChange={(checked) =>
+                    void setAnalyticsEnabled(checked === true)
+                  }
+                >
+                  Share anonymous usage analytics
+                </DropdownMenuCheckboxItem>
+                <DropdownMenuLabel className="px-2 pt-0 pb-1 pl-8 text-[11px] font-normal text-muted-foreground">
+                  App opens and feature usage; never your content
+                </DropdownMenuLabel>
+              </>
             ) : null}
             <DropdownMenuSeparator />
             {isSignedIn ? (

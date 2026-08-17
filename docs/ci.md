@@ -51,6 +51,30 @@ Add these repository secrets before the first signed release:
 
 `GITHUB_TOKEN` is provided by GitHub Actions and is used to create releases and upload artifacts. Windows and Linux artifacts are currently published unsigned; add platform signing secrets before requiring trusted installer signatures on those platforms.
 
+## Product analytics configuration
+
+Packaged builds can report anonymous product analytics to PostHog. The renderer only initializes PostHog when the build was given a project key, so this configuration is what turns measurement on for releases.
+
+Add these repository **variables** (Settings → Secrets and variables → Actions → Variables), not secrets:
+
+- `POSTHOG_PROJECT_KEY`: the PostHog project API key (`phc_…`), passed to the Vite build as `VITE_POSTHOG_KEY`.
+- `POSTHOG_HOST`: the PostHog ingestion host for your project's region, passed as `VITE_POSTHOG_HOST`. Leave it unset to use the app's default, `https://us.i.posthog.com`.
+
+Both are read by the two `publish-electron` build steps in `.github/workflows/release.yml`. Vite exposes `VITE_`-prefixed variables to the renderer build automatically.
+
+A PostHog project key is public by design — it ships inside every installer and can only write events. It is **not** a PostHog personal API key, which can read and administer your project and must never be added to this repository, in a variable or a secret.
+
+If either variable is missing, the release still builds and the app simply ships with analytics disabled and makes no analytics network calls.
+
+Analytics are optional for users too: **Share anonymous usage analytics** in the account menu writes `analyticsEnabled` into the app's `settings.json` and opts PostHog in or out immediately. It defaults on. Events carry no prompts, file paths, media, account details, workspace/model IDs, or command output — only `app opened` (app version, platform, packaged flag), `generation requested`, `generation completed`, `export completed`, and `analytics preference changed`.
+
+### Dashboard to create in PostHog
+
+1. **Active installations**: unique users on `app opened`, trended by day, week, and month (DAU/WAU/MAU).
+2. **Retention**: a retention insight with `app opened` as both the cohortizing and returning event; read the day 1, 7, and 30 columns.
+3. **Version adoption**: `app opened` broken down by the `app_version` property.
+4. **Core funnel**: `app opened` → `generation requested` → `generation completed` (filtered to `outcome = success`) → `export completed`.
+
 ## Auto-updates
 
 Assetwell uses `electron-updater` with the GitHub provider configured in `apps/desktop/package.json`. Packaged apps check for updates shortly after launch, expose **Check for Updates…** in the app menu, download updates in the background, notify the user when an update is ready, show a titlebar Update button once the download is ready, and install on app quit or when the user restarts from the button.

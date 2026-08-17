@@ -18,4 +18,10 @@ describe("IPC channels", () => {
       true,
     )
   })
+
+  test("keeps the analytics preference in the library settings domain", () => {
+    expect(IPC_CHANNELS.library.setAnalyticsEnabled).toBe(
+      "assetwell:library:set-analytics-enabled",
+    )
+  })
 })

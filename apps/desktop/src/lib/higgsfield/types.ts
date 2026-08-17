@@ -191,6 +191,8 @@ export interface HiggsfieldAppValue {
   imagePrompts: PromptPreset[]
   videoPrompts: PromptPreset[]
   settings: AssetwellSettings | null
+  /** Persisted anonymous-analytics preference; defaults on until settings load. */
+  analyticsEnabled: boolean
   runningJobs: number
   videoDraftSource: VideoSource | null
   refreshAccount: () => Promise<void>
@@ -200,6 +202,8 @@ export interface HiggsfieldAppValue {
   chooseVideoSource: () => Promise<VideoSource | null>
   chooseOutputRoot: () => Promise<void>
   revealOutputRoot: () => Promise<void>
+  /** Persists the preference, then opts PostHog in or out. False on failure. */
+  setAnalyticsEnabled: (enabled: boolean) => Promise<boolean>
   savePromptPreset: (
     kind: AssetwellPromptKind,
     body: string,
