@@ -6,15 +6,17 @@ honor its STOP conditions, and update your row when done.
 
 ## Execution order & status
 
-| Plan | Title                                               | Priority | Effort | Depends on | Status |
-| ---- | --------------------------------------------------- | -------- | ------ | ---------- | ------ |
-| 001  | In-app "What's New" after an update                 | P2       | M      | —          | DONE   |
-| 002  | Support 728×90 / 320×50 via AI "strip" path         | P1       | M      | —          | TODO   |
-| 003  | Pad / edge-extend fallback for ultra-wide banners   | P2       | M      | 002        | TODO   |
-| 004  | Local folders on the Uploads page (drill-in UI)     | P1       | L      | —          | DONE   |
-| 005  | 2:1 and 6:5 crop-backed base sizes (image composer) | P2       | S      | —          | DONE   |
-| 006  | Re-frame mismatched video sources before animating  | P1       | M      | —          | DONE   |
-| 007  | Tighten video composer size selection               | P2       | S      | 006        | DONE   |
+| Plan | Title                                                | Priority | Effort | Depends on | Status |
+| ---- | ---------------------------------------------------- | -------- | ------ | ---------- | ------ |
+| 001  | In-app "What's New" after an update                  | P2       | M      | —          | DONE   |
+| 002  | Support 728×90 / 320×50 via AI "strip" path          | P1       | M      | —          | TODO   |
+| 003  | Pad / edge-extend fallback for ultra-wide banners    | P2       | M      | 002        | TODO   |
+| 004  | Local folders on the Uploads page (drill-in UI)      | P1       | L      | —          | DONE   |
+| 005  | 2:1 and 6:5 crop-backed base sizes (image composer)  | P2       | S      | —          | DONE   |
+| 006  | Re-frame mismatched video sources before animating   | P1       | M      | —          | DONE   |
+| 007  | Tighten video composer size selection                | P2       | S      | 006        | DONE   |
+| 008  | Measure anonymous desktop engagement with PostHog    | P1       | M      | —          | DONE   |
+| 009  | Count download redirects and release-asset downloads | P1       | S      | —          | DONE   |
 
 Status values: TODO | IN PROGRESS | DONE | BLOCKED (with one-line reason) | REJECTED (with one-line rationale)
 
@@ -27,6 +29,9 @@ Status values: TODO | IN PROGRESS | DONE | BLOCKED (with one-line reason) | REJE
 - **007 requires 006**: 007 rewrites the size-selector copy to say "sizes that
   don't match your source get a matching frame generated first", which is only
   true once 006's re-frame pipeline exists. 005 is independent of both.
+- **008 and 009 are independently deployable** but should use the same PostHog
+  project so the maintainer can compare website download intent with anonymous
+  desktop activation and retention in one dashboard.
 
 ## Context for this batch
 
@@ -95,6 +100,16 @@ three decisions confirmed interactively on 2026-07-15:
 - **Post-006 hardening**: video-frame completion callbacks are mutually
   exclusive, preventing a result followed by a non-zero exit from starting
   duplicate video runs.
+
+## Context for plans 008–009 (usage and download analytics, 2026-07-15)
+
+Requested directly by the maintainer because Assetwell had no reliable active-use
+or download reporting. Plan 008 adds privacy-limited, opt-outable Electron product
+analytics with no content, account, workspace, model, path, CLI output, autocapture,
+or session replay. Plan 009 records the existing website download redirect on the
+server and retains GitHub's primary-installer `download_count` as a separate proxy
+for completed downloads. Updater ZIP, blockmap, and `latest*.yml` counts are
+explicitly excluded because they conflate update checks/downloads with installers.
 
 ## Findings considered and rejected
 
