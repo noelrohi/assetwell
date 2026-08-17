@@ -318,8 +318,14 @@ interface RendererEnv {
 }
 
 function rendererEnv(): RendererEnv {
-  const meta = import.meta as ImportMeta & { env?: RendererEnv }
-  return meta.env ?? {}
+  // Vite replaces these exact `import.meta.env.*` tokens at build time.
+  // Reading them through an aliased object skips that replacement and leaves
+  // packaged builds permanently unconfigured.
+  return {
+    PROD: import.meta.env.PROD,
+    VITE_POSTHOG_KEY: import.meta.env.VITE_POSTHOG_KEY,
+    VITE_POSTHOG_HOST: import.meta.env.VITE_POSTHOG_HOST,
+  }
 }
 
 async function loadPostHogClient(): Promise<AnalyticsClient | null> {

@@ -7,6 +7,12 @@ and this project uses semantic version tags for desktop releases.
 
 ## [Unreleased]
 
+## [0.0.18] - 2026-08-17
+
+### Fixed
+
+- Anonymous usage analytics never activated in 0.0.17 because the packaged build dropped its configuration; packaged builds now report app opens and feature usage as intended (still anonymous, still opt-outable).
+
 ## [0.0.17] - 2026-08-17
 
 ### Added
